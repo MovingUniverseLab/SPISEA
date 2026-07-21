@@ -380,3 +380,60 @@ class MultiplicityResolvedDK(MultiplicityUnresolved):
         omega = 360*z
         
         return inclination, Omega, omega
+
+
+class MultiplicityResolvedAllSingles(MultiplicityResolvedDK):
+    """
+    For testing purposes only. Leads to zero percent multiples.
+
+    This is a sub-class of :class:`MultiplicityResolvedDK` that is identical
+    to its parent in every way (and is therefore still recognized as a
+    resolved-multiplicity object, so the companions table is built with all
+    of the same columns, e.g. ``log_a``, ``e``, ``i``, ``Omega``, ``omega``)
+    except that the multiplicity fraction and companion star fraction are
+    forced to zero for all masses. As a consequence every star is treated as
+    a single, no companions are ever drawn, and the resulting companions
+    table is empty.
+    """
+    def multiplicity_fraction(self, mass):
+        """
+        Return a multiplicity fraction of zero for every mass, so that no
+        star is ever placed in a multiple system.
+
+        Parameters
+        ----------
+        mass : float or numpy array
+            Mass of primary star.
+
+        Returns
+        -------
+        mf : float or numpy array
+            Multiplicity Fraction, always zero, matching the shape of the
+            input.
+        """
+        if np.isscalar(mass):
+            return 0.0
+
+        return np.zeros_like(np.asarray(mass, dtype=float))
+
+    def companion_star_fraction(self, mass):
+        """
+        Return a companion star fraction of zero for every mass, so that the
+        expected number of companions is always zero.
+
+        Parameters
+        ----------
+        mass : float or numpy array
+            Mass of primary star.
+
+        Returns
+        -------
+        csf : float or numpy array
+            Companion Star Fraction, always zero, matching the shape of the
+            input.
+        """
+        if np.isscalar(mass):
+            return 0.0
+
+        return np.zeros_like(np.asarray(mass, dtype=float))
+
