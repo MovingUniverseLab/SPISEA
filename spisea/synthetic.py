@@ -1358,10 +1358,12 @@ class IsochronePhot(Isochrone):
             self.recalc = False
             if new_file_exists:
                 self.points = Table.read(self.save_file)
-                print(f'Isochrone loaded from existing file: {self.save_file}')
+                if self.verbose:
+                    print(f'Isochrone loaded from existing file: {self.save_file}')
             else:
                 self.points = Table.read(self.save_file_legacy)
-                print(f'Isochrone loaded from existing file: {self.save_file_legacy}')
+                if self.verbose:
+                    print(f'Isochrone loaded from existing file: {self.save_file_legacy}')
 
         # Next: do we have all the filters we need?
         comp_filters = []
