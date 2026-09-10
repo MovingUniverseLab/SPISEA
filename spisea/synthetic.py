@@ -204,7 +204,7 @@ class ResolvedCluster(Cluster):
                              seed=seed)
 
         c = constants
-                         
+
         # Provide a user warning is random seed is set
         if seed is not None and verbose:
             print('WARNING: random seed set to %i' % seed)
@@ -242,11 +242,11 @@ class ResolvedCluster(Cluster):
             interp_keys = self.filt_names
             self.iso_interps = {}
             for ikey in interp_keys:
-                self.iso_interps[ikey] = LinearNDInterpolator((self.iso.points['Teff'], self.iso.points['logg'], 
+                self.iso_interps[ikey] = LinearNDInterpolator((self.iso.points['Teff'], self.iso.points['logg'],
                                                                self.iso.points['metallicity']), self.iso.points[ikey],
                                                                 fill_value=np.nan)
-        
-        ##### 
+
+        #####
         # Make a table to contain all the information about each stellar system.
         #####
         if self.external_evol == False:
@@ -254,7 +254,7 @@ class ResolvedCluster(Cluster):
             star_systems = self._make_star_systems_table(mass, isMulti, sysMass)
             # end1 = time.time()
             # print('Star systems table took {0:f} s.'.format(end1 - start1))
-    
+
             # Trim out bad systems; specifically, stars with masses outside those provided
             # by the model isochrone (except for compact objects).
             # Assumes external evolution software (i.e. COSMIC) will handle systems that fall outside of range
@@ -428,7 +428,7 @@ class ResolvedCluster(Cluster):
         Returns
         -------
         star_systems : astropy.table.Table
-        
+
         companions : astropy.table.Table
         """
         star_systems, companions = self._make_companions_table_initial(star_systems, compMass)
@@ -498,7 +498,7 @@ class ResolvedCluster(Cluster):
         companions_teff_non_nan = np.nan_to_num(companions['Teff'], nan=-99)
         if self.verbose and sum(companions_teff_non_nan > 0) != N_comp_tot:
             print(f'Found {N_comp_tot - sum(companions_teff_non_nan > 0):d} companions out of stellar mass range')
-            
+
         # For low-mass stars and substellar objects below isochrone, assume no mass loss and set phase to 98
         low_mass_idxs = (companions['mass']<np.min(self.iso.points['mass']))
         companions['mass_current'][low_mass_idxs] = companions['mass'][low_mass_idxs]
@@ -550,7 +550,7 @@ class ResolvedCluster(Cluster):
         companions['metallicity'] = np.ones(N_comp_tot) * self.iso.metallicity
         for filt in self.filt_names:
             companions[filt] = np.empty(N_comp_tot, dtype=float)
-            
+
         return star_systems, companions
 
 
@@ -629,7 +629,7 @@ class ResolvedCluster(Cluster):
         ----------
         star_systems : Astropy table
             Star system table.
-            
+
         companions: Astropy table
             Companions table.
 
@@ -662,7 +662,7 @@ class ResolvedCluster(Cluster):
         # as np.nan. Otherwise, add fluxes together
         good = np.where( (f1 != 0) | (f2 != 0) )[0]
         bad = np.where( (f1 == 0) & (f2 == 0) )[0]
-        
+
         star_systems[filt][idx[good]] = -2.5 * np.log10(f1[good] + f2[good])
         star_systems[filt][idx[bad]] = np.nan
 
@@ -1007,7 +1007,7 @@ class Isochrone(object):
 
     wd_atm_func: white dwarf model atmosphere function, optional
         Set the stellar atmosphere models for the white dwarfs.
-        Default is get_wd_atmosphere   
+        Default is get_wd_atmosphere
 
     mass_sampling : int, optional
         Sample the raw isochrone every `mass_sampling` steps. The default
@@ -1227,7 +1227,7 @@ class IsochronePhot(Isochrone):
 
     wd_atm_func: white dwarf model atmosphere function, optional
         Set the stellar atmosphere models for the white dwarfs.
-        Default is atmospheres.get_wd_atmosphere   
+        Default is atmospheres.get_wd_atmosphere
 
     bd_atm_func: brown dwarf model atmosphere function, optimal
         Set the stellar atmosphere models for the brown dwarfs.
@@ -1238,11 +1238,11 @@ class IsochronePhot(Isochrone):
         Default is reddening.RedLawNishiyama09().
 
     iso_dir : path, optional
-         Path to isochrone directory. Code will check isochrone
-         directory to see if isochrone file already exists; if it
-         does, it will just read the isochrone. If the isochrone
-         file doesn't exist, then save isochrone to the isochrone
-         directory.
+        Path to isochrone directory. Code will check isochrone
+        directory to see if isochrone file already exists; if it
+        does, it will just read the isochrone. If the isochrone
+        file doesn't exist, then save isochrone to the isochrone
+        directory.
 
     mass_sampling : int, optional
         Sample the raw isochrone every `mass_sampling` steps. The default
@@ -1275,25 +1275,35 @@ class IsochronePhot(Isochrone):
         Define what filters the synthetic photometry
         will be calculated for, via the filter string
         identifier.
-        
+
     mag_sys : string, optional
         Define magnitude system for synthetic photometry. Default
         is 'Vega', with alternative options 'AB' and 'ST'.
+
+    confirm_recomp : boolean, optional
+        If true, will ask for user confirmation before recalculating the isochrone photometry
+
+    verbose : boolean, optional
+        If true, will print out information about the isochrone generation and photometry calculation.
     """
-    def __init__(self, logAge, AKs, distance,
-                 metallicity=0.0,
-                 evo_model=default_evo_model, atm_func=default_atm_func,
-                 wd_atm_func = default_wd_atm_func, #bd_atm_func = default_bd_atm_func,
-                 wave_range=[3000, 52000],
-                 red_law=default_red_law, mass_sampling=1, iso_dir='./',
-                 min_mass=None, max_mass=None, rebin=True, recomp=False,
-                 filters=['ubv,U', 'ubv,B', 'ubv,V',
-                          'ubv,R', 'ubv,I'],
-                 mag_sys='Vega',
-                 verbose=False):
+    def __init__(
+        self, logAge, AKs, distance,
+        metallicity=0.0,
+        evo_model=default_evo_model,
+        atm_func=default_atm_func,
+        wd_atm_func = default_wd_atm_func, #bd_atm_func = default_bd_atm_func,
+        wave_range=[3000, 52000],
+        red_law=default_red_law,
+        mass_sampling=1, iso_dir='./',
+        min_mass=None, max_mass=None, rebin=True, recomp=False,
+        filters=['ubv,U', 'ubv,B', 'ubv,V', 'ubv,R', 'ubv,I'],
+        mag_sys='Vega',
+        confirm_recomp=False,
+        verbose=False
+    ):
         self.metallicity = metallicity
         self.verbose=verbose
-        
+
         if mag_sys not in ['Vega', 'AB', 'ST']:
             raise ValueError(f'Invalid mag_sys={mag_sys}. Use Vega, AB, or ST.')
         self.mag_sys = mag_sys
@@ -1337,10 +1347,16 @@ class IsochronePhot(Isochrone):
             if verbose:
                 print(f'Generating new isochrone of log(t)={logAge:.2f}, AKs={AKs:.2f}, d={distance} pc')
 
-                user_input = input(f"Isochrone file {self.save_file} does not exist or needs to be regenerated. Do you want to proceed? (yes/no): ").strip().lower()
-                if user_input != 'yes':
-                    print("Operation canceled by the user.")
-                    return
+                if confirm_recomp:
+                    while True:
+                        user_input = input(f"Isochrone file {self.save_file} does not exist or needs to be regenerated. Do you want to proceed? (y/n): ").strip().lower()
+                        if user_input == 'y':
+                            break
+                        elif user_input == 'n':
+                            print("Operation canceled by the user.")
+                            return
+                        else:
+                            print("Invalid input. Please enter 'y' or 'n'.")
 
             super().__init__(logAge, AKs, distance,
                              metallicity=metallicity,
@@ -1419,7 +1435,7 @@ class IsochronePhot(Isochrone):
         drop_columns = [col for col in self.points.columns if (col[:2]=='m_' and
                         (col not in all_filters))]
         self.points.remove_columns(drop_columns)
-        
+
         if self.mag_sys == 'AB':
             for i,filt in enumerate(filters):
                 self.points[all_filters[i]] += calc_ab_vega_filter_conversion(filt)
@@ -1551,8 +1567,8 @@ class IsochronePhot(Isochrone):
 
 class IsochronePhotExternalEvolution(IsochronePhot):
     """
-    Make an isochrone with synthetic photometry in various filters. 
-    Load from file if possible. 
+    Make an isochrone with synthetic photometry in various filters.
+    Load from file if possible.
     This is for evo_models that do NOT have a grid of isochrones
     but rather have their own evolution modules (i.e. COSMIC)
 
@@ -1572,16 +1588,16 @@ class IsochronePhotExternalEvolution(IsochronePhot):
         Default is 0.
 
     evo_model: model evolution class, optional
-        Set the stellar evolution model class. 
+        Set the stellar evolution model class.
         Default is evolution.COSMIC().
 
     atm_func: model atmosphere function, optional
-        Set the stellar atmosphere models for the stars. 
+        Set the stellar atmosphere models for the stars.
         Default is atmospheres.get_merged_atmosphere.
 
     wd_atm_func: white dwarf model atmosphere function, optional
-        Set the stellar atmosphere models for the white dwafs. 
-        Default is atmospheres.get_wd_atmosphere   
+        Set the stellar atmosphere models for the white dwafs.
+        Default is atmospheres.get_wd_atmosphere
 
     red_law : reddening law object, optional
         Define the reddening law for the synthetic photometry.
@@ -1589,14 +1605,14 @@ class IsochronePhotExternalEvolution(IsochronePhot):
 
     iso_dir : path, optional
          Path to isochrone directory. Code will check isochrone
-         directory to see if isochrone file already exists; if it 
-         does, it will just read the isochrone. If the isochrone 
+         directory to see if isochrone file already exists; if it
+         does, it will just read the isochrone. If the isochrone
          file doesn't exist, then save isochrone to the isochrone
          directory.
 
     mass_sampling : int, optional
         Sample the raw isochrone every `mass_sampling` steps. The default
-        is mass_sampling = 0, which is the native isochrone mass sampling 
+        is mass_sampling = 0, which is the native isochrone mass sampling
         of the evolution model.
 
     wave_range : list, optional
@@ -1617,15 +1633,15 @@ class IsochronePhotExternalEvolution(IsochronePhot):
         which is often sufficient synthetic photometry in most cases.
 
     recomp : boolean, optional
-        If true, recalculate the isochrone photometry even if 
+        If true, recalculate the isochrone photometry even if
         the savefile exists. You should recompute anytime you change
         the filter set (see filters below).
 
     filters : array of strings, optional
         Define what filters the synthetic photometry
-        will be calculated for, via the filter string 
-        identifier. 
-        
+        will be calculated for, via the filter string
+        identifier.
+
     mag_sys : string, optional
         Define magnitude system for synthetic photometry. Default
         is 'Vega', with alternative options 'AB' and 'ST'.
@@ -1640,7 +1656,7 @@ class IsochronePhotExternalEvolution(IsochronePhot):
                  filters=['ubv,U', 'ubv,B', 'ubv,V',
                           'ubv,R', 'ubv,I'],
                  mag_sys='Vega'):
-        
+
         if mag_sys not in ['Vega', 'AB', 'ST']:
             raise ValueError(f'Invalid mag_sys={mag_sys}. Use Vega, AB, or ST.')
         self.mag_sys = mag_sys
@@ -1653,15 +1669,15 @@ class IsochronePhotExternalEvolution(IsochronePhot):
         self.red_law = red_law
         self.AKs = AKs
         if hasattr(evo_model, 'external_evol') == False:
-            raise Exception('The specified evolution model does NOT have external evolution. Use IsochronePhot() instead.')  
+            raise Exception('The specified evolution model does NOT have external evolution. Use IsochronePhot() instead.')
         elif self.evo_model.external_evol == False:
             raise Exception('The specified evolution model does NOT have external evolution. Use IsochronePhot() instead.')
-            
+
         self.external_evol = self.evo_model.external_evol
 
         self.metallicity = metallicity
         self.logAge = logAge
-        
+
         # Make the iso_dir, if it doesn't already exist
         if not os.path.exists(atm_grid_dir):
             os.makedirs(atm_grid_dir)
@@ -1683,11 +1699,11 @@ class IsochronePhotExternalEvolution(IsochronePhot):
             else:
                 metal_pre = 'p'
             metal_flag = int(abs(metallicity)*10)
-            
+
             save_file_fmt = '{0}/atm_{1:4.2f}_{2:4s}_{3}{4:2s}.fits'
             self.save_file = save_file_fmt.format(atm_grid_dir, AKs, str(distance).zfill(5), metal_pre, str(metal_flag).zfill(2))
             self.save_file_legacy = save_file_fmt.format(atm_grid_dir, AKs, str(distance).zfill(5), metal_pre, str(metal_flag).zfill(2))
-            
+
         # Expected filters
         self.filters = filters
 
@@ -1703,9 +1719,9 @@ class IsochronePhotExternalEvolution(IsochronePhot):
             self.recalc = True
 
             c = constants
-            
+
             t1 = time.time()
-    
+
             # Assert that the wavelength ranges are within the limits of the
             # VEGA model (0.1 - 10 microns)
             try:
@@ -1722,12 +1738,12 @@ class IsochronePhotExternalEvolution(IsochronePhot):
             module = sys.modules[atm_func.__module__]
             grid_func = getattr(module, atm_func.__name__ + "_grid")
             teff_arr, z_arr, logg_arr = grid_func(rebin=rebin)
-            
+
 
             tab = Table([teff_arr, logg_arr, z_arr],
                     names=['Teff', 'logg', 'metallicity'])
 
-    
+
             # Initialize output for stellar spectra
             self.spec_list = []
 
@@ -1740,12 +1756,12 @@ class IsochronePhotExternalEvolution(IsochronePhot):
                 T = teff_arr[ii]
                 metallicity = z_arr[ii]
                 R = float(1*units.Rsun.to('pc'))
-    
+
                 # Get the atmosphere model now. Wavelength is in Angstroms
                 # This is the time-intensive call... everything else is negligable.
                 star = atm_func(temperature=T, gravity=gravity, metallicity=metallicity,
                                     rebin=rebin)
-    
+
                 # Trim wavelength range down to JHKL range (0.5 - 5.2 microns)
                 star = trim_spectrum(star, wave_range[0], wave_range[1])
     
@@ -1757,7 +1773,7 @@ class IsochronePhotExternalEvolution(IsochronePhot):
                 
                 # Save the final spectrum to our spec_list for later use.            
                 self.spec_list.append(star)
-    
+
             # Append all the meta data to the summary table.
             tab.meta['REDLAW'] = red_law.name
             tab.meta['ATMFUNC'] = atm_func.__name__
@@ -1768,14 +1784,14 @@ class IsochronePhotExternalEvolution(IsochronePhot):
             tab.meta['WAVEMIN'] = wave_range[0]
             tab.meta['WAVEMAX'] = wave_range[1]
             tab.meta['MAGSYS'] = 'Vega'
-    
+
             self.points = tab
-    
+
             t2 = time.time()
             print( 'Atmosphere grid generation took {0:f} s.'.format(t2-t1))
-            
+
             self.verbose = True
-            
+
             # Make photometry
             self.make_photometry(rebin=rebin, vega=vega)
         else:
@@ -1792,7 +1808,7 @@ class IsochronePhotExternalEvolution(IsochronePhot):
             col_name = 'm_' + get_filter_col_name(ii)
             if col_name not in self.points.keys():
                 comp_filters.append(ii)
-        
+
         # Compute additional filters if needed
         if len(comp_filters)>0:
             self.verbose = True
@@ -1805,7 +1821,7 @@ class IsochronePhotExternalEvolution(IsochronePhot):
             module = sys.modules[atm_func.__module__]
             grid_func = getattr(module, atm_func.__name__ + "_grid")
             teff_arr, z_arr, logg_arr = grid_func(rebin=rebin)
-            
+
             print('Loading stellar spectra')
             # Initialize output for stellar spectra
             self.spec_list = []
@@ -1816,7 +1832,7 @@ class IsochronePhotExternalEvolution(IsochronePhot):
                 T = teff_arr[ii]
                 metallicity = z_arr[ii]
                 R = float(1*units.Rsun.to('pc'))
-                
+
                 # Get the atmosphere model now. Wavelength is in Angstroms
                 # This is the time-intensive call... everything else is negligable.
                 star = atm_func(temperature=T, gravity=gravity, metallicity=metallicity,
@@ -1835,13 +1851,13 @@ class IsochronePhotExternalEvolution(IsochronePhot):
                 self.spec_list.append(star)
 
             self.make_photometry(rebin=rebin, vega=vega, comp_filters=comp_filters)
-            
+
         # Drop filters in the saved file that we don't actually want here
         all_filters = ['m_'+get_filter_col_name(f) for f in filters]
         drop_columns = [col for col in self.points.columns if (col[:2]=='m_' and
                         (col not in all_filters))]
         self.points.remove_columns(drop_columns)
-        
+
         if self.mag_sys == 'AB':
             for i,filt in enumerate(filters):
                 self.points[all_filters[i]] += calc_ab_vega_filter_conversion(filt)
@@ -1854,11 +1870,11 @@ class IsochronePhotExternalEvolution(IsochronePhot):
         return
 
     def make_photometry(self, rebin=True, vega=vega, comp_filters=None):
-        """ 
+        """
         Make synthetic photometry for the specified filters. This function
         udpates the self.points table to include new columns with the
         photometry.
-        
+
         """
         startTime = time.time()
 
@@ -1880,7 +1896,7 @@ class IsochronePhotExternalEvolution(IsochronePhot):
         for ii in comp_filters:
             prt_fmt = 'Starting filter: {0:s}   Elapsed time: {1:.2f} seconds'
             print( prt_fmt.format(ii, time.time() - startTime))
-            
+
             filt = get_filter_info(ii, rebin=rebin, vega=vega)
             filt_name = get_filter_col_name(ii)
 
@@ -1888,15 +1904,15 @@ class IsochronePhotExternalEvolution(IsochronePhot):
             col_name = 'm_' + filt_name
             mag_col = Column(np.zeros(npoints, dtype=float), name=col_name)
             self.points.add_column(mag_col)
-            
+
             # Loop through each star in the isochrone and do the filter integration
             print('Starting synthetic photometry')
             for ss in range(npoints):
                 star = self.spec_list[ss]  # These are already extincted, observed spectra.
                 star_mag = mag_in_filter(star, filt)
-                
+
                 self.points[col_name][ss] = star_mag
-        
+
                 if (self.verbose and (ss % 100) == 0):
                     print( verbose_fmt.format(self.points['Teff'][ss], self.points['logg'][ss],
                                              filt_name, star_mag))
@@ -1913,10 +1929,10 @@ class IsochronePhotExternalEvolution(IsochronePhot):
 
     def plot_mass_magnitude(self, mag, savefile=None):
         """
-        This function is not possible in this Isochrone class 
+        This function is not possible in this Isochrone class
         """
         raise Exception('This function is not possible in this Isochrone class')
-        
+
         return
 
 #===================================================#
