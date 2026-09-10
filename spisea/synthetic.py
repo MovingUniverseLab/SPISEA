@@ -1238,11 +1238,11 @@ class IsochronePhot(Isochrone):
         Default is reddening.RedLawNishiyama09().
 
     iso_dir : path, optional
-         Path to isochrone directory. Code will check isochrone
-         directory to see if isochrone file already exists; if it
-         does, it will just read the isochrone. If the isochrone
-         file doesn't exist, then save isochrone to the isochrone
-         directory.
+        Path to isochrone directory. Code will check isochrone
+        directory to see if isochrone file already exists; if it
+        does, it will just read the isochrone. If the isochrone
+        file doesn't exist, then save isochrone to the isochrone
+        directory.
 
     mass_sampling : int, optional
         Sample the raw isochrone every `mass_sampling` steps. The default
@@ -1279,18 +1279,28 @@ class IsochronePhot(Isochrone):
     mag_sys : string, optional
         Define magnitude system for synthetic photometry. Default
         is 'Vega', with alternative options 'AB' and 'ST'.
+
+    confirm_recomp : boolean, optional
+        If true, will ask for user confirmation before recalculating the isochrone photometry
+
+    verbose : boolean, optional
+        If true, will print out information about the isochrone generation and photometry calculation.
     """
-    def __init__(self, logAge, AKs, distance,
-                 metallicity=0.0,
-                 evo_model=default_evo_model, atm_func=default_atm_func,
-                 wd_atm_func = default_wd_atm_func, #bd_atm_func = default_bd_atm_func,
-                 wave_range=[3000, 52000],
-                 red_law=default_red_law, mass_sampling=1, iso_dir='./',
-                 min_mass=None, max_mass=None, rebin=True, recomp=False,
-                 filters=['ubv,U', 'ubv,B', 'ubv,V',
-                          'ubv,R', 'ubv,I'],
-                 mag_sys='Vega',
-                 verbose=False):
+    def __init__(
+        self, logAge, AKs, distance,
+        metallicity=0.0,
+        evo_model=default_evo_model,
+        atm_func=default_atm_func,
+        wd_atm_func = default_wd_atm_func, #bd_atm_func = default_bd_atm_func,
+        wave_range=[3000, 52000],
+        red_law=default_red_law,
+        mass_sampling=1, iso_dir='./',
+        min_mass=None, max_mass=None, rebin=True, recomp=False,
+        filters=['ubv,U', 'ubv,B', 'ubv,V', 'ubv,R', 'ubv,I'],
+        mag_sys='Vega',
+        confirm_recomp=False,
+        verbose=False
+    ):
         self.metallicity = metallicity
         self.verbose=verbose
         
@@ -1337,10 +1347,16 @@ class IsochronePhot(Isochrone):
             if verbose:
                 print(f'Generating new isochrone of log(t)={logAge:.2f}, AKs={AKs:.2f}, d={distance} pc')
 
-                user_input = input(f"Isochrone file {self.save_file} does not exist or needs to be regenerated. Do you want to proceed? (yes/no): ").strip().lower()
-                if user_input != 'yes':
-                    print("Operation canceled by the user.")
-                    return
+                if confirm_recomp:
+                    while True:
+                        user_input = input(f"Isochrone file {self.save_file} does not exist or needs to be regenerated. Do you want to proceed? (y/n): ").strip().lower()
+                        if user_input == 'y':
+                            break
+                        elif user_input == 'n':
+                            print("Operation canceled by the user.")
+                            return
+                        else:
+                            print("Invalid input. Please enter 'y' or 'n'.")
 
             super().__init__(logAge, AKs, distance,
                              metallicity=metallicity,
