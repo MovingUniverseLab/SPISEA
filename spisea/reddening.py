@@ -2354,7 +2354,7 @@ class RedLawNoguerasLara18(RedLawPowerLaw):
 
         # Return error if any wavelength is beyond interpolation range of
         # extinction law
-        if ((min(wavelength) < self.low_lim) | (max(wavelength) > self.high_lim)):
+        if ((min(wavelength) < self.low_lim*u.angstrom) | (max(wavelength) > self.high_lim*u.angstrom)):
             return ValueError('{0}: wavelength values beyond interpolation range'.format(self))
 
         # Extract wave and A/AKs from law, turning wave into micron units
