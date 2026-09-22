@@ -2530,7 +2530,7 @@ def calc_ab_vega_filter_conversion(filt_str):
     filt = get_filter_info(filt_str)
 
     # 2. Define the Vega spectrum
-    vega = SourceSpectrum.from_vega()
+#    vega = SourceSpectrum.from_vega()
 
     # 3. Define an arbitrary input flux in VEGAMAG.
     vegamag_value = 0.0 * su.VEGAMAG
@@ -2570,7 +2570,7 @@ def calc_st_vega_filter_conversion(filt_str):
     filt = get_filter_info(filt_str)
 
     # 2. Define the Vega spectrum
-    vega = SourceSpectrum.from_vega()
+#    vega = SourceSpectrum.from_vega()
 
     # 3. Define an arbitrary input flux in VEGAMAG.
     vegamag_value = 0.0 * su.VEGAMAG
