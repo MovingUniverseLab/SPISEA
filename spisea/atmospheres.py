@@ -11,7 +11,7 @@ import warnings
 
 import stsynphot as stsyn
 from stsynphot import exceptions as stsyn_exceptions
-from synphot.models import BlackBody1D, Empirical1D
+from synphot.models import BlackBodyNorm1D, Empirical1D
 from synphot.spectrum import SourceSpectrum
 from synphot.units import convert_flux
 from synphot import units as su
@@ -1658,7 +1658,7 @@ def get_bb_atmosphere(metallicity=None, temperature=20_000, gravity=None,
         np.logspace(np.log10(wave_min), np.log10(wave_max), wave_num, dtype=np.float64)
         * u.AA
     )
-    bb = SourceSpectrum(BlackBody1D, temperature=temperature)
+    bb = SourceSpectrum(BlackBodyNorm1D, temperature=temperature)
     y_photlam = bb(w_grid)
     y_flam = convert_flux(w_grid, y_photlam, su.FLAM)
     bbspec = SourceSpectrum(Empirical1D, points=w_grid, lookup_table=y_flam)
