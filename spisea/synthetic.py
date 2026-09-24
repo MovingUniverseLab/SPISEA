@@ -1404,6 +1404,7 @@ class IsochronePhot(Isochrone):
 
                 # Redden the spectrum. This doesn't take much time at all.
                 star *= red_law.extinction_curve(AKs, star.waveset)
+                #pdb.set_trace()
 
                 # Save the final spectrum to our spec_list for later use.
                 self.spec_list.append(star)
@@ -2315,7 +2316,12 @@ def get_filter_info(name, vega=vega, rebin=True):
             filt = SpectralElement(filt.model, waveset=new_wave)
 
     vega_obs = Observation(vega, filt, binset=filt.waveset, force='taper')
-    vega_flux = vega_obs.countrate(area=tel_area_dummy)
+    wave_aa = vega_obs.binset.to(u.AA).value
+    bin_width = np.diff(wave_aa)
+    bin_width = np.append(bin_width, bin_width[-1])
+    hc_erg_aa = (constants.h * constants.c).to(u.erg * u.AA).value
+    vega_flux = np.sum(vega_obs.binflux.to_value(su.PHOTLAM) *
+                       hc_erg_aa / wave_aa * bin_width)
     vega_mag = 0.03
 
     if getattr(filt, "meta", None) is None:
@@ -2470,7 +2476,12 @@ def mag_in_filter(star, filt):
     as filter, and has been applied.
     """
     star_in_filter = Observation(star, filt, binset=filt.waveset, force='taper')
-    star_flux = star_in_filter.countrate(area=tel_area_dummy)
+    wave_aa = star_in_filter.binset.to(u.AA).value
+    bin_width = np.diff(wave_aa)
+    bin_width = np.append(bin_width, bin_width[-1])
+    hc_erg_aa = (constants.h * constants.c).to(u.erg * u.AA).value
+    star_flux = np.sum(star_in_filter.binflux.to_value(su.PHOTLAM) *
+                       hc_erg_aa / wave_aa * bin_width)
 
     # plt.figure()
     # plt.loglog(star_in_filter.waveset, star_in_filter(star_in_filter.waveset), 'r-', label='wave')
