@@ -184,7 +184,7 @@ def get_jwst_filt(name):
     Define JWST filter as synphot object
     """
     try:
-        t = Table.read('{0}/jwst/{1}.txt'.format(filters_dir, name), format='ascii')
+        t = Table.read('{0}/jwst/{1}.txt'.format(filters_dir, name.upper()), format='ascii')
     except:
         raise ValueError('Could not find JWST filter {0} in {1}/jwst'.format(name, filters_dir))
 
