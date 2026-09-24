@@ -2315,19 +2315,19 @@ def get_filter_info(name, vega=vega, rebin=True):
             new_wave = np.linspace(filt.waveset[idx[0]], filt.waveset[idx[-1]], 1500, dtype=float)
             filt = SpectralElement(filt.model, waveset=new_wave)
 
-    vega_obs = Observation(vega, filt, binset=filt.waveset, force='taper')
-    wave_aa = vega_obs.binset.to(u.AA).value
-    bin_width = np.diff(wave_aa)
-    bin_width = np.append(bin_width, bin_width[-1])
-    hc_erg_aa = (constants.h * constants.c).to(u.erg * u.AA).value
-    vega_flux = np.sum(vega_obs.binflux.to_value(su.PHOTLAM) *
-                       hc_erg_aa / wave_aa * bin_width)
-    vega_mag = 0.03
-
-    if getattr(filt, "meta", None) is None:
-        filt.meta = {}
-    filt.meta["flux0"] = vega_flux
-    filt.meta["mag0"] = vega_mag
+#    vega_obs = Observation(vega, filt, binset=filt.waveset, force='taper')
+#    wave_aa = vega_obs.binset.to(u.AA).value
+#    bin_width = np.diff(wave_aa)
+#    bin_width = np.append(bin_width, bin_width[-1])
+#    hc_erg_aa = (constants.h * constants.c).to(u.erg * u.AA).value
+#    vega_flux = np.sum(vega_obs.binflux.to_value(su.PHOTLAM) *
+#                       hc_erg_aa / wave_aa * bin_width)
+#    vega_mag = 0.03
+#
+#    if getattr(filt, "meta", None) is None:
+#        filt.meta = {}
+#    filt.meta["flux0"] = vega_flux
+#    filt.meta["mag0"] = vega_mag
 
     return filt
 
@@ -2476,22 +2476,7 @@ def mag_in_filter(star, filt):
     as filter, and has been applied.
     """
     star_in_filter = Observation(star, filt, binset=filt.waveset, force='taper')
-    wave_aa = star_in_filter.binset.to(u.AA).value
-    bin_width = np.diff(wave_aa)
-    bin_width = np.append(bin_width, bin_width[-1])
-    hc_erg_aa = (constants.h * constants.c).to(u.erg * u.AA).value
-    star_flux = np.sum(star_in_filter.binflux.to_value(su.PHOTLAM) *
-                       hc_erg_aa / wave_aa * bin_width)
-
-    # plt.figure()
-    # plt.loglog(star_in_filter.waveset, star_in_filter(star_in_filter.waveset), 'r-', label='wave')
-    # plt.loglog(star_in_filter.binset, star_in_filter.binflux, 'k-', label='binwave')
-    # plt.xlabel('Wavelength (Angstroms)')
-    # plt.ylabel('Flux (erg s^-1 cm^-2 A^-1)')
-    # plt.legend()
-    # plt.savefig('spec.png')
-    
-    star_mag = -2.5 * math.log10(star_flux / filt.meta["flux0"]) + filt.meta["mag0"]
+    star_mag = star_in_filter.effstim(su.VEGAMAG, vegaspec=vega).value
 
     return star_mag
 
@@ -2540,27 +2525,15 @@ def calc_ab_vega_filter_conversion(filt_str):
     # 1. Get filter info
     filt = get_filter_info(filt_str)
 
-    # 2. Define the Vega spectrum
-#    vega = SourceSpectrum.from_vega()
-
-    # 3. Define an arbitrary input flux in VEGAMAG.
-    vegamag_value = 0.0 * su.VEGAMAG
-
-    # 4. Normalize the Vega spectrum to the input VEGAMAG value
-    vega_norm = vega.normalize(vegamag_value, band=filt)
-
     # 6. Observe the normalized spectrum through the bandpass
-    obs = Observation(vega_norm, filt)
+    obs = Observation(vega, filt)
 
     # 7. Check the integrated flux in both filter sets.
-    abmag_value = obs.effstim(flux_unit='abmag')
-    vegamag_value = obs.effstim(flux_unit='vegamag')
+    abmag_value = obs.effstim(flux_unit='abmag').value
 
-    ab_2_vega = abmag_value - vegamag_value
+    print(f'For {filt_str}, m_ab - m_vega = {abmag_value}')
 
-    print(f'For {filt_str}, m_ab - m_vega = {ab_2_vega}')
-
-    return ab_2_vega
+    return abmag_value
 
 
 def calc_st_vega_filter_conversion(filt_str):
@@ -2580,25 +2553,13 @@ def calc_st_vega_filter_conversion(filt_str):
     # 1. Get filter info
     filt = get_filter_info(filt_str)
 
-    # 2. Define the Vega spectrum
-#    vega = SourceSpectrum.from_vega()
-
-    # 3. Define an arbitrary input flux in VEGAMAG.
-    vegamag_value = 0.0 * su.VEGAMAG
-
-    # 4. Normalize the Vega spectrum to the input VEGAMAG value
-    vega_norm = vega.normalize(vegamag_value, band=filt)
-
     # 6. Observe the normalized spectrum through the bandpass
-    obs = Observation(vega_norm, filt)
+    obs = Observation(vega, filt)
 
     # 7. Check the integrated flux in both filter sets.
-    stmag_value = obs.effstim(flux_unit='stmag')
-    vegamag_value = obs.effstim(flux_unit='vegamag')
+    stmag_value = obs.effstim(flux_unit='stmag').value
 
-    st_2_vega = stmag_value - vegamag_value
+    print(f'For {filt_str}, m_st - m_vega = {stmag_value}')
 
-    print(f'For {filt_str}, m_st - m_vega = {st_2_vega}')
-
-    return st_2_vega
+    return stmag_value
 
