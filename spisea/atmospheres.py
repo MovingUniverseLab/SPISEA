@@ -2417,15 +2417,21 @@ def make_BTSettl_2015_catalog(path_to_dir):
 
     return
 
-def rebin_BTSettl_2015(cdbs_path=os.environ['PYSYN_CDBS']):
+def rebin_BTSettl_2015(cdbs_path=None):
     """
     Rebin BTSettle_CIFITS2011_2015 models to atlas ck04 resolution; this makes
     spectrophotometry MUCH faster
 
     makes new directory in cdbs/grid: BTSettl_2015_rebin
 
-    cdbs_path: path to cdbs directory
+    cdbs_path: path to cdbs directory. Defaults to the PYSYN_CDBS
+    environment variable.
     """
+    # Resolve the default here rather than in the signature, so that merely
+    # importing this module does not require PYSYN_CDBS to be set
+    if cdbs_path is None:
+        cdbs_path = os.environ['PYSYN_CDBS']
+
     # Get an atlas ck04 model, we will use this to set wavelength grid
     sp_atlas = get_castelli_atmosphere()
 
@@ -2984,15 +2990,21 @@ def make_WDKoester_catalog(path_to_dir):
 
     return
 
-def rebin_WDKoester(cdbs_path=os.environ['PYSYN_CDBS']):
+def rebin_WDKoester(cdbs_path=None):
     """
     Rebin wdKoester models to atlas ck04 resolution; this makes
     spectrophotometry MUCH faster
 
     makes new directory in cdbs/grid: wdKoester_rebin
 
-    cdbs_path: path to cdbs directory
+    cdbs_path: path to cdbs directory. Defaults to the PYSYN_CDBS
+    environment variable.
     """
+    # Resolve the default here rather than in the signature, so that merely
+    # importing this module does not require PYSYN_CDBS to be set
+    if cdbs_path is None:
+        cdbs_path = os.environ['PYSYN_CDBS']
+
     # Get an atlas ck04 model, we will use this to set wavelength grid
     sp_atlas = get_castelli_atmosphere()
 
