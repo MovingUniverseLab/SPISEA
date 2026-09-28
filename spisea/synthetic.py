@@ -2315,19 +2315,15 @@ def get_filter_info(name, vega=vega, rebin=True):
             new_wave = np.linspace(filt.waveset[idx[0]], filt.waveset[idx[-1]], 1500, dtype=float)
             filt = SpectralElement(filt.model, waveset=new_wave)
 
-#    vega_obs = Observation(vega, filt, binset=filt.waveset, force='taper')
-#    wave_aa = vega_obs.binset.to(u.AA).value
-#    bin_width = np.diff(wave_aa)
-#    bin_width = np.append(bin_width, bin_width[-1])
-#    hc_erg_aa = (constants.h * constants.c).to(u.erg * u.AA).value
-#    vega_flux = np.sum(vega_obs.binflux.to_value(su.PHOTLAM) *
-#                       hc_erg_aa / wave_aa * bin_width)
-#    vega_mag = 0.03
-#
-#    if getattr(filt, "meta", None) is None:
-#        filt.meta = {}
-#    filt.meta["flux0"] = vega_flux
-#    filt.meta["mag0"] = vega_mag
+    vega_obs = Observation(vega, filt, binset=filt.waveset, force='taper')
+    vega_flux = vega_obs.integrate(wavelengths=filt.waveset,
+                                   flux_unit=su.FLAM).value
+    vega_mag = 0.03
+
+    if getattr(filt, "meta", None) is None:
+        filt.meta = {}
+    filt.meta["flux0"] = vega_flux
+    filt.meta["mag0"] = vega_mag
 
     return filt
 
@@ -2476,7 +2472,10 @@ def mag_in_filter(star, filt):
     as filter, and has been applied.
     """
     star_in_filter = Observation(star, filt, binset=filt.waveset, force='taper')
-    star_mag = star_in_filter.effstim(su.VEGAMAG, vegaspec=vega).value
+    star_flux = star_in_filter.integrate(wavelengths=filt.waveset,
+                                         flux_unit=su.FLAM).value
+    star_mag = (-2.5 * np.log10(star_flux / filt.meta["flux0"])
+                + filt.meta["mag0"])
 
     return star_mag
 
