@@ -3,6 +3,7 @@ import time
 import math
 import datetime
 import scipy
+import scipy.integrate
 import scipy.interpolate
 import inspect
 import warnings
@@ -224,7 +225,6 @@ class ResolvedCluster(Cluster):
 
         # Check if using an external evolution model (i.e. COSMIC)
         self.external_evol = getattr(iso, 'external_evol', False)
-        print(f"Isochrone {type(iso).__name__}")
         if self.external_evol and (self.ifmr is not None):
             warnings.warn(f"Isochrone {type(iso).__name__} uses external evolution. "
                 "Input IFMR will be ignored.")
@@ -1404,7 +1404,6 @@ class IsochronePhot(Isochrone):
 
                 # Redden the spectrum. This doesn't take much time at all.
                 star *= red_law.extinction_curve(AKs, star.waveset)
-                #pdb.set_trace()
 
                 # Save the final spectrum to our spec_list for later use.
                 self.spec_list.append(star)
@@ -2521,14 +2520,19 @@ def calc_ab_vega_filter_conversion(filt_str):
     filt_str: string
         SPISEA filter identification string (see Photometric Filters doc page)
     """
-    # 1. Get filter info
+    # Get filter and apply to Vega
     filt = get_filter_info(filt_str)
+    
+    # Get AB reference flux in filter
+    obs = Observation(vega, filt, binset=filt.waveset, force='taper')
+    wave_aa = filt.waveset.to(u.AA).value
+    throughput = filt(filt.waveset).value
+    c_aa_s = constants.c.to(u.AA / u.s).value
+    ab_reference = abs(scipy.integrate.trapezoid(
+        throughput * c_aa_s / wave_aa**2, x=wave_aa))
 
-    # 6. Observe the normalized spectrum through the bandpass
-    obs = Observation(vega, filt)
-
-    # 7. Check the integrated flux in both filter sets.
-    abmag_value = obs.effstim(flux_unit='abmag').value
+    # Apply Vega ZPs to get mag conversion
+    abmag_value = -2.5 * math.log10(filt.meta['flux0'] / ab_reference) - 48.6 - filt.meta['mag0']
 
     print(f'For {filt_str}, m_ab - m_vega = {abmag_value}')
 
@@ -2549,14 +2553,17 @@ def calc_st_vega_filter_conversion(filt_str):
     filt_str: string
         SPISEA filter identification string (see Photometric Filters doc page)
     """
-    # 1. Get filter info
+    # Get filter and its Vega zero points
     filt = get_filter_info(filt_str)
 
-    # 6. Observe the normalized spectrum through the bandpass
-    obs = Observation(vega, filt)
+    # Get ST reference flux in filter
+    obs = Observation(vega, filt, binset=filt.waveset, force='taper')
+    wave_aa = filt.waveset.to(u.AA).value
+    throughput = filt(filt.waveset).value
+    st_reference = abs(scipy.integrate.trapezoid(throughput, x=wave_aa))
 
-    # 7. Check the integrated flux in both filter sets.
-    stmag_value = obs.effstim(flux_unit='stmag').value
+    # Apply Vega ZPs to get mag conversion
+    stmag_value = -2.5 * math.log10(filt.meta["flux0"] / st_reference) - 21.1 - filt.meta["mag0"]
 
     print(f'For {filt_str}, m_st - m_vega = {stmag_value}')
 
