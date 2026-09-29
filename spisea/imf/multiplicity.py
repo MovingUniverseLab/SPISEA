@@ -676,48 +676,46 @@ class Multiplicity_MoeDiStefano(MultiplicityUnresolved):
                     compLoga[idx, 0] = log_a
                     compEcc[idx, 0] = mye
 
-        # Handle BDs (Fontanive+18)
-        # Find binary BDs
-        bd_comp_idxs = np.where((mass1<0.08) & is_bin)[0]
-        logm = np.log10(mass1[bd_comp_idxs])
-        # MASS FIRST
-        b = 1.0 + self.q_pow_bd
-        # Inverse CDF calculation
-        q_bds = (rng.random(len(bd_comp_idxs)) * (1.0 - self.q_min ** b) + self.q_min ** b) ** (1.0 / b)
-        # SEMI-MAJOR AXIS NEXT
-        # Calculate mean and standard deviation semi-major axes
-        log_a_mean = np.interp(
-            logm,
-            [np.log10(0.01), np.log10(0.08)],
-            [np.log10(2.5), np.log10(8.0)]
-        )
-        log_a_std = np.interp(
-            logm,
-            [np.log10(0.01), np.log10(0.08)],
-            [0.25, 0.5]
-        )
-        # Truncated normal distribution between log10(0.01) AU and log10(2000) AU
-        log_a_lower = np.log10(0.01)
-        log_a_upper = np.log10(2000)
-        # Convert bounds to standard normal space
-        a_lower_std = (log_a_lower - log_a_mean) / log_a_std
-        a_upper_std = (log_a_upper - log_a_mean) / log_a_std
-        # Draw log_a
-        log_a_bds = truncnorm.rvs(a_lower_std, a_upper_std, loc=log_a_mean, scale=log_a_std)
-        # LAST: ECCENTRICITY
-        ecc_bds = np.sqrt(rng.random(len(bd_comp_idxs)))
-        # SAVE PROPERTIES TO ARRAYS
-        compMasses[bd_comp_idxs,0] = mass1[bd_comp_idxs]*q_bds
-        compLoga[bd_comp_idxs,0] = log_a_bds
-        compEcc[bd_comp_idxs,0] = ecc_bds
+#        # Handle BDs (Fontanive+18)
+#        # Find binary BDs
+#        bd_comp_idxs = np.where((mass1<0.08) & is_bin)[0]
+#        logm = np.log10(mass1[bd_comp_idxs])
+#        # MASS FIRST
+#        b = 1.0 + self.q_pow_bd
+#        # Inverse CDF calculation
+#        q_bds = (rng.random(len(bd_comp_idxs)) * (1.0 - self.q_min ** b) + self.q_min ** b) ** (1.0 / b)
+#        # SEMI-MAJOR AXIS NEXT
+#        # Calculate mean and standard deviation semi-major axes
+#        log_a_mean = np.interp(
+#            logm,
+#            [np.log10(0.01), np.log10(0.08)],
+#            [np.log10(2.5), np.log10(8.0)]
+#        )
+#        log_a_std = np.interp(
+#            logm,
+#            [np.log10(0.01), np.log10(0.08)],
+#            [0.25, 0.5]
+#        )
+#        # Truncated normal distribution between log10(0.01) AU and log10(2000) AU
+#        log_a_lower = np.log10(0.01)
+#        log_a_upper = np.log10(2000)
+#        # Convert bounds to standard normal space
+#        a_lower_std = (log_a_lower - log_a_mean) / log_a_std
+#        a_upper_std = (log_a_upper - log_a_mean) / log_a_std
+#        # Draw log_a
+#        log_a_bds = truncnorm.rvs(a_lower_std, a_upper_std, loc=log_a_mean, scale=log_a_std)
+#        # LAST: ECCENTRICITY
+#        ecc_bds = np.sqrt(rng.random(len(bd_comp_idxs)))
+#        # SAVE PROPERTIES TO ARRAYS
+#        compMasses[bd_comp_idxs,0] = mass1[bd_comp_idxs]*q_bds
+#        compLoga[bd_comp_idxs,0] = log_a_bds
+#        compEcc[bd_comp_idxs,0] = ecc_bds
         
         # Generate all orbital angles at once for all binaries
         all_orbital_angles = purely_random_keplerian_parameters(rng=rng, n=n_binaries)
         compI[system_idx, 0] = all_orbital_angles[0]
         compOmega[system_idx, 0] = all_orbital_angles[1]
         compomega[system_idx, 0] = all_orbital_angles[2]
-
-        #pdb.set_trace()
 
         mask = compMasses == 0
         return (
