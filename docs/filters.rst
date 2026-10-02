@@ -222,9 +222,11 @@ Example: ``'naco,H'``
 
 **OGLE**
 
-OGLE R-wide filter, provided by Andrzej Udalski
+OGLE-IV filters for V- and I-band from `SVO <https://svo2.cab.inta-csic.es/theory/fps/index.php?mode=browse&gname=LCO&gname2=OGLE-IV&asttype=>`_
 
-Filters: Rw
+The R-wide filter is new in 2026, profile provided by Andrzej Udalski
+
+Filters: V, I, Rw
 
 Example: ``'ogle,Rw'``
 
