@@ -615,7 +615,9 @@ def get_tess_filt(name):
 
     # Wavelength from nanometers to angstroms and and transmission in fraction
     wave = t['col1']*10
-    trans = t['col2']
+    # Transmission is scaled with lambda in the file, divide it out and renormalize
+    trans = t['col2']/wave
+    trans = trans/np.max(trans)
 
     spectrum = SpectralElement(
         Empirical1D,
@@ -637,8 +639,10 @@ def get_washington_filt(name):
 
     # Wavelength from nanometers to angstroms and and transmission in fraction
     wave = t['col1']*10
-    trans = t['col2']
-
+    # Transmission is scaled with lambda in the file, divide it out and renormalize
+    trans = t['col2']/wave
+    trans = trans/np.max(trans)
+    
     spectrum = SpectralElement(
         Empirical1D,
         points=wave * u.AA,

@@ -2316,7 +2316,7 @@ def get_filter_info(name, vega=vega, rebin=True):
 
     vega_obs = Observation(vega, filt, binset=filt.waveset, force='taper')
     vega_flux = vega_obs.integrate(wavelengths=filt.waveset,
-                                   flux_unit=su.FLAM).value
+                                   flux_unit=su.PHOTLAM).value
     vega_mag = 0.03
 
     if getattr(filt, "meta", None) is None:
@@ -2472,7 +2472,7 @@ def mag_in_filter(star, filt):
     """
     star_in_filter = Observation(star, filt, binset=filt.waveset, force='taper')
     star_flux = star_in_filter.integrate(wavelengths=filt.waveset,
-                                         flux_unit=su.FLAM).value
+                                         flux_unit=su.PHOTLAM).value
     star_mag = (-2.5 * np.log10(star_flux / filt.meta["flux0"])
                 + filt.meta["mag0"])
 
@@ -2524,12 +2524,11 @@ def calc_ab_vega_filter_conversion(filt_str):
     filt = get_filter_info(filt_str)
     
     # Get AB reference flux in filter
-    obs = Observation(vega, filt, binset=filt.waveset, force='taper')
     wave_aa = filt.waveset.to(u.AA).value
     throughput = filt(filt.waveset).value
     c_aa_s = constants.c.to(u.AA / u.s).value
-    ab_reference = abs(scipy.integrate.trapezoid(
-        throughput * c_aa_s / wave_aa**2, x=wave_aa))
+    ab_reference = scipy.integrate.trapezoid(
+        throughput * c_aa_s / wave_aa, x=wave_aa)
 
     # Apply Vega ZPs to get mag conversion
     abmag_value = -2.5 * math.log10(filt.meta['flux0'] / ab_reference) - 48.6 - filt.meta['mag0']
@@ -2557,10 +2556,9 @@ def calc_st_vega_filter_conversion(filt_str):
     filt = get_filter_info(filt_str)
 
     # Get ST reference flux in filter
-    obs = Observation(vega, filt, binset=filt.waveset, force='taper')
     wave_aa = filt.waveset.to(u.AA).value
     throughput = filt(filt.waveset).value
-    st_reference = abs(scipy.integrate.trapezoid(throughput, x=wave_aa))
+    st_reference = scipy.integrate.trapezoid(throughput*wave_aa, x=wave_aa)
 
     # Apply Vega ZPs to get mag conversion
     stmag_value = -2.5 * math.log10(filt.meta["flux0"] / st_reference) - 21.1 - filt.meta["mag0"]

@@ -85,7 +85,7 @@ def test_synthpop_MIST_extension():
     evo1 = evo1_grid.isochrone(10**logAge, metallicity=0)
     evo2 = evo2_grid.isochrone(10**logAge, metallicity=0)
 
-    # I expect evo2 extends to low masses velow evo1
+    # I expect evo2 extends to low masses below evo1
     assert len(evo2) > len(evo1)
     assert np.min(evo2['mass']) < np.min(evo1['mass'])
 
