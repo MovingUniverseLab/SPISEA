@@ -186,7 +186,7 @@ def get_jwst_filt(name):
     try:
         t = Table.read('{0}/jwst/{1}.txt'.format(filters_dir, name.upper()), format='ascii')
     except:
-        raise ValueError('Could not find JWST filter {0} in {1}/jwst'.format(name, filters_dir))
+        raise ValueError('Could not find JWST filter {0} in {1}/jwst'.format(name.upper(), filters_dir))
 
     # Convert wavelengths to angstroms
     wave = t['microns'] * 10**4. * u.AA
@@ -617,7 +617,10 @@ def get_tess_filt(name):
     # Wavelength from nanometers to angstroms and and transmission in fraction
     wave = t['col1']*10
     trans = t['col2']
-
+    # Transmission is scaled with lambda in the file, divide it out and renormalize
+    trans = t['col2']/wave
+    trans = trans/np.max(trans)
+    
     spectrum = SpectralElement(
         Empirical1D,
         points=wave * u.AA,
@@ -639,7 +642,10 @@ def get_washington_filt(name):
     # Wavelength from nanometers to angstroms and and transmission in fraction
     wave = t['col1']*10
     trans = t['col2']
-
+    # Transmission is scaled with lambda in the file, divide it out and renormalize
+    trans = t['col2']/wave
+    trans = trans/np.max(trans)
+    
     spectrum = SpectralElement(
         Empirical1D,
         points=wave * u.AA,
@@ -724,9 +730,9 @@ def get_ogle_filt(name):
     except:
         raise ValueError('Could not find ogle filter {0} in {1}/ogle'.format(name, filters_dir))
 
-    # Wavelength in nm->angstroms and and transmission in percent->fraction
-    wave = np.flip(t['col1'])*10
-    trans = np.flip(t['col2'])/100
+    # Wavelength in angstroms and and transmission in fraction
+    wave = t['col1']
+    trans = t['col2']
 
     spectrum = SpectralElement(
         Empirical1D,
