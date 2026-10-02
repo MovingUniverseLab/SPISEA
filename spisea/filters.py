@@ -567,6 +567,7 @@ def get_euclid_filt(name):
 
     wavelength = t[t.keys()[0]]
     transmission = t[t.keys()[1]]
+    transmission[transmission<0] = 0
 
     # Convert wavelength to Angstroms
     if name.lower() != 'vis':
