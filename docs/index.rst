@@ -97,6 +97,8 @@ Change Log
 		* New tutorial for creating SPISEA clusters using COSMIC: docs/Cluster_w_COSMIC.ipynb
 
 * *Minor Changes*
+	* Added opt-in Offner et al. 2023 (Protostars and Planets VII; arXiv:2203.10066) multiplicity model, including brown dwarfs. MF/CSF is a logistic in log-mass; :math:`\gamma(M)` is an error-weighted logistic; :math:`\mu(a)` is a smooth broken power law (:math:`s=0.1` dex); :math:`\sigma(\log_{10} a)` is a 2-parameter logistic. Comparison figures vs SPISEA v2.5 are in :ref:`multi_obj`. The SPISEA v2.5 :class:`~imf.multiplicity.MultiplicityUnresolved` / :class:`~imf.multiplicity.MultiplicityResolvedDK` objects remain the default.
+	* Companion mass and separation draws (including brown-dwarf q and binaries-only BD systems) now live on the multiplicity object rather than being special-cased in ``imf.py``.
 	* The MISTv1.2-synthpop model extension was modified to include denser sampling in the gap between the base MISTv1.2 grids and 0.1Msun.
   	* Modified default for MISTv1.2 isochrones: synthpop_extension will be True by default to keep a consistent lower mass limit of 0.1Msun across all ages and metallicities.
 	* Added option to return synthetic photometry in terms of AB or ST mag units in IsochronePhot. Vega mag units remains the default. New meta keyword `MAGSYS` added to output tables to specify magnitude unit system.
