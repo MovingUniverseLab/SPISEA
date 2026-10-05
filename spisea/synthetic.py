@@ -227,7 +227,10 @@ class ResolvedCluster(Cluster):
 
         # Check if using an external evolution model (i.e. COSMIC)
         self.external_evol = getattr(iso, 'external_evol', False)
-
+        if self.external_evol and (self.ifmr is not None):
+            warnings.warn(f"Isochrone {type(iso).__name__} uses external evolution. "
+                "Input IFMR will be ignored.")
+                
         #####
         # Make isochrone interpolators
         #####
@@ -267,15 +270,11 @@ class ResolvedCluster(Cluster):
         # Make a table to contain all the information about companions.
         #####
         if self.imf.make_multiples:
-            # start3 = time.time()
             if self.external_evol == False:
                 star_systems, companions = self._make_companions_table(star_systems, compMass)
             else:
                 # Makes initial table to be evolved externally
                 star_systems, companions = self._make_companions_table_initial(star_systems, compMass)
-            # end3 = time.time()
-            # print('Companion table new took {0:f} s.'.format(end3 - start3))
-
 
         #####
         # Do external evolution if chosen and assign photometry
@@ -335,6 +334,8 @@ class ResolvedCluster(Cluster):
         # Convert nan_to_num to avoid errors on greater than, less than comparisons
 
         # Define brown dwarf mass range
+        # TODO: do we want this hard-coded? it should probably be handled
+        # by the isochrones, right?
         bd_mask = (star_systems['mass'] >= 0.01) & (star_systems['mass'] <= 0.08)
         # hard code BDs as 90 and invariant masses
         star_systems['phase'][bd_mask] = 90
@@ -596,6 +597,8 @@ class ResolvedCluster(Cluster):
             companions[filt] = m_rescaled
 
             # Add companions masses to primaries
+            # TODO: I don't think that gets done here... is the comment old?
+            # TODO: Should it just say mags instead of masses?
             N_comp_max = np.max(star_systems['N_companions'])
             comp_index = np.zeros((len(star_systems), N_comp_max), dtype=int)
             kk = 0
@@ -604,23 +607,13 @@ class ResolvedCluster(Cluster):
                     comp_index[ii][cc] = kk
                     kk += 1
 
-            # Find all the systems with at least one companion... add the flux
-            # of that companion to the primary. Repeat for 2 companions,
-            # 3 companions, etc.
-            for cc in range(1, N_comp_max+1):
-                # All systems with at least cc companions.
-                idx = np.where(star_systems['N_companions'] >= cc)[0]
-
-                # Get the location in the companions array for each system and
-                # the cc'th companion.
-                cdx = comp_index[idx, cc-1]
-                star_systems = self._calc_system_mag(star_systems, companions, idx, cdx, filt)
+        star_systems = self._calc_system_mag(star_systems, companions)
 
         return star_systems, companions
 
 
 
-    def _calc_system_mag(self, star_systems, companions, idx, cdx, filt):
+    def _calc_system_mag(self, star_systems, companions):
         """
         Helper function to calculate the system magnitude from
         companion and primary magnitude.
@@ -633,39 +626,37 @@ class ResolvedCluster(Cluster):
         companions: Astropy table
             Companions table.
 
-        idx : array-like
-            Indices of primaries with companions
-
-        cdx : array-like
-            Indices of companions
-
-        filt : str
-            Filter name
-
         Returns
         -------
         star_systems : Astropy table
             Star system table with system magnitdes corrected
         """
-        mag_s = star_systems[filt][idx]
-        mag_c = companions[filt][cdx]
+        inv_ln10_25 = 2.5 / np.log(10.0)
+        N_systems = len(star_systems)
 
-        # Add companion flux to system flux.
-        f1 = 10**(-mag_s / 2.5)
-        f2 = 10**(-mag_c / 2.5)
+        for filt in self.filt_names:
+            m_primary = np.asarray(star_systems[filt])
+            m_comp = np.asarray(companions[filt])
+            sys_idx = companions['system_idx']
 
-        # For dark objects, turn the np.nan fluxes into zeros.
-        f1 = np.nan_to_num(f1)
-        f2 = np.nan_to_num(f2)
+            # companion-to-primary flux ratios
+            delta_m = m_comp - m_primary[sys_idx]
+            comp_ratio = np.nan_to_num(10.0 ** (-0.4 * delta_m), nan=0.0)
+            total_comp_ratio = np.zeros(N_systems, dtype=float)
+            np.add.at(total_comp_ratio, sys_idx, comp_ratio)
 
-        # If *both* objects are dark, then keep the magnitude
-        # as np.nan. Otherwise, add fluxes together
-        good = np.where( (f1 != 0) | (f2 != 0) )[0]
-        bad = np.where( (f1 == 0) & (f2 == 0) )[0]
-        
-        star_systems[filt][idx[good]] = -2.5 * np.log10(f1[good] + f2[good])
-        star_systems[filt][idx[bad]] = np.nan
+            # companion only total flux for dark primary case
+            comp_abs_flux = np.nan_to_num(10.0 ** (-0.4 * m_comp), nan=0.0)
+            total_comp_abs_flux = np.zeros(N_systems, dtype=float)
+            np.add.at(total_comp_abs_flux, sys_idx, comp_abs_flux)
 
+            # use log1p for precise magnitude addition
+            with np.errstate(divide='ignore', invalid='ignore'):
+                m_with_primary = m_primary - inv_ln10_25 * np.log1p(total_comp_ratio)
+                m_dark = np.where(total_comp_abs_flux > 0.0, -2.5 * np.log10(total_comp_abs_flux), np.nan)
+
+                star_systems[filt] = np.where(~np.isnan(m_primary), m_with_primary, m_dark)
+                
         return star_systems
 
 
@@ -2319,7 +2310,8 @@ def get_filter_info(name, vega=vega, rebin=True):
             filt = SpectralElement(filt.model, waveset=new_wave)
 
     vega_obs = Observation(vega, filt, binset=filt.waveset, force='taper')
-    vega_flux = vega_obs.countrate(area=tel_area_dummy)
+    vega_flux = vega_obs.integrate(wavelengths=filt.waveset,
+                                   flux_unit=su.PHOTLAM).value
     vega_mag = 0.03
 
     if getattr(filt, "meta", None) is None:
@@ -2474,17 +2466,10 @@ def mag_in_filter(star, filt):
     as filter, and has been applied.
     """
     star_in_filter = Observation(star, filt, binset=filt.waveset, force='taper')
-    star_flux = star_in_filter.countrate(area=tel_area_dummy)
-
-    # plt.figure()
-    # plt.loglog(star_in_filter.waveset, star_in_filter(star_in_filter.waveset), 'r-', label='wave')
-    # plt.loglog(star_in_filter.binset, star_in_filter.binflux, 'k-', label='binwave')
-    # plt.xlabel('Wavelength (Angstroms)')
-    # plt.ylabel('Flux (erg s^-1 cm^-2 A^-1)')
-    # plt.legend()
-    # plt.savefig('spec.png')
-    
-    star_mag = -2.5 * math.log10(star_flux / filt.meta["flux0"]) + filt.meta["mag0"]
+    star_flux = star_in_filter.integrate(wavelengths=filt.waveset,
+                                         flux_unit=su.PHOTLAM).value
+    star_mag = (-2.5 * np.log10(star_flux / filt.meta["flux0"])
+                + filt.meta["mag0"])
 
     return star_mag
 
@@ -2530,30 +2515,22 @@ def calc_ab_vega_filter_conversion(filt_str):
     filt_str: string
         SPISEA filter identification string (see Photometric Filters doc page)
     """
-    # 1. Get filter info
+    # Get filter and apply to Vega
     filt = get_filter_info(filt_str)
 
-    # 2. Define the Vega spectrum
-    vega = SourceSpectrum.from_vega()
+    # Get AB reference flux in filter
+    wave_aa = filt.waveset.to(u.AA).value
+    throughput = filt(filt.waveset).value
+    c_aa_s = constants.c.to(u.AA / u.s).value
+    ab_reference = scipy.integrate.trapezoid(
+        throughput * c_aa_s / wave_aa, x=wave_aa)
 
-    # 3. Define an arbitrary input flux in VEGAMAG.
-    vegamag_value = 0.0 * su.VEGAMAG
+    # Apply Vega ZPs to get mag conversion
+    abmag_value = -2.5 * math.log10(filt.meta['flux0'] / ab_reference) - 48.6 - filt.meta['mag0']
 
-    # 4. Normalize the Vega spectrum to the input VEGAMAG value
-    vega_norm = vega.normalize(vegamag_value, band=filt)
+    print(f'For {filt_str}, m_ab - m_vega = {abmag_value}')
 
-    # 6. Observe the normalized spectrum through the bandpass
-    obs = Observation(vega_norm, filt)
-
-    # 7. Check the integrated flux in both filter sets.
-    abmag_value = obs.effstim(flux_unit='abmag')
-    vegamag_value = obs.effstim(flux_unit='vegamag')
-
-    ab_2_vega = abmag_value - vegamag_value
-
-    print(f'For {filt_str}, m_ab - m_vega = {ab_2_vega}')
-
-    return ab_2_vega
+    return abmag_value
 
 
 def calc_st_vega_filter_conversion(filt_str):
@@ -2570,28 +2547,18 @@ def calc_st_vega_filter_conversion(filt_str):
     filt_str: string
         SPISEA filter identification string (see Photometric Filters doc page)
     """
-    # 1. Get filter info
+    # Get filter and its Vega zero points
     filt = get_filter_info(filt_str)
 
-    # 2. Define the Vega spectrum
-    vega = SourceSpectrum.from_vega()
+    # Get ST reference flux in filter
+    wave_aa = filt.waveset.to(u.AA).value
+    throughput = filt(filt.waveset).value
+    st_reference = scipy.integrate.trapezoid(throughput*wave_aa, x=wave_aa)
 
-    # 3. Define an arbitrary input flux in VEGAMAG.
-    vegamag_value = 0.0 * su.VEGAMAG
+    # Apply Vega ZPs to get mag conversion
+    stmag_value = -2.5 * math.log10(filt.meta["flux0"] / st_reference) - 21.1 - filt.meta["mag0"]
 
-    # 4. Normalize the Vega spectrum to the input VEGAMAG value
-    vega_norm = vega.normalize(vegamag_value, band=filt)
+    print(f'For {filt_str}, m_st - m_vega = {stmag_value}')
 
-    # 6. Observe the normalized spectrum through the bandpass
-    obs = Observation(vega_norm, filt)
-
-    # 7. Check the integrated flux in both filter sets.
-    stmag_value = obs.effstim(flux_unit='stmag')
-    vegamag_value = obs.effstim(flux_unit='vegamag')
-
-    st_2_vega = stmag_value - vegamag_value
-
-    print(f'For {filt_str}, m_st - m_vega = {st_2_vega}')
-
-    return st_2_vega
+    return stmag_value
 
