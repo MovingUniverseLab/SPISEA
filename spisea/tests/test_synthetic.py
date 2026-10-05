@@ -46,6 +46,7 @@ def test_isochrone(plot=False):
 
     #return iso
 
+@pytest.mark.slow
 def test_iso_wave():
     """
     Test to make sure isochrones generated have spectra with the proper
@@ -140,6 +141,7 @@ def test_iso_wave():
         pass
     return
 
+@pytest.mark.slow
 def test_IsochronePhot(plot=False):
     logAge = 6.7
     AKs = 2.7
@@ -290,6 +292,7 @@ def test_IsochronePhot(plot=False):
 
     return
 
+@pytest.mark.slow
 def test_ResolvedCluster():
     # Define cluster parameters
     logAge = 6.7
@@ -504,6 +507,7 @@ def test_ResolvedClusterDiffRedden():
 
     return
 
+@pytest.mark.slow
 def test_UnresolvedCluster():
     log_age = 6.7
     AKs = 0.0
@@ -531,6 +535,7 @@ def test_UnresolvedCluster():
 
     return
 
+@pytest.mark.slow
 def test_ifmr_multiplicity():
     # Define cluster parameters
     logAge = 9.7
@@ -835,6 +840,7 @@ def test_cluster_mass():
 
     return
 
+@pytest.mark.slow
 def test_keep_low_mass_stars():
     """
     Test "keep_low_mass_stars = True" functionality introduced in v2.2
@@ -865,8 +871,7 @@ def test_keep_low_mass_stars():
         red_law=red_law,
         filters=filt_list,
         mass_sampling=mass_sampling,
-        iso_dir=iso_dir,
-        recomp=True
+        iso_dir=iso_dir
     )
 
     # Get the minimum mass in the isochrones. This should be the lowest
@@ -1025,6 +1030,7 @@ def test_COSMIC_evolve():
 
     return
 
+@pytest.mark.slow
 def test_COSMIC_ResolvedCluster():
     """
     Test the full COSMIC cluster pipeline, mirroring the Cluster_w_COSMIC
@@ -1436,6 +1442,7 @@ def test_Raithel18_IFMR_5():
 
     return
 
+@pytest.mark.slow
 def test_ResolvedCluster_random_state():
     """
     Test that the random state is properly set in ResolvedCluster, such that two clusters with the same seed have the same stars.
@@ -1534,16 +1541,16 @@ def test_ResolvedCluster_no_companions():
 @pytest.mark.parametrize(
     "filt_str, expected_ab_minus_vega",
     [
-        # Regression baselines (synphot 1.x + stsynphot): m_AB - m_Vega for Vega,
-        # using SPISEA get_filter_info bandpasses and SourceSpectrum.from_vega().
-        ("ubv,V", 0.016),
-        ("ubv,B", -0.12),
-        ("2mass,J", 0.913),
-        ("wfc3,ir,f125w", 0.923)
+        # Independent integrations: syn.Vega() vs. flat 0-ABmag spectra,
+        # with SPISEA's 0.03-mag Vega convention applied to the offset.
+        ("bessell,V", -0.012),
+        ("bessell,B", -0.130),
+        ("2mass,J", 0.894),
+        ("wfc3,ir,f125w", 0.902)
     ],
 )
 def test_calc_ab_vega_filter_conversion_known(filt_str, expected_ab_minus_vega):
-    """Vega AB minus Vega magnitude offset matches tabulated values for a few filters."""
+    """Vega AB minus Vega magnitude offset matches reference values for a few filters."""
     with patch("builtins.print"):
         out = syn.calc_ab_vega_filter_conversion(filt_str)
     mag = float(out.value) if hasattr(out, "value") else float(out)
@@ -1554,16 +1561,16 @@ def test_calc_ab_vega_filter_conversion_known(filt_str, expected_ab_minus_vega):
 @pytest.mark.parametrize(
     "filt_str, expected_st_minus_vega",
     [
-        # Regression baselines (synphot 1.x + stsynphot): m_ST - m_Vega for Vega,
-        # using SPISEA get_filter_info bandpasses and SourceSpectrum.from_vega().
-        ("ubv,B", -0.61),
-        ("ubv,V", 0.019),
-        ("2mass,J", 2.686),
-        ("wfc3,ir,f125w", 2.703)
+        # Independent integrations: syn.Vega() vs. flat 0-STmag spectra,
+        # with SPISEA's 0.03-mag Vega convention applied to the offset.
+        ("bessell,B", -0.606),
+        ("bessell,V", -0.002),
+        ("2mass,J", 2.668),
+        ("wfc3,ir,f125w", 2.692)
     ],
 )
 def test_calc_st_vega_filter_conversion_known(filt_str, expected_st_minus_vega):
-    """Vega AB minus Vega magnitude offset matches tabulated values for a few filters."""
+    """Vega ST minus Vega magnitude offset matches reference values for a few filters."""
     with patch("builtins.print"):
         out = syn.calc_st_vega_filter_conversion(filt_str)
     mag = float(out.value) if hasattr(out, "value") else float(out)

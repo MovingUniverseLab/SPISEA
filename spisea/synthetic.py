@@ -2518,15 +2518,15 @@ def calc_ab_vega_filter_conversion(filt_str):
     # Get filter and apply to Vega
     filt = get_filter_info(filt_str)
 
-    # Get AB reference flux in filter
-    wave_aa = filt.waveset.to(u.AA).value
-    throughput = filt(filt.waveset).value
-    c_aa_s = constants.c.to(u.AA / u.s).value
-    ab_reference = scipy.integrate.trapezoid(
-        throughput * c_aa_s / wave_aa, x=wave_aa)
+    # Integrate a zero-AB-magnitude reference spectrum in photon-flux units.
+    ab_source = SourceSpectrum(ConstFlux1D, amplitude=0 * u.ABmag)
+    ab_observation = Observation(ab_source, filt, binset=filt.waveset,
+                                 force='taper')
+    ab_reference = ab_observation.integrate(
+        wavelengths=filt.waveset, flux_unit=su.PHOTLAM).value
 
     # Apply Vega ZPs to get mag conversion
-    abmag_value = -2.5 * math.log10(filt.meta['flux0'] / ab_reference) - 48.6 - filt.meta['mag0']
+    abmag_value = -2.5 * math.log10(filt.meta['flux0'] / ab_reference) - filt.meta['mag0']
 
     print(f'For {filt_str}, m_ab - m_vega = {abmag_value}')
 
@@ -2550,13 +2550,15 @@ def calc_st_vega_filter_conversion(filt_str):
     # Get filter and its Vega zero points
     filt = get_filter_info(filt_str)
 
-    # Get ST reference flux in filter
-    wave_aa = filt.waveset.to(u.AA).value
-    throughput = filt(filt.waveset).value
-    st_reference = scipy.integrate.trapezoid(throughput*wave_aa, x=wave_aa)
+    # Integrate a zero-ST-magnitude reference spectrum in photon-flux units.
+    st_source = SourceSpectrum(ConstFlux1D, amplitude=0 * u.STmag)
+    st_observation = Observation(st_source, filt, binset=filt.waveset,
+                                 force='taper')
+    st_reference = st_observation.integrate(
+        wavelengths=filt.waveset, flux_unit=su.PHOTLAM).value
 
     # Apply Vega ZPs to get mag conversion
-    stmag_value = -2.5 * math.log10(filt.meta["flux0"] / st_reference) - 21.1 - filt.meta["mag0"]
+    stmag_value = -2.5 * math.log10(filt.meta["flux0"] / st_reference) - filt.meta["mag0"]
 
     print(f'For {filt_str}, m_st - m_vega = {stmag_value}')
 
