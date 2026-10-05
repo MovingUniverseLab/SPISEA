@@ -120,21 +120,18 @@ def get_decam_filt(name):
     """
     # Read in filter info
     try:
-        t = Table.read('{0}/decam/DECam_filters.txt'.format(filters_dir), format='ascii')
-
-        trans = t[name]
+        t = Table.read('{0}/decam/CTIO_DECam.{1}.dat'.format(filters_dir, name), format='ascii')
     except:
         if name=='y':
             raise ValueError('DECam has a /"Y/" filter, not /"y/". The /"y/" in SPISEA <v3.0 was a bug.')
         else:
-            raise ValueError('Could not find DECAM filter {0} in {1}/decam/DECam_filters.txt'.format(name, filters_dir))
+            raise ValueError('Could not find DECam filter file {0}/decam/CTIO_DECam.{1}.dat'.format(filters_dir, name))
+            
+    wave = t['col1']
+    trans = t['col2']
 
     # Don't allow negative transmission
     trans[trans<0] = 0.0
-
-    # Convert wavelengths from nm to angstroms, while eliminating masked regions
-    wave = t['wavelength'] * 10.
-    trans = trans
 
     spectrum = SpectralElement(
         Empirical1D,

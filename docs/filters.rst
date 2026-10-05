@@ -91,7 +91,7 @@ Example: ``'ctio_osiris,H'``
 
 **DeCam**
 
-`Dark Energy Camera <https://noirlab.edu/science/documents/scidoc0472>`_
+Dark Energy Camera `total transmissions from SVO <https://svo2.cab.inta-csic.es/theory/fps/index.php?mode=browse&gname=CTIO&gname2=DECam&asttype=>`_
 
 Filters: u, g, r, i, z, Y
 
