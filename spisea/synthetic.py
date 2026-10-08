@@ -2310,8 +2310,7 @@ def get_filter_info(name, vega=vega, rebin=True):
             filt = SpectralElement(filt.model, waveset=new_wave)
 
     vega_obs = Observation(vega, filt, binset=filt.waveset, force='taper')
-    vega_flux = vega_obs.integrate(wavelengths=filt.waveset,
-                                   flux_unit=su.PHOTLAM).value
+    vega_flux = flux_from_observation(vega_obs)
     vega_mag = 0.03
 
     if getattr(filt, "meta", None) is None:
@@ -2459,6 +2458,19 @@ def make_isochrone_grid(age_arr, AKs_arr, dist_arr, evo_model=default_evo_model,
     return
 
 
+# Little helper function to replace synphot's buggy integration methods
+def flux_from_observation(obs):
+    # NOTE, this is written to work with the bug in synphot where
+    # photon counting bandpasses have been pre-scaled with lambda,
+    # but the units on the observation flux have not been adjusted
+    # appropriately. If synphot fixes this, this function will likely 
+    # become inaccurate and need to be replaced, possibly checking
+    # the synphot version to determine whether a correction is needed.
+    wave = obs.bandpass.waveset.to('angstrom').value
+    flux = su.convert_flux(obs.bandpass.waveset, obs(obs.bandpass.waveset), su.FLAM).value
+    return scipy.integrate.trapezoid(flux, x=wave)
+
+
 # Little helper utility to get the magnitude of an object through a filter.
 def mag_in_filter(star, filt):
     """
@@ -2466,8 +2478,7 @@ def mag_in_filter(star, filt):
     as filter, and has been applied.
     """
     star_in_filter = Observation(star, filt, binset=filt.waveset, force='taper')
-    star_flux = star_in_filter.integrate(wavelengths=filt.waveset,
-                                         flux_unit=su.PHOTLAM).value
+    star_flux = flux_from_observation(star_in_filter)
     star_mag = (-2.5 * np.log10(star_flux / filt.meta["flux0"])
                 + filt.meta["mag0"])
 
@@ -2522,8 +2533,7 @@ def calc_ab_vega_filter_conversion(filt_str):
     ab_source = SourceSpectrum(ConstFlux1D, amplitude=0 * u.ABmag)
     ab_observation = Observation(ab_source, filt, binset=filt.waveset,
                                  force='taper')
-    ab_reference = ab_observation.integrate(
-        wavelengths=filt.waveset, flux_unit=su.PHOTLAM).value
+    ab_reference = flux_from_observation(ab_observation)
 
     # Apply Vega ZPs to get mag conversion
     abmag_value = -2.5 * math.log10(filt.meta['flux0'] / ab_reference) - filt.meta['mag0']
@@ -2554,8 +2564,7 @@ def calc_st_vega_filter_conversion(filt_str):
     st_source = SourceSpectrum(ConstFlux1D, amplitude=0 * u.STmag)
     st_observation = Observation(st_source, filt, binset=filt.waveset,
                                  force='taper')
-    st_reference = st_observation.integrate(
-        wavelengths=filt.waveset, flux_unit=su.PHOTLAM).value
+    st_reference = flux_from_observation(st_observation)
 
     # Apply Vega ZPs to get mag conversion
     stmag_value = -2.5 * math.log10(filt.meta["flux0"] / st_reference) - filt.meta["mag0"]

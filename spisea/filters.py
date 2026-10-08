@@ -186,8 +186,8 @@ def get_jwst_filt(name):
         raise ValueError('Could not find JWST filter {0} in {1}/jwst'.format(name.upper(), filters_dir))
 
     # Convert wavelengths to angstroms
-    wave = t['microns'] * 10**4. * u.AA
-    trans = t['throughput'] * su.THROUGHPUT
+    wave = t['Microns'] * 10**4. * u.AA
+    trans = t['Throughput'] * su.THROUGHPUT
 
     # Change any negative numbers to 0
     bad = np.where(trans < 0)
