@@ -2348,7 +2348,6 @@ class RedLawDeliwala26(pysynphot.reddening.CustomRedLaw):
         # based on their Table 8. Wavelengths in microns, extinction in mags
         wave, ext = RedLawDeliwala26._read_Deliwala26()
 
-        pdb.set_trace()
         # Convert wave to angstromgs
         wave *= 10**4
 
@@ -2361,7 +2360,7 @@ class RedLawDeliwala26(pysynphot.reddening.CustomRedLaw):
         pysynphot.reddening.CustomRedLaw.__init__(self, wave=wave,
                                                   waveunits='angstrom',
                                                   Avscaled=ext_scale,
-                                                  name='Deliwala26',
+                                                   name='Deliwala26',
                                                   litref='Deliwala+26')
 
         # Set the upper/lower wavelength limits of law (in angstroms)
