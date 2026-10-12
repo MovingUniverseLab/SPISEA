@@ -257,3 +257,18 @@ def test_all_EL():
     red_law = reddening.RedLawSODC(2.5)
 
     return
+
+def test_Deliwala26():
+    """
+    Test that the implementation of the Deliwala+26 extinction curve 
+    returns the measured extinction ratios in the JWST F115W,
+    F140M, F182M, F212N, F323N, and F405N filters.
+
+    We will assume an 8 Gyr RC star with [M/H] = 0.3, with A_2.166 microns = 2.5 mag
+    as being representative of the average GC extinction. 
+    """
+    # TO DO
+    pass
+
+    return
+
