@@ -2314,6 +2314,132 @@ class RedLawNoguerasLara20(RedLawBrokenPowerLaw):
 
         return A_at_wave
 
+class RedLawDeliwala26(pysynphot.reddening.CustomRedLaw):
+    """
+    Defines extinction law from Deliwala+26 derived for the Galactic Center
+    in based on the extinction ratios between the JWST F115W, F140M, F182M, 
+    F212N, F323N, and F405N filters. 
+    
+    NOTE: this law is implemented as a smooth spline interpolation of 
+    the measured extinction law ratios for wavelengths < 2.7 microns.
+    For wavelengths > 2.7 microns, the interpolated law from Fritz+11 is 
+    modified in the F323N and F405N wavelengths to natcg tge ibserved extinction
+    law ratios. In other words, the shape of the F11 law is used to "connect" the points
+    between the F323N and F405N filters, given the complex shape of the extinction
+    curve in this wavelength regime. See spisea/el_files/README_deliwala26_methodology.txt
+    for more details, as well as tests/test_reddening.test_RedLawDeliwala26().
+
+    Long story short: caution should be used when using this law to predict
+    extinction outside the JWST filters used in Deliwala+26, especially at 
+    wavelengths > 2.7 microns. 
+
+    By default, law is scaled such that A_lambda / A_2.166 microns = 1,
+    following Fritz+11
+
+    Parameters:
+    -----------
+    scale_labmda: float
+        Wavelength at which extinction law is scaled (A_lambda / A_scale_lambda = 1),
+        in microns. Default is 2.166 microns
+
+    """
+    def __init__(self, scale_lambda=2.166):
+        # Read in the interpolated extinction curve from Fritz+11,
+        # based on their Table 8. Wavelengths in microns, extinction in mags
+        wave, ext = RedLawDeliwala26._read_Deliwala26()
+
+        pdb.set_trace()
+        # Convert wave to angstromgs
+        wave *= 10**4
+
+        # Rescale extinction law such that A_lambda / A_2.166 microns = 1
+        idx = np.where( abs(wave - (scale_lambda*10**4)) ==
+                            min(abs(wave - (scale_lambda*10**4))) )
+        ext_scale = ext / ext[idx]
+
+        # Make custom reddening law
+        pysynphot.reddening.CustomRedLaw.__init__(self, wave=wave,
+                                                  waveunits='angstrom',
+                                                  Avscaled=ext_scale,
+                                                  name='Deliwala26',
+                                                  litref='Deliwala+26')
+
+        # Set the upper/lower wavelength limits of law (in angstroms)
+        self.low_lim = min(wave)
+        self.high_lim = max(wave)
+
+        # Other useful variables
+        self.scale_lambda = scale_lambda
+        self.name = 'D26'
+
+        return
+
+    @staticmethod
+    def _read_Deliwala26():
+        """
+        Return the extinction curve from Deliwala26.
+
+        Output:
+        ------
+        wave: array
+            Wavelength in microns
+
+        ext: array
+            Extinction in mags
+
+        ext_err: array
+            Extinction error, in mags
+        """
+        # Read in file with Table 8 info (published with Fritz+11 paper)
+        inpath = os.path.dirname(os.path.abspath(__file__))
+        infile = os.path.join(inpath, 'el_files', 'deliwala26_curve.csv')
+
+        t = Table.read(infile, format='ascii')
+        wave = t['wavelength_um']
+        ext = t['A_lambda_over_A_2p166']
+
+        return wave, ext
+
+    def Deliwala26(self, wavelength, A_scale_lambda):
+        """
+        Return the extinction at a given wavelength assuming the
+        extinction law and a total extinction at the scale_lambda
+        (the wavelength where the extinction law = 1)
+
+        Parameters
+        ----------
+        wavelength : float or array
+            Wavelength to return extinction for, in microns
+        A_scale_lambda : float
+            Total extinction at scale_lambda, in mags
+        """
+        # If input entry is a single float, turn it into an array
+        try:
+            len(wavelength)
+        except:
+            wavelength = [wavelength]
+
+        # Return error if any wavelength is beyond interpolation range of
+        # extinction law
+        if ((min(wavelength) < (self.low_lim*10**-4)) | (max(wavelength) > (self.high_lim*10**-4))):
+            return ValueError('{0}: wavelength values beyond interpolation range'.format(self))
+
+        # Extract wave and A/A_scale_lambda from law, turning wave into micron units
+        wave = self.wave * (10**-4)
+        law = self.obscuration
+
+        # Find the value of the law at the closest points
+        # to wavelength
+        A_Ascale_at_wave = []
+        for ii in wavelength:
+            idx = np.where( abs(wave - ii) == min(abs(wave - ii)) )
+            A_Ascale_at_wave.append(law[idx][0])
+
+        # Now multiply by A_scale_lambda (since law assumes A_scale_lambda = 1)
+        A_at_wave = np.array(A_Ascale_at_wave) * A_scale_lambda
+
+        return A_at_wave
+
 #---------------------------#
 # Cubic spline function from Schalfly+16 appendix
 #---------------------------#
