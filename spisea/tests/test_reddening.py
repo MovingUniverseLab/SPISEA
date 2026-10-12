@@ -206,7 +206,9 @@ def test_red_law_IsochronePhot():
                       'H18b', 'NL18', 'C89,3.1', 'D26', 'pl,2.12,0.9,2.4',
                       'broken_pl,[2.3,1.63,0.9],[2.23, 3.0],2.12']
 
-    aks_arr = [2.62, 2.46, 1.67, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3]
+    aks_arr = [2.62, 2.46, 1.67, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3]
+    assert len(redlaw_arr) == len(aks_arr) # Catch dumb test code formatting error before we go too far
+
     for ii in range(len(redlaw_arr)):
         redlaw = reddening.get_red_law(redlaw_arr[ii])
         #redlaw_arr[ii]
