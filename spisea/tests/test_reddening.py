@@ -258,17 +258,60 @@ def test_all_EL():
 
     return
 
-def test_Deliwala26():
+def test_RedLawDeliwala26():
     """
-    Test that the implementation of the Deliwala+26 extinction curve 
-    returns the measured extinction ratios in the JWST F115W,
-    F140M, F182M, F212N, F323N, and F405N filters.
+    Check that adding dust changes RC magnitudes in the measured proportions 
+    from RedLawDeliwala26.
 
-    We will assume an 8 Gyr RC star with [M/H] = 0.3, with A_2.166 microns = 2.5 mag
-    as being representative of the average GC extinction. 
+    Use the representative RC atmosphere from the 8 Gyr, [M/H] = +0.3
+    MIST population, selecting the model nearest the median RC temperature.
+    Begin with F11 extinction of 2.5 mag at 2.166 microns, then add
+    0.001 mag at that wavelength using Deliwala+26.
     """
-    # TO DO
-    pass
 
-    return
+    measured_ratios = {
+        'f115w': 3.06,
+        'f140m': 2.21,
+        'f182m': 1.21,
+        'f212n': 1.00,
+        'f323n': 1.05,
+        'f405n': 0.39,
+    }
+
+    # Choose an RC model with a typical temperature in the 8 Gyr population.
+    isochrone = evolution.MISTv1().isochrone(age=8e9, metallicity=0.3)
+    rc_models = isochrone[isochrone['phase'] == 3] 
+    median_log_temperature = np.median(rc_models['logT'])
+    closest_to_median = np.argmin(abs(rc_models['logT'] - median_log_temperature))
+    star = rc_models[closest_to_median]
+    rc_spectrum = atmospheres.get_merged_atmosphere(
+        temperature=10**star['logT'],
+        gravity=star['logg'],
+        metallicity=0.3,
+    )
+    existing_extinction = reddening.RedLawFritz11().reddening(2.5)
+    spectrum_before = rc_spectrum * existing_extinction
+
+    # Add a small amount of dust with the Deliwala+26 law.
+    law = reddening.RedLawDeliwala26()
+    extra_extinction = law.reddening(0.001)
+    spectrum_after = spectrum_before * extra_extinction
+
+    # Measure how much fainter the star becomes in each filter.
+    magnitude_changes = {}
+    for band in measured_ratios:
+        bandpass = synthetic.get_filter_info('jwst,' + band)
+        magnitude_before = synthetic.mag_in_filter(spectrum_before, bandpass)
+        magnitude_after = synthetic.mag_in_filter(spectrum_after, bandpass)
+        magnitude_changes[band] = magnitude_after - magnitude_before
+
+    # Compare each change with F212N: e.g., F115W should change 3.06 times as much.
+    f212n_change = magnitude_changes['f212n']
+    assert np.isfinite(f212n_change) and f212n_change > 0
+    for band, measured_ratio in measured_ratios.items():
+        recovered_ratio = magnitude_changes[band] / f212n_change
+        np.testing.assert_allclose(
+            recovered_ratio, measured_ratio, rtol=0.01, atol=0,
+            err_msg=f'{band}: Deliwala26 differential ratio',
+        )
 

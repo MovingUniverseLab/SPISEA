@@ -2316,18 +2316,18 @@ class RedLawNoguerasLara20(RedLawBrokenPowerLaw):
 
 class RedLawDeliwala26(pysynphot.reddening.CustomRedLaw):
     """
-    Defines extinction law from Deliwala+26 derived for the Galactic Center
-    in based on the extinction ratios between the JWST F115W, F140M, F182M, 
+    Defines the differential extinction law from Deliwala+26 derived for the Galactic Center
+    based on the extinction ratios between the JWST F115W, F140M, F182M, 
     F212N, F323N, and F405N filters. 
     
     NOTE: this law is implemented as a smooth spline interpolation of 
     the measured extinction law ratios for wavelengths < 2.7 microns.
     For wavelengths > 2.7 microns, the interpolated law from Fritz+11 is 
-    modified in the F323N and F405N wavelengths to natcg tge ibserved extinction
+    modified in the F323N and F405N wavelengths to match the observed extinction
     law ratios. In other words, the shape of the F11 law is used to "connect" the points
     between the F323N and F405N filters, given the complex shape of the extinction
     curve in this wavelength regime. See spisea/el_files/README_deliwala26_methodology.txt
-    for more details, as well as tests/test_reddening.test_RedLawDeliwala26().
+    for more details, as well as spisea.tests.test_reddening.test_RedLawDeliwala26().
 
     Long story short: caution should be used when using this law to predict
     extinction outside the JWST filters used in Deliwala+26, especially at 
@@ -2338,17 +2338,17 @@ class RedLawDeliwala26(pysynphot.reddening.CustomRedLaw):
 
     Parameters:
     -----------
-    scale_labmda: float
+    scale_lambda: float
         Wavelength at which extinction law is scaled (A_lambda / A_scale_lambda = 1),
         in microns. Default is 2.166 microns
 
     """
     def __init__(self, scale_lambda=2.166):
-        # Read in the interpolated extinction curve from Fritz+11,
-        # based on their Table 8. Wavelengths in microns, extinction in mags
+        # Read the F11-anchored Deliwala+26 curve: wavelengths in microns
+        # and dimensionless extinction ratios normalized at 2.166 microns
         wave, ext = RedLawDeliwala26._read_Deliwala26()
 
-        # Convert wave to angstromgs
+        # Convert wave to angstroms
         wave *= 10**4
 
         # Rescale extinction law such that A_lambda / A_2.166 microns = 1
@@ -2384,12 +2384,9 @@ class RedLawDeliwala26(pysynphot.reddening.CustomRedLaw):
             Wavelength in microns
 
         ext: array
-            Extinction in mags
-
-        ext_err: array
-            Extinction error, in mags
+            Dimensionless extinction ratio A_lambda / A_2.166 microns
         """
-        # Read in file with Table 8 info (published with Fritz+11 paper)
+        # Read the tabulated Deliwala+26 extinction curve
         inpath = os.path.dirname(os.path.abspath(__file__))
         infile = os.path.join(inpath, 'el_files', 'deliwala26_curve.csv')
 
