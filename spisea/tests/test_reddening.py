@@ -4,7 +4,6 @@ import pylab as py
 import os
 import pdb
 
-
 def test_RedLawBrokenPowerLaw(plots=False):
     #===============================#
     # Test 1: 2-segment law
@@ -204,7 +203,7 @@ def test_red_law_IsochronePhot():
     # Define reddening laws and associated AKs vals
     redlaw_arr = ['F11', 'S10', 'NL20', 'I05', 'N09', 'RZ07',
                       'RL85', 'D16', 'F09,2.5,3', 'S16,1.55,0', 'DM16',
-                      'H18b', 'NL18', 'C89,3.1', 'pl,2.12,0.9,2.4',
+                      'H18b', 'NL18', 'C89,3.1', 'D26', 'pl,2.12,0.9,2.4',
                       'broken_pl,[2.3,1.63,0.9],[2.23, 3.0],2.12']
 
     aks_arr = [2.62, 2.46, 1.67, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3]
@@ -255,6 +254,7 @@ def test_all_EL():
     red_law = reddening.RedLawNoguerasLara18()
     red_law = reddening.RedLawNoguerasLara20()
     red_law = reddening.RedLawSODC(2.5)
+    red_law = reddening.RedLawDeliwala26()
 
     return
 
@@ -268,7 +268,7 @@ def test_RedLawDeliwala26():
     Begin with F11 extinction of 2.5 mag at 2.166 microns, then add
     0.001 mag at that wavelength using Deliwala+26.
     """
-
+    # From Table 2 of Deliwala+26 (A_<filt> / A_<f212n>)
     measured_ratios = {
         'f115w': 3.06,
         'f140m': 2.21,
@@ -278,17 +278,30 @@ def test_RedLawDeliwala26():
         'f405n': 0.39,
     }
 
+    measured_ratio_errs = {
+        'f115w': 0.08,
+        'f140m': 0.08,
+        'f182m': 0.05,
+        'f212n': 0.0001, # Since this is the reference wavelength
+        'f323n': 0.07,
+        'f405n': 0.04,
+    }
+
     # Choose an RC model with a typical temperature in the 8 Gyr population.
     isochrone = evolution.MISTv1().isochrone(age=8e9, metallicity=0.3)
+
     rc_models = isochrone[isochrone['phase'] == 3] 
     median_log_temperature = np.median(rc_models['logT'])
     closest_to_median = np.argmin(abs(rc_models['logT'] - median_log_temperature))
     star = rc_models[closest_to_median]
+
+    # Intrinsic RC star spectrum for this pop
     rc_spectrum = atmospheres.get_merged_atmosphere(
         temperature=10**star['logT'],
         gravity=star['logg'],
         metallicity=0.3,
     )
+
     existing_extinction = reddening.RedLawFritz11().reddening(2.5)
     spectrum_before = rc_spectrum * existing_extinction
 
@@ -314,4 +327,51 @@ def test_RedLawDeliwala26():
             recovered_ratio, measured_ratio, rtol=0.01, atol=0,
             err_msg=f'{band}: Deliwala26 differential ratio',
         )
+
+    #---End-to-End test of the extinction law ratios---#
+    # Start with the approximate extinction at the GC and apply to the star
+    d26_extinction = law.reddening(2.5)
+    spectrum_final = rc_spectrum * d26_extinction
+
+    # Calculate the synthetic photometry in the JWST filters for both
+    # the extinguished and non-extiguished spectrum. The difference is 
+    # the total extinction in the filter
+    A_filt_arr = []
+    band_arr = []
+    for band in measured_ratios:
+        bandpass = synthetic.get_filter_info('jwst,' + band)
+        mag_ext = synthetic.mag_in_filter(spectrum_final, bandpass)   
+        mag_no_ext = synthetic.mag_in_filter(rc_spectrum, bandpass)  
+
+        # Calculate extinction in this filter
+        A_filt = mag_ext - mag_no_ext
+        A_filt_arr.append(A_filt)
+
+        band_arr.append(band)
+    A_filt_arr = np.array(A_filt_arr)
+    band_arr = np.array(band_arr)
+
+    # Calculate A_filt / A_F212N ratios
+    idx_f212n = np.where(band_arr == 'f212n')
+    A_filt_f212n = A_filt_arr / A_filt_arr[idx_f212n]
+
+    # Compare these to calculated vals
+    band_arr = list(measured_ratios.keys())
+    obs_ratio_arr = list(measured_ratios.values())
+    obs_err_arr = list(measured_ratio_errs.values())
+
+    # Let's make sure the values are either within 1% of within the observed
+    # error, whichever is smaller
+    atol = np.min([np.array(obs_ratio_arr)*0.01, obs_err_arr], axis=0)
+    failed = ~np.isclose(A_filt_f212n, obs_ratio_arr, rtol=0, atol=atol)
+
+    fail_msg = '\n'.join(
+        '{0}: observed = {1} +/- {2}, predicted = {3:.3f}'.format(
+            band_arr[ii], obs_ratio_arr[ii], obs_err_arr[ii], A_filt_f212n[ii])
+        for ii in np.where(failed)[0]
+    )
+    assert not failed.any(), 'Deliwala26 A_filt_f212n failures:\n' + fail_msg
+
+
+    return 
 
