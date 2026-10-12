@@ -2458,17 +2458,11 @@ def make_isochrone_grid(age_arr, AKs_arr, dist_arr, evo_model=default_evo_model,
     return
 
 
-# Little helper function to replace synphot's buggy integration methods
+# Little helper function for consistent integration
 def flux_from_observation(obs):
-    # NOTE, this is written to work with the bug in synphot where
-    # photon counting bandpasses have been pre-scaled with lambda,
-    # but the units on the observation flux have not been adjusted
-    # appropriately. If synphot fixes this, this function will likely 
-    # become inaccurate and need to be replaced, possibly checking
-    # the synphot version to determine whether a correction is needed.
     wave = obs.bandpass.waveset.to('angstrom').value
     flux = su.convert_flux(obs.bandpass.waveset, obs(obs.bandpass.waveset), su.FLAM).value
-    return scipy.integrate.trapezoid(flux, x=wave)
+    return scipy.integrate.trapezoid(flux*wave, x=wave)
 
 
 # Little helper utility to get the magnitude of an object through a filter.

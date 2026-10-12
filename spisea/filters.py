@@ -70,7 +70,10 @@ def get_2mass_filt(name):
 
     wavelength = t[t.keys()[0]]
     transmission = t[t.keys()[1]]
-
+    # Transmission is scaled with lambda in the file, divide it out and renormalize
+    transmission = transmission/wavelength
+    transmission = transmission/np.max(transmission)
+    
     # Convert wavelength to Angstroms
     wavelength = wavelength * 10**4 * u.AA
     transmission = transmission * su.THROUGHPUT  
