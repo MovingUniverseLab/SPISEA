@@ -245,9 +245,11 @@ Example: ``'naco,H'``
 
 **OGLE**
 
-OGLE-IV filters for V- and I-band from `SVO <https://svo2.cab.inta-csic.es/theory/fps/index.php?mode=browse&gname=LCO&gname2=OGLE-IV&asttype=>`_
+V- and I-band from `OGLE-IV documentation <https://ogle.astrouw.edu.pl/main/OGLEIV/mosaic.html>`_
 
 The R-wide filter is new in 2026, profile provided by Andrzej Udalski
+
+We have scaled these by the mean of the min and max measured QE from the OGLE-IV docs.
 
 Filters: V, I, Rw
 
