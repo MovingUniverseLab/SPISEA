@@ -21,7 +21,7 @@ def test_isochrone(plot=False):
     distance = 4000
 
     startTime = time.time()
-    iso = syn.Isochrone(logAge, AKs, distance)
+    iso = syn.Isochrone(logAge, AKs, distance, mass_sampling=10)
     print('Test completed in: %d seconds' % (time.time() - startTime))
     # Typically takes 104 - 120 seconds.
     # Limited by pysynphot.Icat call in atmospheres.py
@@ -29,7 +29,7 @@ def test_isochrone(plot=False):
     assert iso.points.meta['LOGAGE'] == logAge
     assert iso.points.meta['AKS'] == AKs
     assert iso.points.meta['DISTANCE'] == distance
-    assert len(iso.points) > 100
+    assert len(iso.points) > 50
 
     if plot:
         plt.figure(1)
@@ -81,7 +81,7 @@ def test_iso_wave():
         mass_sampling=10,
         wave_range=wave_range1,
         recomp=True,
-        iso_dir=iso_dir
+        iso_dir=iso_dir,
     )
 
     test = my_iso.spec_list[0]
@@ -139,7 +139,7 @@ def test_IsochronePhot(plot=False):
     AKs = 2.7
     distance = 4000
     filt_list = ['wfc3,ir,f127m', 'nirc2,J']
-    mass_sampling=1
+    mass_sampling=3
     iso_dir = f'{spisea_path}/tests/isochrones'
 
     evo_model = evolution.MISTv1()

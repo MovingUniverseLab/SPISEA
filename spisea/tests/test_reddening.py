@@ -304,6 +304,9 @@ def test_RedLawDeliwala26():
         metallicity=0.3,
     )
 
+    # Define the D26 extinction law
+    law = reddening.RedLawDeliwala26()
+
     #---End-to-End test of the extinction law ratios---#
     # Start with the approximate extinction at the GC and apply to the star
     d26_extinction = law.reddening(2.5)
@@ -353,7 +356,6 @@ def test_RedLawDeliwala26():
     #spectrum_before = rc_spectrum * existing_extinction
     #
     ## Add a small amount of dust with the Deliwala+26 law.
-    #law = reddening.RedLawDeliwala26()
     #extra_extinction = law.reddening(0.001)
     #spectrum_after = spectrum_before * extra_extinction
     #
