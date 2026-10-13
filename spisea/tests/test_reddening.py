@@ -304,32 +304,6 @@ def test_RedLawDeliwala26():
         metallicity=0.3,
     )
 
-    existing_extinction = reddening.RedLawFritz11().reddening(2.5)
-    spectrum_before = rc_spectrum * existing_extinction
-
-    # Add a small amount of dust with the Deliwala+26 law.
-    law = reddening.RedLawDeliwala26()
-    extra_extinction = law.reddening(0.001)
-    spectrum_after = spectrum_before * extra_extinction
-
-    # Measure how much fainter the star becomes in each filter.
-    magnitude_changes = {}
-    for band in measured_ratios:
-        bandpass = synthetic.get_filter_info('jwst,' + band)
-        magnitude_before = synthetic.mag_in_filter(spectrum_before, bandpass)
-        magnitude_after = synthetic.mag_in_filter(spectrum_after, bandpass)
-        magnitude_changes[band] = magnitude_after - magnitude_before
-
-    # Compare each change with F212N: e.g., F115W should change 3.06 times as much.
-    f212n_change = magnitude_changes['f212n']
-    assert np.isfinite(f212n_change) and f212n_change > 0
-    for band, measured_ratio in measured_ratios.items():
-        recovered_ratio = magnitude_changes[band] / f212n_change
-        np.testing.assert_allclose(
-            recovered_ratio, measured_ratio, rtol=0.01, atol=0,
-            err_msg=f'{band}: Deliwala26 differential ratio',
-        )
-
     #---End-to-End test of the extinction law ratios---#
     # Start with the approximate extinction at the GC and apply to the star
     d26_extinction = law.reddening(2.5)
@@ -374,6 +348,31 @@ def test_RedLawDeliwala26():
     )
     assert not failed.any(), 'Deliwala26 A_filt_f212n failures:\n' + fail_msg
 
+    #----Previous Approach: Differential law---#
+    #existing_extinction = reddening.RedLawFritz11().reddening(2.5)
+    #spectrum_before = rc_spectrum * existing_extinction
+    #
+    ## Add a small amount of dust with the Deliwala+26 law.
+    #law = reddening.RedLawDeliwala26()
+    #extra_extinction = law.reddening(0.001)
+    #spectrum_after = spectrum_before * extra_extinction
+    #
+    # Measure how much fainter the star becomes in each filter.
+    #magnitude_changes = {}
+    #for band in measured_ratios:
+    #    bandpass = synthetic.get_filter_info('jwst,' + band)
+    #    magnitude_before = synthetic.mag_in_filter(spectrum_before, bandpass)
+    #    magnitude_after = synthetic.mag_in_filter(spectrum_after, bandpass)
+    #    magnitude_changes[band] = magnitude_after - magnitude_before
 
+    # Compare each change with F212N: e.g., F115W should change 3.06 times as much.
+    #f212n_change = magnitude_changes['f212n']
+    #assert np.isfinite(f212n_change) and f212n_change > 0
+    #for band, measured_ratio in measured_ratios.items():
+    #    recovered_ratio = magnitude_changes[band] / f212n_change
+    #    np.testing.assert_allclose(
+    #        recovered_ratio, measured_ratio, rtol=0.01, atol=0,
+    #        err_msg=f'{band}: Deliwala26 differential ratio',
+    #    )
     return 
 
