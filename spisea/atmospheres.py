@@ -149,7 +149,7 @@ def get_atmosphere_grid(model_dir):
 
     return teff_arr, z_arr, logg_arr
 
-def get_kurucz_atmosphere(metallicity=0, temperature=20000, gravity=4, rebin=False, verbose=False):
+def get_kurucz_atmosphere(metallicity=0, temperature=20000, gravity=4, rebin=False, verbose=True):
     """
     Return atmosphere from the Kurucz pysnphot grid
     (`Kurucz 1993 <http://www.stsci.edu/hst/observatory/crds/k93models.html>`_).
@@ -213,7 +213,7 @@ def get_kurucz_atmosphere_grid():
     teff_arr, z_arr, logg_arr = get_atmosphere_grid('k93models')
     return teff_arr, z_arr, logg_arr
 
-def get_castelli_atmosphere(metallicity=0, temperature=20000, gravity=4, rebin=False, verbose=False):
+def get_castelli_atmosphere(metallicity=0, temperature=20000, gravity=4, rebin=False, verbose=True):
     """
     Return atmospheres from the synphot ATLAS9 atlas
     (`Castelli & Kurucz 2004 <http://www.stsci.edu/hst/observatory/crds/castelli_kurucz_atlas.html>`_).
@@ -282,7 +282,7 @@ def get_castelli_atmosphere_grid():
     teff_arr, z_arr, logg_arr = get_atmosphere_grid('ck04models')
     return teff_arr, z_arr, logg_arr
 
-def get_nextgen_atmosphere(metallicity=0, temperature=5000, gravity=4, rebin=False, verbose=False):
+def get_nextgen_atmosphere(metallicity=0, temperature=5000, gravity=4, rebin=False, verbose=True):
     """
     metallicity = [M/H] (def = 0)
     temperature = Kelvin (def = 5000)
@@ -321,7 +321,7 @@ def get_nextgen_atmosphere_grid():
     teff_arr, z_arr, logg_arr = get_atmosphere_grid('nextgen')
     return teff_arr, z_arr, logg_arr
 
-def get_amesdusty_atmosphere(metallicity=0, temperature=5000, gravity=4, rebin=False, verbose=False):
+def get_amesdusty_atmosphere(metallicity=0, temperature=5000, gravity=4, rebin=False, verbose=True):
     """
     metallicity = [M/H] (def = 0)
     temperature = Kelvin (def = 5000)
@@ -350,7 +350,7 @@ def get_amesdusty_atmosphere_grid():
     return teff_arr, z_arr, logg_arr
 
 def get_phoenix_atmosphere(metallicity=0, temperature=5000, gravity=4,
-                               rebin=False, verbose=False):
+                               rebin=False, verbose=True):
     """
     Return atmosphere from the synphot
     `PHOENIX atlas <http://www.stsci.edu/hst/observatory/crds/SIfileInfo/synphottables/index_phoenix_models_html>`_.
@@ -530,7 +530,7 @@ def get_cmfgenRot_atmosphere_closest(metallicity=0, temperature=24000, gravity=4
     return sp
 
 
-def get_cmfgenNoRot_atmosphere(metallicity=0, temperature=22500, gravity=3.98, rebin=True, verbose=False):
+def get_cmfgenNoRot_atmosphere(metallicity=0, temperature=22500, gravity=3.98, rebin=True, verbose=True):
     """
     metallicity = [M/H] (def = 0)
     temperature = Kelvin (def = 24000)
@@ -570,7 +570,7 @@ def get_cmfgenNoRot_atmosphere_grid(rebin=True):
     return teff_arr, z_arr, logg_arr
 
 # Redefinition of get_cmfgenNoRot_atmosphere and get_cmfgenNoRot_atmosphere_grid
-def get_cmfgenNoRot_atmosphere(metallicity=0, temperature=30000, gravity=4.14, verbose=False):
+def get_cmfgenNoRot_atmosphere(metallicity=0, temperature=30000, gravity=4.14, verbose=True):
     """
     metallicity = [M/H] (def = 0)
     temperature = Kelvin (def = 30000)
@@ -598,7 +598,7 @@ def get_cmfgenNoRot_atmosphere_grid():
     teff_arr, z_arr, logg_arr = get_atmosphere_grid('cmfgenF15_noRot')
     return teff_arr, z_arr, logg_arr
 
-def get_phoenixv16_atmosphere(metallicity=0, temperature=4000, gravity=4, rebin=True, verbose=False):
+def get_phoenixv16_atmosphere(metallicity=0, temperature=4000, gravity=4, rebin=True, verbose=True):
     """
     Return PHOENIX v16 atmospheres from
     `Husser et al. 2013 <https://ui.adsabs.harvard.edu/abs/2013A%26A...553A...6H/abstract>`_.
@@ -686,7 +686,7 @@ def get_phoenixv16_atmosphere_grid(rebin=True):
     return teff_arr, z_arr, logg_arr
 
 
-def get_BTSettl_2015_atmosphere(metallicity=0, temperature=2500, gravity=4, rebin=True, verbose=False):
+def get_BTSettl_2015_atmosphere(metallicity=0, temperature=2500, gravity=4, rebin=True, verbose=True):
     """
     Return atmosphere from CIFIST2011_2015 grid
     (`Allard et al. 2012 <https://ui.adsabs.harvard.edu/abs/2012RSPTA.370.2765A/abstract>`_,
@@ -773,7 +773,7 @@ def get_BTSettl_2015_atmosphere_grid(rebin=True):
     return teff_arr, z_arr, logg_arr
 
 
-def get_BTSettl_atmosphere(metallicity=0, temperature=2500, gravity=4.5, rebin=True, verbose=False):
+def get_BTSettl_atmosphere(metallicity=0, temperature=2500, gravity=4.5, rebin=True, verbose=True):
     """
     Return atmosphere from CIFIST2011 grid
     (`Allard et al. 2012 <https://ui.adsabs.harvard.edu/abs/2012RSPTA.370.2765A/abstract>`_)
@@ -879,7 +879,7 @@ def get_BTSettl_atmosphere(metallicity=0, temperature=2500, gravity=4.5, rebin=T
 
     return sp
 
-def get_Meisner2023_atmosphere(metallicity=0, temperature=1000, gravity=4.5, rebin=True, verbose=False):
+def get_Meisner2023_atmosphere(metallicity=0, temperature=1000, gravity=4.5, rebin=True, verbose=True):
     """
     Return atmosphere from Meisner2023 grid
     (`Meisner et al. 2023 <https://ui.adsabs.harvard.edu/abs/2023AJ....166...57M/abstract>`_)
@@ -933,7 +933,7 @@ def get_Meisner2023_atmosphere_grid(rebin=True):
     teff_arr, z_arr, logg_arr = get_atmosphere_grid(atm_name)
     return teff_arr, z_arr, logg_arr
 
-def get_Phillips2020_atmosphere(metallicity=0, temperature=1000, gravity=4.5, rebin=True, verbose=False):
+def get_Phillips2020_atmosphere(metallicity=0, temperature=1000, gravity=4.5, rebin=True, verbose=True):
     """
         Return atmosphere from Phillips et al., 2020 using ATMO model
         (`Phillips et al. 2020 <https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract>`_)
@@ -1044,7 +1044,7 @@ def get_BTSettl_atmosphere_grid(rebin=True):
     return teff_arr, z_arr, logg_arr
 
 
-def get_wdKoester_atmosphere(metallicity=0, temperature=20000, gravity=7, verbose=False):
+def get_wdKoester_atmosphere(metallicity=0, temperature=20000, gravity=7, verbose=True):
     """
     Return white dwarf atmospheres from
     `Koester et al. 2010 <https://ui.adsabs.harvard.edu/abs/2010MmSAI..81..921K/abstract>`_
@@ -1086,7 +1086,7 @@ def get_wdKoester_atmosphere_grid():
     teff_arr, z_arr, logg_arr = get_atmosphere_grid('wdKoester')
     return teff_arr, z_arr, logg_arr
 
-def get_atlas_phoenix_atmosphere(metallicity=0, temperature=5250, gravity=4, verbose=False):
+def get_atlas_phoenix_atmosphere(metallicity=0, temperature=5250, gravity=4, verbose=True):
     """
     Return atmosphere that is a linear merge of atlas ck04 model and phoenixV16.
 
@@ -1126,7 +1126,7 @@ def get_atlas_phoenix_atmosphere_grid():
     teff_arr, z_arr, logg_arr = get_atmosphere_grid('merged_atlas_phoenix')
     return teff_arr, z_arr, logg_arr
         
-def get_BTSettl_phoenix_atmosphere(metallicity=0, temperature=5250, gravity=4, verbose=False):
+def get_BTSettl_phoenix_atmosphere(metallicity=0, temperature=5250, gravity=4, verbose=True):
     """
     Return atmosphere that is a linear merge of BTSettl_CITFITS2011_2015 model
     and phoenixV16.
@@ -1169,7 +1169,7 @@ def get_BTSettl_phoenix_atmosphere_grid():
     return teff_arr, z_arr, logg_arr
         
     
-def get_BTSettl_meisner_atmosphere(metallicity=0, temperature=5250, gravity=4, verbose=False):
+def get_BTSettl_meisner_atmosphere(metallicity=0, temperature=5250, gravity=4, verbose=True):
     """
     Return atmosphere that is a linear merge of BTSettl_CITFITS2011_2015 model
     and Meisner2023.
@@ -2065,7 +2065,7 @@ def rebin_cmfgen(cdbs_path, rot=True):
     return
 
 
-def organize_PHOENIXv16_atmospheres(path_to_dir, met_str='m00', verbose=False):
+def organize_PHOENIXv16_atmospheres(path_to_dir, met_str='m00', verbose=True):
     """
     Construct the Phoenix Husser+13 atmopsheres for each model. Combines the
     fluxes from the *HiRES.fits files and the wavelengths of the
@@ -2198,7 +2198,7 @@ def make_PHOENIXv16_catalog(path_to_dir, met_str='m00'):
 
     return
 
-def cdbs_PHOENIXv16(path_to_cdbs_dir, verbose=False):
+def cdbs_PHOENIXv16(path_to_cdbs_dir, verbose=True):
     """
     Put the PHOENIXv16 (Husser+13) fits files into cdbs format. This primarily
     consists of adjusting the flux units from [erg/s/cm^2/cm] to [erg/s/cm^2/A]
@@ -2276,7 +2276,7 @@ def cdbs_PHOENIXv16(path_to_cdbs_dir, verbose=False):
 
     return
 
-def rebin_phoenixV16(cdbs_path, verbose=False):
+def rebin_phoenixV16(cdbs_path, verbose=True):
     """
     Rebin phoenixV16 models to atlas ck04 resolution; this makes
     spectrophotometry MUCH faster
@@ -2385,7 +2385,7 @@ def rebin_phoenixV16(cdbs_path, verbose=False):
 
     return
 
-def organize_BTSettl_2015_atmospheres(path_to_dir, verbose=False):
+def organize_BTSettl_2015_atmospheres(path_to_dir, verbose=True):
     """
     Construct cdbs-ready BTSettl_CIFITS_2011_2015 atmospheres for each model.
     Will convert wavelength units to angstroms and flux units to [erg/s/cm^2/A]
@@ -2486,7 +2486,7 @@ def make_BTSettl_2015_catalog(path_to_dir):
 
     return
 
-def rebin_BTSettl_2015(cdbs_path=os.environ['PYSYN_CDBS'], verbose=False):
+def rebin_BTSettl_2015(cdbs_path=os.environ['PYSYN_CDBS'], verbose=True):
     """
     Rebin BTSettle_CIFITS2011_2015 models to atlas ck04 resolution; this makes
     spectrophotometry MUCH faster
@@ -2541,7 +2541,7 @@ def rebin_BTSettl_2015(cdbs_path=os.environ['PYSYN_CDBS'], verbose=False):
 
     return
 
-def make_wavelength_unique(files, dirname, verbose=False):
+def make_wavelength_unique(files, dirname, verbose=True):
     """
     Helper function to go through each BTSettl spectrum and ensure that
     each wavelength point is unique. This is required for rebinning to work.
@@ -2591,7 +2591,7 @@ def make_wavelength_unique(files, dirname, verbose=False):
 
     return
 
-def organize_BTSettl_atmospheres(verbose=False):
+def organize_BTSettl_atmospheres(verbose=True):
     """
     Construct cdbs-ready atmospheres for the BTSettl grid (CIFITS2011).
     The code expects tp be run in cdbs/grid/BTSettl, and expects that the
@@ -2660,7 +2660,7 @@ def organize_BTSettl_atmospheres(verbose=False):
 
     return
 
-def make_BTSettl_catalog(verbose=False):
+def make_BTSettl_catalog(verbose=True):
     """
     Create cdbs catalog.fits of BTSettl grid.
     THIS IS STEP 2, after organize_BTSettl_atmospheres has
@@ -2724,7 +2724,7 @@ def make_BTSettl_catalog(verbose=False):
 
     return
 
-def rebin_BTSettl(make_unique=False, verbose=False):
+def rebin_BTSettl(make_unique=False, verbose=True):
     """
     Rebin BTSettle models to atlas ck04 resolution; this makes
     spectrophotometry MUCH faster
@@ -2798,7 +2798,7 @@ def rebin_BTSettl(make_unique=False, verbose=False):
 
     return
 
-def organize_all_Meisner2023_atmospheres(verbose=False):
+def organize_all_Meisner2023_atmospheres(verbose=True):
     """
     Construct cdbs-ready atmospheres for the Meisner2023 grid.
     The code expects tp be run in cdbs/grid/Meisner2023, and expects that the
@@ -2853,7 +2853,7 @@ def organize_all_Meisner2023_atmospheres(verbose=False):
 
     return
 
-def make_Meisner2023_catalog(verbose=False):
+def make_Meisner2023_catalog(verbose=True):
     """
     Create cdbs catalog.fits of Meisner2023 grid.
     THIS IS STEP 2, after organize_Meisner2023_atmospheres has
@@ -2912,7 +2912,7 @@ def make_Meisner2023_catalog(verbose=False):
 
     return
 
-def rebin_Meisner2023(make_unique=False, verbose=False):
+def rebin_Meisner2023(make_unique=False, verbose=True):
     """
     Rebin Meisner2023 models to atlas ck04 resolution; this makes
     spectrophotometry MUCH faster
@@ -2982,7 +2982,7 @@ def rebin_Meisner2023(make_unique=False, verbose=False):
 
 
 
-def organize_WDKoester_atmospheres(path_to_dir, verbose=False):
+def organize_WDKoester_atmospheres(path_to_dir, verbose=True):
     """
     Construct cdbs-ready wdKoester WD atmospheres for each model. (from Koester 2010)
     Will convert wavelength units to angstroms and flux units to [erg/s/cm^2/A]
@@ -3071,7 +3071,7 @@ def make_WDKoester_catalog(path_to_dir):
 
     return
 
-def rebin_WDKoester(cdbs_path=os.environ['PYSYN_CDBS'], verbose=False):
+def rebin_WDKoester(cdbs_path=os.environ['PYSYN_CDBS'], verbose=True):
     """
     Rebin wdKoester models to atlas ck04 resolution; this makes
     spectrophotometry MUCH faster
