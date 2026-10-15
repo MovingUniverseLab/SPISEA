@@ -1924,6 +1924,412 @@ class COSMIC(StellarEvolution):
 #==============================#
 # Merged model classes
 #==============================#
+class MergedFlameSkimmerRedDiamondbackMISTv12(StellarEvolution):
+    """
+    Load the merged Sonora Flame Skimmer, Sonora Red Diamondback, and
+    MIST v1.2 evolution grid.
+
+    Flame Skimmer supplies the low-mass evolution through 9 Gyr. At older
+    ages Red Diamondback is used only at its native metallicities (-0.5, 0.0,
+    and +0.5); the other merged-grid metallicities retain explicitly flagged
+    Flame age extrapolations. MIST v1.2 supplies the stellar sequence.
+
+    The merged grid covers [M/H] = -1.0 to +0.5 in 0.25-dex steps. For a
+    request below -1.0, the best available [M/H]=-1.0 brown-dwarf evolution
+    rows are reused as an explicitly warned proxy and joined with MIST v1.2 at
+    the requested metallicity. Photometry can remain unavailable for old or
+    low-metallicity brown dwarfs when the atmosphere grid has no matching
+    spectrum; the evolution loader does not invent fluxes.
+
+    Parameters
+    ----------
+    model_dir : str or path-like, optional
+        Root directory containing the seven metallicity subdirectories from
+        ``iso/z0014`` through ``iso/z045``. When omitted, use the installed SPISEA model location
+        ``evolution/merged/flame_red_diamondback_mist_v12``.
+    """
+
+    def __init__(self, model_dir=None):
+        self.z_solar = 0.0142
+        self.metallicity_list = np.array(
+            [-1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5], dtype=float
+        )
+        z_list = list(self.z_solar * 10.0**self.metallicity_list)
+
+        regular_ages = np.round(np.arange(5.0, 10.15 + 0.025, 0.05), 2)
+        exact_ages = np.array([
+            np.log10(9.0e9),
+            np.log10(15.0e9),
+        ])
+        age_list = np.array(sorted(set(regular_ages) | set(exact_ages)))
+
+        # The mass sampling varies with age, so there is no single exact list.
+        mass_list = []
+
+        if model_dir is None:
+            model_dir = os.path.join(
+                models_dir,
+                'merged',
+                'flame_red_diamondback_mist_v12',
+            )
+            self._uses_installed_grid = True
+        else:
+            model_dir = os.path.abspath(os.fspath(model_dir))
+            self._uses_installed_grid = False
+
+        StellarEvolution.__init__(
+            self,
+            model_dir,
+            age_list,
+            mass_list,
+            z_list,
+        )
+        self.model_version_name = (
+            'MergedFlameSkimmerRedDiamondbackMISTv12'
+        )
+        self.z_solar = 0.0142
+        self.metallicity_list = np.array(
+            [-1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5], dtype=float
+        )
+        self.z_file_map = {
+            -1.0: 'z0014',
+            -0.75: 'z0025',
+            -0.5: 'z0045',
+            -0.25: 'z0080',
+            0.0: 'z014',
+            0.25: 'z025',
+            0.5: 'z045',
+        }
+        self._mist_only_evolution = None
+        self._mist_only_min_metallicity = -4.0
+        self._low_metallicity_warning_emitted = False
+
+        # Minimum version of the currently installed SPISEA evolution grid.
+        self.evo_grid_min = 3.0
+
+    @staticmethod
+    def _isochrone_filename(log_age):
+        if np.isclose(log_age, np.log10(9.0e9), rtol=0.0, atol=1.0e-8):
+            return 'iso_9.954243.fits'
+        if np.isclose(log_age, np.log10(15.0e9), rtol=0.0, atol=1.0e-8):
+            return 'iso_10.176091.fits'
+        return 'iso_{0:.2f}.fits'.format(log_age)
+
+    def _read_static_merged_isochrone(self, log_age, metallicity):
+        iso_file = self._isochrone_filename(log_age)
+        full_iso_file = os.path.join(
+            self.model_dir,
+            'iso',
+            self.z_file_map[float(metallicity)],
+            iso_file,
+        )
+        if not os.path.isfile(full_iso_file):
+            raise FileNotFoundError(
+                'Isochrone file not found: {0}'.format(full_iso_file)
+            )
+        return Table.read(full_iso_file, format='fits')
+
+    @staticmethod
+    def _standardize_proxy_component(frame, model_ref):
+        output = frame.copy()
+        required_input = {'mass', 'mass_current', 'logL', 'logT'}
+        missing_input = sorted(required_input - set(output.columns))
+        if missing_input:
+            raise ValueError(
+                'Low-metallicity proxy component is missing columns: {0}'
+                .format(', '.join(missing_input))
+            )
+        # SPISEA's ordinary MIST loader does not always expose logR. Derive
+        # it from the Stefan-Boltzmann identity rather than rejecting an
+        # otherwise valid requested-metallicity MIST isochrone. Likewise,
+        # derive logg only when the delegated loader did not provide it.
+        if 'logR' not in output:
+            output['logR'] = (
+                0.5 * pd.to_numeric(output['logL'], errors='raise')
+                - 2.0 * (
+                    pd.to_numeric(output['logT'], errors='raise')
+                    - np.log10(5772.0)
+                )
+            )
+        if 'logg' not in output:
+            output['logg'] = (
+                4.438
+                + np.log10(pd.to_numeric(output['mass_current'], errors='raise'))
+                - 2.0 * pd.to_numeric(output['logR'], errors='raise')
+            )
+        required = {'mass', 'mass_current', 'logL', 'logT', 'logR', 'logg'}
+        missing = sorted(required - set(output.columns))
+        if missing:
+            raise ValueError(
+                'Low-metallicity proxy component is missing columns: {0}'
+                .format(', '.join(missing))
+            )
+        if 'logT_WR' not in output:
+            output['logT_WR'] = output['logT']
+        if 'phase' not in output:
+            output['phase'] = 0
+        if 'isWR' not in output:
+            output['isWR'] = False
+        if 'model_ref' not in output:
+            output['model_ref'] = model_ref
+        if 'is_interpolated' not in output:
+            output['is_interpolated'] = False
+        if 'is_extrapolated' not in output:
+            output['is_extrapolated'] = False
+        if 'interp_axis' not in output:
+            output['interp_axis'] = 'none'
+        if 'extrap_axis' not in output:
+            output['extrap_axis'] = 'none'
+        return output
+
+    def _low_metallicity_proxy_isochrone(
+            self, requested_age, actual_log_age, requested_metallicity):
+        """Combine -1 brown dwarfs with MIST at the requested [M/H]."""
+        if not self._low_metallicity_warning_emitted:
+            warnings.warn(
+                'Requested [M/H]={0:+.2f} is below the Flame Skimmer '
+                'limit. Brown-dwarf evolution is approximated with the '
+                '[M/H]=-1.00 merged grid, while MIST v1.2 uses the requested '
+                'metallicity. Brown-dwarf photometry may be unavailable '
+                'where the atmosphere grid has no matching spectrum.'
+                .format(requested_metallicity),
+                UserWarning,
+                stacklevel=3,
+            )
+            self._low_metallicity_warning_emitted = True
+
+        minus_one = self._read_static_merged_isochrone(
+            actual_log_age, -1.0
+        ).to_pandas()
+        minus_one = self._standardize_proxy_component(
+            minus_one, 'Sonora [M/H]=-1 brown-dwarf proxy'
+        )
+        brown_dwarfs = minus_one.loc[
+            pd.to_numeric(minus_one['mass'], errors='coerce') <= 0.080000001
+        ].copy()
+        if len(brown_dwarfs) < 4:
+            raise ValueError(
+                'The [M/H]=-1 merged isochrone has too few brown-dwarf rows '
+                'for the low-metallicity proxy.'
+            )
+        brown_dwarfs['model_ref'] = 'Sonora [M/H]=-1 brown-dwarf proxy'
+
+        if self._mist_only_evolution is None:
+            self._mist_only_evolution = MISTv1(
+                version=1.2, synthpop_extension=False
+            )
+        delegated_age = float(10.0**actual_log_age)
+        mist_table = self._mist_only_evolution.isochrone(
+            age=delegated_age,
+            metallicity=requested_metallicity,
+        )
+        mist = self._standardize_proxy_component(
+            mist_table.to_pandas(), 'original MIST v1.2'
+        )
+        mist = mist.loc[
+            pd.to_numeric(mist['mass'], errors='coerce') > 0.080000001
+        ].sort_values('mass', kind='stable').reset_index(drop=True)
+        brown_dwarfs = brown_dwarfs.sort_values(
+            'mass', kind='stable'
+        ).reset_index(drop=True)
+        if len(mist) < 4:
+            raise ValueError(
+                'MIST v1.2 has too few rows above 0.08 Msun for the '
+                'low-metallicity proxy junction.'
+            )
+
+        low_edge = float(brown_dwarfs['mass'].iloc[-1])
+        high_edge = float(mist['mass'].iloc[0])
+        if high_edge <= low_edge:
+            raise ValueError(
+                'The low-metallicity brown-dwarf and MIST components overlap '
+                'or are not ordered in initial mass.'
+            )
+        step = 0.002
+        first = math.ceil((low_edge + 1.0e-12) / step) * step
+        bridge_mass = np.round(
+            np.arange(first, high_edge - 1.0e-12, step), 12
+        )
+        if len(bridge_mass) == 0:
+            raise ValueError(
+                'No PCHIP bridge rows fit inside the low-metallicity mass gap.'
+            )
+
+        low_anchor = brown_dwarfs.tail(4)
+        high_anchor = mist.head(4)
+        anchor_mass = np.concatenate([
+            low_anchor['mass'].to_numpy(dtype=float),
+            high_anchor['mass'].to_numpy(dtype=float),
+        ])
+        if not np.all(np.diff(anchor_mass) > 0):
+            raise ValueError(
+                'Low-metallicity PCHIP anchors are not strictly increasing.'
+            )
+        bridge = pd.DataFrame({'mass': bridge_mass})
+        for quantity in ('logL', 'logT'):
+            anchor_values = np.concatenate([
+                low_anchor[quantity].to_numpy(dtype=float),
+                high_anchor[quantity].to_numpy(dtype=float),
+            ])
+            function = interpolate.PchipInterpolator(
+                anchor_mass, anchor_values, extrapolate=False
+            )
+            bridge[quantity] = function(bridge_mass)
+            lower = min(float(anchor_values[3]), float(anchor_values[4]))
+            upper = max(float(anchor_values[3]), float(anchor_values[4]))
+            values = bridge[quantity].to_numpy(dtype=float)
+            if values.min() < lower - 1.0e-10 or values.max() > upper + 1.0e-10:
+                raise ValueError(
+                    'Low-metallicity PCHIP {0} left its endpoint range.'
+                    .format(quantity)
+                )
+
+        solar_teff = 5772.0
+        solar_logg = 4.438
+        bridge['mass_current'] = bridge['mass']
+        bridge['logR'] = (
+            0.5 * bridge['logL']
+            - 2.0 * (bridge['logT'] - np.log10(solar_teff))
+        )
+        bridge['logg'] = (
+            solar_logg + np.log10(bridge['mass_current'])
+            - 2.0 * bridge['logR']
+        )
+        bridge['logT_WR'] = bridge['logT']
+        bridge['phase'] = 99
+        bridge['isWR'] = False
+        bridge['model_ref'] = 'PCHIP [M/H]=-1 proxy-to-MIST bridge'
+        bridge['is_interpolated'] = True
+        bridge['is_extrapolated'] = bool(
+            brown_dwarfs['is_extrapolated'].astype(bool).any()
+        )
+        bridge['interp_axis'] = 'mass'
+        bridge['extrap_axis'] = np.where(
+            bridge['is_extrapolated'], 'age', 'none'
+        )
+
+        columns = [
+            'mass', 'mass_current', 'logL', 'logT', 'logR', 'logg',
+            'logT_WR', 'phase', 'isWR', 'model_ref', 'is_interpolated',
+            'is_extrapolated', 'interp_axis', 'extrap_axis',
+        ]
+        combined = pd.concat(
+            [
+                brown_dwarfs.reindex(columns=columns),
+                bridge.reindex(columns=columns),
+                mist.reindex(columns=columns),
+            ],
+            ignore_index=True,
+        ).sort_values('mass', kind='stable').reset_index(drop=True)
+        numeric = combined[
+            ['mass', 'mass_current', 'logL', 'logT', 'logR', 'logg']
+        ].to_numpy(dtype=float)
+        if not np.isfinite(numeric).all():
+            raise ValueError(
+                'Low-metallicity proxy isochrone contains non-finite '
+                'evolution values.'
+            )
+        if not np.all(np.diff(combined['mass'].to_numpy(dtype=float)) > 0):
+            raise ValueError(
+                'Low-metallicity proxy isochrone masses are not strictly '
+                'increasing.'
+            )
+
+        combined['phase'] = combined['phase'].astype(int)
+        for name in ('isWR', 'is_interpolated', 'is_extrapolated'):
+            combined[name] = combined[name].fillna(False).astype(bool)
+        for name in ('model_ref', 'interp_axis', 'extrap_axis'):
+            combined[name] = combined[name].fillna('none').astype(str)
+
+        iso = Table.from_pandas(combined)
+        iso.meta['log_age'] = math.log10(requested_age)
+        iso.meta['log_age_act'] = actual_log_age
+        iso.meta['metallicity_in'] = requested_metallicity
+        iso.meta['metallicity_act'] = requested_metallicity
+        iso.meta['brown_dwarf_source_metallicity'] = -1.0
+        iso.meta['metallicity_policy'] = (
+            '[M/H]=-1 brown-dwarf evolution proxy plus MIST v1.2 at the '
+            'requested metallicity'
+        )
+        iso.meta['brown_dwarf_photometry'] = (
+            'may be unavailable where atmosphere coverage is missing'
+        )
+        return iso
+
+    def isochrone(self, age=1.e8, metallicity=0.0):
+        """Return the nearest available isochrone for age in years."""
+        if age <= 0:
+            raise ValueError('Age must be positive and in years.')
+
+        if self._uses_installed_grid:
+            self.evo_grid_num = check_evo_grid_number(
+                self.evo_grid_min,
+                models_dir,
+            )
+
+        log_age = math.log10(age)
+        age_array = np.asarray(self.age_list, dtype=float)
+        if log_age < age_array.min() or log_age > age_array.max():
+            raise ValueError(
+                'Requested logAge {0} is out of bounds between {1} and {2}.'
+                .format(log_age, age_array.min(), age_array.max())
+            )
+
+        age_index = np.argmin(np.abs(age_array - log_age))
+        actual_log_age = float(age_array[age_index])
+
+        if metallicity < self.metallicity_list.min():
+            if metallicity < self._mist_only_min_metallicity:
+                raise ValueError(
+                    'Requested metallicity {0} is below the MIST v1.2 '
+                    'minimum of {1}.'.format(
+                        metallicity, self._mist_only_min_metallicity
+                    )
+                )
+            return self._low_metallicity_proxy_isochrone(
+                requested_age=float(age),
+                actual_log_age=actual_log_age,
+                requested_metallicity=float(metallicity),
+            )
+
+        if metallicity > self.metallicity_list.max():
+            raise ValueError(
+                'Requested metallicity {0} is above the merged-grid maximum '
+                'of {1}.'.format(
+                    metallicity,
+                    self.metallicity_list.max(),
+                )
+            )
+
+        metallicity_index = np.argmin(
+            np.abs(self.metallicity_list - metallicity)
+        )
+        actual_metallicity = float(
+            self.metallicity_list[metallicity_index]
+        )
+
+        iso = self._read_static_merged_isochrone(
+            actual_log_age, actual_metallicity
+        )
+        required_columns = {
+            'mass', 'mass_current', 'logL', 'logT', 'logR', 'logg',
+            'logT_WR', 'phase', 'isWR',
+        }
+        missing = sorted(required_columns - set(iso.colnames))
+        if missing:
+            raise ValueError(
+                'Merged isochrone is missing columns: {0}'.format(
+                    ', '.join(missing)
+                )
+            )
+
+        iso.meta['log_age'] = log_age
+        iso.meta['log_age_act'] = actual_log_age
+        iso.meta['metallicity_in'] = metallicity
+        iso.meta['metallicity_act'] = actual_metallicity
+        return iso
+
+
 class MergedPhillipsBaraffePisaEkstromParsec(StellarEvolution):
     """
     This is a combination of several different evolution models:
