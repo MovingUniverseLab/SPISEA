@@ -114,7 +114,7 @@ class RedLawBase(ExtinctionCurve):
         AKs : float
             Total extinction in AKs, in mags
         wavelengths : numpy or Quantity array
-            Wavelength array in Angstrom or Quantity. If not provided, the native 
+            Wavelength array in Angstrom or Quantity. If not provided, the native
             wavelength array is used, which is in Angstrom..
 
         Returns
@@ -157,8 +157,8 @@ class RedLawBase(ExtinctionCurve):
         # Throughputs but only at the input wavelengths. Now rescaled to AKs.
         thru = 10 ** (-0.4 * A_lambda_new) * su.THROUGHPUT
 
-        return ExtinctionCurve(ExtinctionModel1D, 
-                               points=x, 
+        return ExtinctionCurve(ExtinctionModel1D,
+                               points=x,
                                lookup_table=thru,
                                meta=self.meta)
 
@@ -241,11 +241,11 @@ class RedLawNishiyama09(RedLawBase):
     <https://ui.adsabs.harvard.edu/abs/2009ApJ...696.1407N/abstract>`_,
     combined with the Av / AKs value from `Nishiyama et al. 2008
     <https://ui.adsabs.harvard.edu/abs/2008ApJ...680.1174N/abstract>`_.
-    This law is defined between 0.5 - 8.0 microns.
+    This law is defined between 0.551 - 8.0 microns.
 
     This law is constructed in 3 segments:
 
-    * 0.5 -- 1.24 microns: a linear interpolation in log(1/lambda) vs log(A/AKs) space
+    * 0.551 -- 1.24 microns: a linear interpolation in log(1/lambda) vs log(A/AKs) space
       between the Av/AKs and AJ/AKs values
     * 1.25 -- 2.14 microns: a power law with index of 2.0
     * 2.14 -- 8.0 microns: a spline interpolation between the observed extinction values
@@ -256,7 +256,7 @@ class RedLawNishiyama09(RedLawBase):
     """
     def __init__(self):
         # Fetch the extinction curve, pre-interpolate across 3-8 microns
-        wave = np.arange(0.5, 8.0, 0.001) * u.micron
+        wave = np.linspace(0.5, 8.0, 7501) * u.micron
 
         # This will eventually be scaled by AKs when you
         # call reddening(). Right now, calc for AKs=1
@@ -310,7 +310,7 @@ class RedLawNishiyama09(RedLawBase):
 
         alpha = 2.0
         wave_jhk = wavelength[jhk_idx]
-        idx_scale = np.where(abs(wave_jhk - 2.14 * u.micron) == min(abs(wave_jhk - 2.14 * u.micron)) )
+        idx_scale = np.argmin(np.abs(wave_jhk - 2.14*u.micron))
 
         A_jhk = (wave_jhk / (1 * u.micron))**(-1.0*alpha)
         A_Ks_jhk = A_jhk / A_jhk[-1]
@@ -376,15 +376,11 @@ class RedLawNishiyama09(RedLawBase):
         wave = self.wave * u.AA
         law = self.A_lambda_over_AKs
 
-        # Find the value of the law at the closest points
-        # to wavelength
-        A_AKs_at_wave = []
-        for ii in wavelength:
-            idx = np.argmin(np.abs(wave - ii))
-            A_AKs_at_wave.append(law[idx])
+        # Find the value of the law at the closest points to wavelength
+        wave_idxs = np.argmin(np.abs(wave-wavelength[:,np.newaxis]),axis=1)
 
         # Now multiply by AKs (since law assumes AKs = 1)
-        A_at_wave = np.array(A_AKs_at_wave) * AKs
+        A_at_wave = law[wave_idxs] * AKs
 
         return A_at_wave
 
@@ -432,7 +428,7 @@ class RedLawCardelli(RedLawBase):
     """
     def __init__(self, Rv):
         # Fetch the extinction curve, pre-interpolate across 0.3-3 microns
-        wave = np.arange(0.3, 3.0, 0.001) * u.micron
+        wave = np.linspace(0.3, 3.0, 2701) * u.micron
 
         # This will eventually be scaled by AKs when you
         # call reddening(). Produces A_lambda for AKs = 1, which will be
@@ -537,7 +533,7 @@ class RedLawCardelli(RedLawBase):
         extinction = a + b/Rv
 
         # Now, want to produce A_lambda / AKs, to match other laws
-        k_ind = np.where(abs(x-0.46) == min(abs(x-0.46)))
+        k_ind = np.argmin(np.abs(x-0.46))
         Aks_Av = a[k_ind] + b[k_ind]/Rv # Aks / Av
         Av_Aks = 1.0 / Aks_Av # Av / Aks
 
@@ -578,24 +574,20 @@ class RedLawCardelli(RedLawBase):
         wave = self.wave * u.AA
         law = self.A_lambda_over_AKs
 
-        # Find the value of the law at the closest points
-        # to wavelength
-        A_AKs_at_wave = []
-        for ii in wavelength:
-            idx = np.argmin(np.abs(wave - ii))
-            A_AKs_at_wave.append(law[idx][0])
+        # Find the value of the law at the closest points to wavelength
+        wave_idxs = np.argmin(np.abs(wave-wavelength[:,np.newaxis]),axis=1)
 
         # Now multiply by AKs (since law assumes AKs = 1)
-        A_lambda_over_AKs = np.array(A_AKs_at_wave) * AKs
+        A_at_wave = law[wave_idxs] * AKs
 
-        return A_lambda_over_AKs
+        return A_at_wave
 
 class RedLawSODC(RedLawBase):
     r"""
     Defines the SODC extinction law from SynthPop, described by
     `Klüter & Huston et al. (2025) <https://ui.adsabs.harvard.edu/abs/2025AJ....169..317K/abstract>`_.
     It is based on the `Cardelli et al. (1989) <https://ui.adsabs.harvard.edu/abs/1989ApJ...345..245C/abstract>`_
-    formulation with an updated optical end from `O'Donnell et al (1994) 
+    formulation with an updated optical end from `O'Donnell et al (1994)
     <https://ui.adsabs.harvard.edu/abs/1994ApJ...422..158O/abstract>`_ and infrared side adjusted to match
     `Surot et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020A%26A...644A.140S/abstract>`_.
     The law is defined from 0.25 - 3.5 microns, and in terms
@@ -609,8 +601,8 @@ class RedLawSODC(RedLawBase):
         bulge, 2.5 is more typical.
     """
     def __init__(self, Rv):
-        # Fetch the extinction curve, pre-interpolate across 0.25-3.5 microns
-        wave = np.arange(0.25, 3.5, 0.001) * u.micron
+        # Fetch the extinction curve, pre-interpolate across 0.3-3 microns
+        wave = np.linspace(0.25, 3.5, 3251) * u.micron
 
         # This will eventually be scaled by AKs when you
         # call reddening(). Produces A_lambda for AKs = 1, which will be
@@ -664,7 +656,7 @@ class RedLawSODC(RedLawBase):
         y = x - 1.82
 
         # Calculate coefficients for long wavelengths (low wavenumber)
-        # Wavenumger <= 1.1 
+        # Wavenumger <= 1.1
         idx = np.where(x <= 1.1)[0]
         a[idx] =  0.53974  * x[idx] ** 2.255
         b[idx] = -0.495567 * x[idx] ** 2.255
@@ -686,7 +678,7 @@ class RedLawSODC(RedLawBase):
         extinction = a + b/Rv
 
         # Now, want to produce A_lambda / AKs, to match other laws
-        k_ind = np.argmin(abs(x-0.46))
+        k_ind = np.argmin(np.abs(x-0.46))
         Aks_Av = a[k_ind] + b[k_ind]/Rv # Aks / Av
         Av_Aks = 1.0 / Aks_Av # Av / Aks
 
@@ -727,17 +719,13 @@ class RedLawSODC(RedLawBase):
         wave = self.wave * u.AA
         law = self.A_lambda_over_AKs
 
-        # Find the value of the law at the closest points
-        # to wavelength
-        A_AKs_at_wave = []
-        for ii in wavelength:
-            idx = np.argmin(np.abs(wave - ii))
-            A_AKs_at_wave.append(law[idx][0])
+        # Find the value of the law at the closest points to wavelength
+        wave_idxs = np.argmin(np.abs(wave-wavelength[:,np.newaxis]),axis=1)
 
         # Now multiply by AKs (since law assumes AKs = 1)
-        A_lambda_over_AKs = np.array(A_AKs_at_wave) * AKs
+        A_at_wave = law[wave_idxs] * AKs
 
-        return A_lambda_over_AKs
+        return A_at_wave
 
 class RedLawRomanZuniga07(RedLawBase):
     """
@@ -752,7 +740,7 @@ class RedLawRomanZuniga07(RedLawBase):
     """
     def __init__(self):
         # Fetch the extinction curve, pre-interpolate across 1-8 microns
-        wave = np.arange(1.0, 8.0, 0.01) * u.micron
+        wave = np.linspace(1.0, 8.0, 7001) * u.micron
         wave = wave.to(u.AA)
 
         # This will eventually be scaled by AKs when you
@@ -825,15 +813,11 @@ class RedLawRomanZuniga07(RedLawBase):
         wave = self.wave * u.AA
         law = self.obscuration
 
-        # Find the value of the law at the closest points
-        # to wavelength
-        A_AKs_at_wave = []
-        for ii in wavelength:
-            idx = np.argmin(np.abs(wave - ii))
-            A_AKs_at_wave.append(law[idx][0])
+        # Find the value of the law at the closest points to wavelength
+        wave_idxs = np.argmin(np.abs(wave-wavelength[:,np.newaxis]),axis=1)
 
         # Now multiply by AKs (since law assumes AKs = 1)
-        A_lambda = np.array(A_AKs_at_wave) * AKs
+        A_lambda = law[wave_idxs] * AKs
 
         return A_lambda
 
@@ -873,15 +857,15 @@ class RedLawRiekeLebofsky(RedLawBase):
     """
     def __init__(self):
         # Define the wavelength range of the extinction law
-        wave = np.arange(1.0, 5.0, 0.001) * u.micron
+        wave = np.linspace(1.0, 5.0, 4001) * u.micron
 
         # This will eventually be scaled by AKs when you
         # call reddening(). Right now, calc for AKs=1
         Alambda_scaled = RedLawRiekeLebofsky._derive_RiekeLebofsky(wave)
 
-        super().__init__(waveset=wave, 
-                         A_lambda_over_AKs=Alambda_scaled, 
-                         name='RiekeLebofsky', 
+        super().__init__(waveset=wave,
+                         A_lambda_over_AKs=Alambda_scaled,
+                         name='RiekeLebofsky',
                          litref='Rieke+Lebovsky 1985')
 
         self.low_lim = min(wave)
@@ -966,15 +950,11 @@ class RedLawRiekeLebofsky(RedLawBase):
         wave = self.wave * u.AA
         law = self.A_lambda_over_AKs
 
-        # Find the value of the law at the closest points
-        # to wavelength
-        A_AKs_at_wave = []
-        for ii in wavelength:
-            idx = np.where( abs(wave - ii) == min(abs(wave - ii)) )
-            A_AKs_at_wave.append(law[idx][0])
+        # Find the value of the law at the closest points to wavelength
+        wave_idxs = np.argmin(np.abs(wave-wavelength[:,np.newaxis]),axis=1)
 
         # Now multiply by AKs (since law assumes AKs = 1)
-        A_at_wave = np.array(A_AKs_at_wave) * AKs
+        A_at_wave = law[wave_idxs] * AKs
 
         return A_at_wave
 
@@ -1040,15 +1020,15 @@ class RedLawDamineli16(RedLawBase):
     """
     def __init__(self):
         # Fetch the extinction curve, pre-interpolate across 0.4-4.8 microns
-        wave = np.arange(0.4, 4.8, 0.001) * u.micron
+        wave = np.linspace(0.4, 4.8, 4401) * u.micron
 
         # This will eventually be scaled by AKs when you
         # call reddening(). Right now, calc for AKs=1
         Alambda_scaled = RedLawDamineli16._derive_Damineli16(wave)
 
-        super().__init__(waveset=wave, 
-                         A_lambda_over_AKs=Alambda_scaled, 
-                         name='Damineli16', 
+        super().__init__(waveset=wave,
+                         A_lambda_over_AKs=Alambda_scaled,
+                         name='Damineli16',
                          litref='Damineli+ 2016')
 
         # Set the upper/lower wavelength limits of law (in angstroms)
@@ -1117,15 +1097,11 @@ class RedLawDamineli16(RedLawBase):
         wave = self.wave * u.AA
         law = self.obscuration
 
-        # Find the value of the law at the closest points
-        # to wavelength
-        A_AKs_at_wave = []
-        for ii in wavelength:
-            idx = np.where( abs(wave - ii) == min(abs(wave - ii)) )
-            A_AKs_at_wave.append(law[idx][0])
+        # Find the value of the law at the closest points to wavelength
+        wave_idxs = np.argmin(np.abs(wave-wavelength[:,np.newaxis]),axis=1)
 
         # Now multiply by AKs (since law assumes AKs = 1)
-        A_at_wave = np.array(A_AKs_at_wave) * AKs
+        A_at_wave = law[wave_idxs] * AKs
 
         return A_at_wave
 
@@ -1166,15 +1142,15 @@ class RedLawDeMarchi16(RedLawBase):
     """
     def __init__(self):
         # Fetch the extinction curve, pre-interpolate across 1-8 microns
-        wave = np.arange(0.3, 8.0, 0.001) * u.micron
+        wave = np.linspace(0.3, 8.0, 7701) * u.micron
 
         # This will eventually be scaled by AK when you
         # call reddening(). Right now, calc for AKs=1
         Alambda_scaled = RedLawDeMarchi16._derive_DeMarchi16(wave)
 
-        super().__init__(waveset=wave, 
-                         A_lambda_over_AKs=Alambda_scaled, 
-                         name='DeMarchi16', 
+        super().__init__(waveset=wave,
+                         A_lambda_over_AKs=Alambda_scaled,
+                         name='DeMarchi16',
                          litref='DeMarchi+ 2016')
 
         # Set the upper/lower wavelength limits of law (in angstroms)
@@ -1259,15 +1235,11 @@ class RedLawDeMarchi16(RedLawBase):
         law = self.obscuration
         wave = self.wave * u.micron
 
-        # Find the value of the law at the closest points
-        # to wavelength
-        A_AKs_at_wave = []
-        for ii in wavelength:
-            idx = np.where( abs(wave - ii) == min(abs(wave - ii)) )
-            A_AKs_at_wave.append(law[idx][0])
+        # Find the value of the law at the closest points to wavelength
+        wave_idxs = np.argmin(np.abs(wave-wavelength[:,np.newaxis]),axis=1)
 
-        # Now multiply by AK (since law assumes AK = 1)
-        A_at_wave = np.array(A_AKs_at_wave) * AK
+        # Now multiply by AKs (since law assumes AKs = 1)
+        A_at_wave = law[wave_idxs] * AKs
 
         return A_at_wave
 
@@ -1294,15 +1266,15 @@ class RedLawFitzpatrick09(RedLawBase):
     """
     def __init__(self, alpha, RV):
         # Fetch the extinction curve, pre-interpolate across 1-8 microns
-        wave = np.arange(0.5, 3.0, 0.001) * u.micron
+        wave = np.linspace(0.5, 3.0, 2501) * u.micron
 
         # This will eventually be scaled by AK when you
         # call reddening(). Right now, calc for AKs=1
         Alambda_scaled = RedLawFitzpatrick09._derive_Fitzpatrick09(wave, alpha, RV)
 
-        super().__init__(waveset=wave, 
-                         A_lambda_over_AKs=Alambda_scaled, 
-                         name='Fitzpatrick09', 
+        super().__init__(waveset=wave,
+                         A_lambda_over_AKs=Alambda_scaled,
+                         name='Fitzpatrick09',
                          litref='Fitzpatrick+ 2009')
 
         # Set the upper/lower wavelength limits of law (in angstroms)
@@ -1387,15 +1359,11 @@ class RedLawFitzpatrick09(RedLawBase):
         wave = self.wave * u.AA
         law = self.A_lambda_over_AKs
 
-        # Find the value of the law at the closest points
-        # to wavelength
-        A_AKs_at_wave = []
-        for ii in wavelength:
-            idx = np.where( abs(wave - ii) == min(abs(wave - ii)) )
-            A_AKs_at_wave.append(law[idx][0])
+        # Find the value of the law at the closest points to wavelength
+        wave_idxs = np.argmin(np.abs(wave-wavelength[:,np.newaxis]),axis=1)
 
         # Now multiply by AKs (since law assumes AKs = 1)
-        A_at_wave = np.array(A_AKs_at_wave) * AKs
+        A_at_wave = law[wave_idxs] * AKs
 
         return A_at_wave
 
@@ -1416,15 +1384,15 @@ class RedLawSchlafly16(RedLawBase):
     """
     def __init__(self, AH_AKs, x):
         # Fetch the extinction curve, pre-interpolate across 0.5-4.8 microns
-        wave = np.arange(0.5, 4.8, 0.001) * u.micron
+        wave = np.linspace(0.5, 4.8, 4301) * u.micron
 
         # This will eventually be scaled by AK when you
         # call reddening(). Right now, calc for AKs=1
         Alambda_scaled = RedLawSchlafly16._derive_Schlafly16(wave, AH_AKs, x)
 
-        super().__init__(waveset=wave, 
-                         A_lambda_over_AKs=Alambda_scaled, 
-                         name='Schlafly16', 
+        super().__init__(waveset=wave,
+                         A_lambda_over_AKs=Alambda_scaled,
+                         name='Schlafly16',
                          litref='Schlafly+ 2016')
 
         # Set the upper/lower wavelength limits of law (in angstroms)
@@ -1455,7 +1423,6 @@ class RedLawSchlafly16(RedLawBase):
         # Evaluate function for desired wavelengths (in angstroms)
         law = law_func(wavelength.to(u.AA).value)
 
-        # Now normalize to A_lambda/AKs, rather than A_lambda/A(5420 Angstroms)
         idx = np.argmin(np.abs(wavelength.value - 2.151))
         law_out = law / law[idx]
 
@@ -1543,15 +1510,11 @@ class RedLawSchlafly16(RedLawBase):
         wave = self.wave * u.AA
         law = self.A_lambda_over_AKs
 
-        # Find the value of the law at the closest points
-        # to wavelength
-        A_AKs_at_wave = []
-        for ii in wavelength:
-            idx = np.where( abs(wave - ii) == min(abs(wave - ii)) )
-            A_AKs_at_wave.append(law[idx][0])
+        # Find the value of the law at the closest points to wavelength
+        wave_idxs = np.argmin(np.abs(wave-wavelength[:,np.newaxis]),axis=1)
 
         # Now multiply by AKs (since law assumes AKs = 1)
-        A_at_wave = np.array(A_AKs_at_wave) * AKs
+        A_at_wave = law[wave_idxs] * AKs
 
         return A_at_wave
 
@@ -1566,12 +1529,13 @@ class RedLawIndebetouw05(RedLawBase):
     """
     def __init__(self):
         # Get A_lambda / A_K values from Indebetouw+05
-        wave = np.arange(1.25, 8.0, 0.001) * u.micron # microns
+        wave = np.linspace(1.25, 8.0, 6751) * u.micron
+
         Alambda_scaled = RedLawIndebetouw05._derive_Indebetouw05(wave)
 
-        super().__init__(waveset=wave, 
-                         A_lambda_over_AKs=Alambda_scaled, 
-                         name='Indebetouw05', 
+        super().__init__(waveset=wave,
+                         A_lambda_over_AKs=Alambda_scaled,
+                         name='Indebetouw05',
                          litref='Indebetouw+ 2005')
 
         # Set the upper/lower wavelength limits of law (in angstroms)
@@ -1627,15 +1591,11 @@ class RedLawIndebetouw05(RedLawBase):
         wave = self.wave * u.AA
         law = self.A_lambda_over_AKs
 
-        # Find the value of the law at the closest points
-        # to wavelength
-        A_AKs_at_wave = []
-        for ii in wavelength:
-            idx = np.argmin(np.abs(wave - ii))
-            A_AKs_at_wave.append(law[idx][0])
+        # Find the value of the law at the closest points to wavelength
+        wave_idxs = np.argmin(np.abs(wave-wavelength[:,np.newaxis]),axis=1)
 
         # Now multiply by AKs (since law assumes AKs = 1)
-        A_at_wave = np.array(A_AKs_at_wave) * AKs
+        A_at_wave = law[wave_idxs] * AKs
 
         return A_at_wave
 
@@ -1703,14 +1663,14 @@ class RedLawPowerLaw(RedLawBase):
     """
     def __init__(self, alpha, K_wave, wave_min=0.5, wave_max=5.0):
         # Fetch the extinction curve, pre-interpolate across wave_min to wave_max
-        wave = np.arange(wave_min, wave_max, 0.001) * u.micron
+        wave = np.linspace(wave_min, wave_max, int(round((wave_max-wave_min)*1000+1))) * u.micron
 
         # This will eventually be scaled by AK when you
         # call reddening(). Right now, calc for AKs=1
         Alambda_scaled = RedLawPowerLaw._derive_powerlaw(wave, alpha, K_wave * u.micron)
 
-        super().__init__(waveset=wave, 
-                         A_lambda_over_AKs=Alambda_scaled, 
+        super().__init__(waveset=wave,
+                         A_lambda_over_AKs=Alambda_scaled,
                          name='Power law',
                          litref='Power law')
         
@@ -1790,15 +1750,11 @@ class RedLawPowerLaw(RedLawBase):
         # Extract wave and A/AKs from law, turning wave into micron units
         law = self.A_lambda_over_AKs
 
-        # Find the value of the law at the closest points
-        # to wavelength
-        A_AKs_at_wave = []
-        for ii in wavelength:
-            idx = np.argmin(np.abs(self.waveset - wavelength[ii]))
-            A_AKs_at_wave.append(law[idx])
+        # Find the value of the law at the closest points to wavelength
+        wave_idxs = np.argmin(np.abs(wave-wavelength[:,np.newaxis]),axis=1)
 
         # Now multiply by AKs (since law assumes AKs = 1)
-        A_at_wave = np.array(A_AKs_at_wave) * AKs
+        A_at_wave = law[wave_idxs] * AKs
 
         return A_at_wave
 
@@ -1844,7 +1800,8 @@ class RedLawBrokenPowerLaw(RedLawBase):
             K_wave = K_wave.to(u.micron)
 
         # Fetch the extinction curve, pre-interpolate across defined wavelength range
-        wave = np.arange(np.min(lambda_limits/u.micron), np.max(lambda_limits/u.micron), 0.01) * u.micron
+        wave_min,wave_max = np.min(lambda_limits)/u.micron, np.max(lambda_limits)/u.micron
+        wave = np.linspace(wave_min, wave_max, int(round((wave_max-wave_min)*1000+1))) * u.micron
 
         # Deal with pesky floating point issues that can artificially push the upper
         # value of wave above the max(lambda_limit)
@@ -1860,8 +1817,8 @@ class RedLawBrokenPowerLaw(RedLawBase):
         # call reddening(). Right now, calc for AKs=1
         Alambda_scaled = RedLawBrokenPowerLaw._derive_broken_powerlaw(wave, lambda_limits, alpha_vals, K_wave)
 
-        super().__init__(waveset=wave, 
-                         A_lambda_over_AKs=Alambda_scaled, 
+        super().__init__(waveset=wave,
+                         A_lambda_over_AKs=Alambda_scaled,
                          name='Broken Power law',
                          litref='Broken Power law')
 
@@ -1873,7 +1830,7 @@ class RedLawBrokenPowerLaw(RedLawBase):
 
     @staticmethod
     def _derive_broken_powerlaw(wave, lambda_limits, alpha_vals, K_wave):
-        """
+        r"""
         Calculate the resulting extinction for an array of wavelengths.
         The extinction is normalized with A_Ks.
 
@@ -1969,15 +1926,11 @@ class RedLawBrokenPowerLaw(RedLawBase):
         wave = self.wave * u.AA
         law = self.A_lambda_over_AKs
 
-        # Find the value of the law at the closest points
-        # to wavelength
-        A_AKs_at_wave = []
-        for ii in wavelength:
-            idx = np.argmin(np.abs(wave - ii))
-            A_AKs_at_wave.append(law[idx])
+        # Find the value of the law at the closest points to wavelength
+        wave_idxs = np.argmin(np.abs(wave-wavelength[:,np.newaxis]),axis=1)
 
         # Now multiply by AKs (since law assumes AKs = 1)
-        A_at_wave = np.array(A_AKs_at_wave) * AKs
+        A_at_wave = law[wave_idxs] * AKs
 
         return A_at_wave
 
@@ -2012,9 +1965,9 @@ class RedLawFritz11(RedLawBase):
         ext_scale = ext / ext[idx]
 
         # Make custom reddening law
-        super().__init__(waveset=wave, 
-                         A_lambda_over_AKs=ext_scale.data, 
-                         name='Fritz11', 
+        super().__init__(waveset=wave,
+                         A_lambda_over_AKs=ext_scale.data,
+                         name='Fritz11',
                          litref='Fritz+2011')
 
         # Set the upper/lower wavelength limits of law (in angstroms)
@@ -2165,15 +2118,11 @@ class RedLawFritz11(RedLawBase):
         wave = self.wave * u.AA
         law = self.obscuration
 
-        # Find the value of the law at the closest points
-        # to wavelength
-        A_Ascale_at_wave = []
-        for ii in wavelength:
-            idx = np.argmin(np.abs(wave - ii))
-            A_Ascale_at_wave.append(law[idx][0])
+        # Find the value of the law at the closest points to wavelength
+        wave_idxs = np.argmin(np.abs(wave-wavelength[:,np.newaxis]),axis=1)
 
         # Now multiply by A_scale_lambda (since law assumes A_scale_lambda = 1)
-        A_at_wave = np.array(A_Ascale_at_wave) * A_scale_lambda
+        A_at_wave = law[wave_idxs] * A_scale_lambda
 
         return A_at_wave
 
@@ -2187,15 +2136,15 @@ class RedLawHosek18b(RedLawBase):
     """
     def __init__(self):
         # Fetch the extinction curve, pre-interpolate across 3-8 microns
-        wave = np.arange(0.7, 3.545, 0.001) * u.micron
+        wave = np.linspace(0.7, 3.545, 2846) * u.micron
 
         # This will eventually be scaled by AKs when you
         # call reddening(). Right now, calc for AKs=1
         Alambda_scaled = RedLawHosek18b._derive_Hosek18b(wave)
 
-        super().__init__(waveset=wave, 
-                         A_lambda_over_AKs=Alambda_scaled, 
-                         name='Hosek+18b', 
+        super().__init__(waveset=wave,
+                         A_lambda_over_AKs=Alambda_scaled,
+                         name='Hosek+18b',
                          litref='Hosek+ 2018b')
 
         # Set the upper/lower wavelength limits of law (in angstroms)
@@ -2270,15 +2219,11 @@ class RedLawHosek18b(RedLawBase):
         wave = self.wave * u.AA
         law = self.obscuration
 
-        # Find the value of the law at the closest points
-        # to wavelength
-        A_AKs_at_wave = []
-        for ii in wavelength:
-            idx = np.argmin(np.abs(wave - ii))
-            A_AKs_at_wave.append(law[idx][0])
+        # Find the value of the law at the closest points to wavelength
+        wave_idxs = np.argmin(np.abs(wave-wavelength[:,np.newaxis]),axis=1)
 
         # Now multiply by AKs (since law assumes AKs = 1)
-        A_at_wave = np.array(A_AKs_at_wave) * AKs
+        A_at_wave = law[wave_idxs] * AKs
 
         return A_at_wave
 
@@ -2348,15 +2293,11 @@ class RedLawSchoedel10(RedLawBrokenPowerLaw):
         wave = self.wave * u.AA
         law = self.obscuration
 
-        # Find the value of the law at the closest points
-        # to wavelength
-        A_AKs_at_wave = []
-        for ii in wavelength:
-            idx = np.argmin(np.abs(wave - ii))
-            A_AKs_at_wave.append(law[idx][0])
+        # Find the value of the law at the closest points to wavelength
+        wave_idxs = np.argmin(np.abs(wave-wavelength[:,np.newaxis]),axis=1)
 
         # Now multiply by AKs (since law assumes AKs = 1)
-        A_at_wave = np.array(A_AKs_at_wave) * AKs
+        A_at_wave = law[wave_idxs] * AKs
 
         return A_at_wave
 
@@ -2413,22 +2354,18 @@ class RedLawNoguerasLara18(RedLawPowerLaw):
 
         # Return error if any wavelength is beyond interpolation range of
         # extinction law
-        if ((min(wavelength) < self.low_lim) | (max(wavelength) > self.high_lim)):
+        if ((min(wavelength) < self.low_lim*u.angstrom) | (max(wavelength) > self.high_lim*u.angstrom)):
             return ValueError('{0}: wavelength values beyond interpolation range'.format(self))
 
         # Extract wave and A/AKs from law, turning wave into micron units
         wave = self.wave * u.AA
         law = self.obscuration
 
-        # Find the value of the law at the closest points
-        # to wavelength
-        A_AKs_at_wave = []
-        for ii in wavelength:
-            idx = np.argmin(np.abs(wave - ii))
-            A_AKs_at_wave.append(law[idx][0])
+        # Find the value of the law at the closest points to wavelength
+        wave_idxs = np.argmin(np.abs(wave-wavelength[:,np.newaxis]),axis=1)
 
         # Now multiply by AKs (since law assumes AKs = 1)
-        A_at_wave = np.array(A_AKs_at_wave) * AKs
+        A_at_wave = law[wave_idxs] * AKs
 
         return A_at_wave
 
@@ -2500,15 +2437,11 @@ class RedLawNoguerasLara20(RedLawBrokenPowerLaw):
         wave = self.wave * u.AA
         law = self.obscuration
 
-        # Find the value of the law at the closest points
-        # to wavelength
-        A_AKs_at_wave = []
-        for ii in wavelength:
-            idx = np.argmin(np.abs(wave - ii))
-            A_AKs_at_wave.append(law[idx][0])
+        # Find the value of the law at the closest points to wavelength
+        wave_idxs = np.argmin(np.abs(wave-wavelength[:,np.newaxis]),axis=1)
 
         # Now multiply by AKs (since law assumes AKs = 1)
-        A_at_wave = np.array(A_AKs_at_wave) * AKs
+        A_at_wave = law[wave_idxs] * AKs
 
         return A_at_wave
 

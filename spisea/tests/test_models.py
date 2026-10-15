@@ -85,7 +85,7 @@ def test_synthpop_MIST_extension():
     evo1 = evo1_grid.isochrone(10**logAge, metallicity=0)
     evo2 = evo2_grid.isochrone(10**logAge, metallicity=0)
 
-    # I expect evo2 extends to low masses velow evo1
+    # I expect evo2 extends to low masses below evo1
     assert len(evo2) > len(evo1)
     assert np.min(evo2['mass']) < np.min(evo1['mass'])
 
@@ -291,7 +291,7 @@ def test_filters():
                      'nsfcam,L', 'tess,tess',
                      'washington,C', 'washington,M', 'washington,T1', 'washington,T2',
                      'hipparcos,Hp', 'tycho,B', 'tycho,V',
-                     'kepler,Kp', 'ogle,Rw',
+                     'kepler,Kp', 'ogle,Rw', 'ogle,I', 'ogle,V',
                      'subaru,hsc,g','subaru,hsc,r','subaru,hsc,i','subaru,hsc,z','subaru,hsc,Y',
                      'subaru,hsc,nb387', 'subaru,hsc,nb468', 'subaru,hsc,nb515', 'subaru,hsc,nb527',
                      'subaru,hsc,nb656', 'subaru,hsc,nb718', 'subaru,hsc,nb816', 'subaru,hsc,nb921',

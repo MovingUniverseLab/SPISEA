@@ -70,7 +70,10 @@ def get_2mass_filt(name):
 
     wavelength = t[t.keys()[0]]
     transmission = t[t.keys()[1]]
-
+    # Transmission is scaled with lambda in the file, divide it out and renormalize
+    transmission = transmission/wavelength
+    transmission = transmission/np.max(transmission)
+    
     # Convert wavelength to Angstroms
     wavelength = wavelength * 10**4 * u.AA
     transmission = transmission * su.THROUGHPUT  
@@ -120,21 +123,18 @@ def get_decam_filt(name):
     """
     # Read in filter info
     try:
-        t = Table.read('{0}/decam/DECam_filters.txt'.format(filters_dir), format='ascii')
-
-        trans = t[name]
+        t = Table.read('{0}/decam/CTIO_DECam.{1}.dat'.format(filters_dir, name), format='ascii')
     except:
         if name=='y':
             raise ValueError('DECam has a /"Y/" filter, not /"y/". The /"y/" in SPISEA <v3.0 was a bug.')
         else:
-            raise ValueError('Could not find DECAM filter {0} in {1}/decam/DECam_filters.txt'.format(name, filters_dir))
+            raise ValueError('Could not find DECam filter file {0}/decam/CTIO_DECam.{1}.dat'.format(filters_dir, name))
+            
+    wave = t['col1']
+    trans = t['col2']
 
     # Don't allow negative transmission
     trans[trans<0] = 0.0
-
-    # Convert wavelengths from nm to angstroms, while eliminating masked regions
-    wave = t['wavelength'] * 10.
-    trans = trans
 
     spectrum = SpectralElement(
         Empirical1D,
@@ -186,11 +186,11 @@ def get_jwst_filt(name):
     try:
         t = Table.read('{0}/jwst/{1}.txt'.format(filters_dir, name.upper()), format='ascii')
     except:
-        raise ValueError('Could not find JWST filter {0} in {1}/jwst'.format(name, filters_dir))
+        raise ValueError('Could not find JWST filter {0} in {1}/jwst'.format(name.upper(), filters_dir))
 
     # Convert wavelengths to angstroms
-    wave = t['microns'] * 10**4. * u.AA
-    trans = t['throughput'] * su.THROUGHPUT
+    wave = t['Microns'] * 10**4. * u.AA
+    trans = t['Throughput'] * su.THROUGHPUT
 
     # Change any negative numbers to 0
     bad = np.where(trans < 0)
@@ -567,6 +567,7 @@ def get_euclid_filt(name):
 
     wavelength = t[t.keys()[0]]
     transmission = t[t.keys()[1]]
+    transmission[transmission<0] = 0
 
     # Convert wavelength to Angstroms
     if name.lower() != 'vis':
@@ -616,7 +617,10 @@ def get_tess_filt(name):
     # Wavelength from nanometers to angstroms and and transmission in fraction
     wave = t['col1']*10
     trans = t['col2']
-
+    # Transmission is scaled with lambda in the file, divide it out and renormalize
+    trans = t['col2']/wave
+    trans = trans/np.max(trans)
+    
     spectrum = SpectralElement(
         Empirical1D,
         points=wave * u.AA,
@@ -638,7 +642,10 @@ def get_washington_filt(name):
     # Wavelength from nanometers to angstroms and and transmission in fraction
     wave = t['col1']*10
     trans = t['col2']
-
+    # Transmission is scaled with lambda in the file, divide it out and renormalize
+    trans = t['col2']/wave
+    trans = trans/np.max(trans)
+    
     spectrum = SpectralElement(
         Empirical1D,
         points=wave * u.AA,
@@ -723,9 +730,9 @@ def get_ogle_filt(name):
     except:
         raise ValueError('Could not find ogle filter {0} in {1}/ogle'.format(name, filters_dir))
 
-    # Wavelength in nm->angstroms and and transmission in percent->fraction
-    wave = np.flip(t['col1'])*10
-    trans = np.flip(t['col2'])/100
+    # Wavelength in angstroms and and transmission in fraction
+    wave = t['col1']
+    trans = t['col2']
 
     spectrum = SpectralElement(
         Empirical1D,

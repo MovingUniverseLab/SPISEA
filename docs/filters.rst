@@ -26,6 +26,18 @@ the :ref:`isochrone_objects` how to interpret the filter strings
 and pull the corresponding transmission functions from the filt_func
 directories.
 
+.. note::
+	Photometric filters may be defined as pure transmission $T(\lambda)$, or
+	as transmission scaled by wavelength $T(\lambda)\lambda$. This can be convenient when
+	switching between energy counting and photon counting detectors. See e.g. 
+	`Maíz Apellániz (2006)
+	<https://ui.adsabs.harvard.edu/abs/2006AJ....131.1184M/abstract>`_ Appendix A for more details.
+	We assume that filters are defined in pure transmission $T(\lambda)$ and generate photometry 
+	for photon counting detectors. The following filter systems were clearly documented to 
+	have been scaled by $\lambda$ in their original source, so we divide it out and 
+	renormalize when initializing these filter objects: 2MASS, TESS, Washington.
+
+
 Available filters:
 
 * 2MASS
@@ -70,6 +82,7 @@ Filters: J, H, Ks
 
 Example: ``'2mass,H'``
 
+
 **Bessell**
 
 `Bessel (1990) <https://ui.adsabs.harvard.edu/abs/1990PASP..102.1181B/abstract>`_ Johnson-Cousins UBVRI filters
@@ -77,6 +90,7 @@ Example: ``'2mass,H'``
 Filters: U, B, V, R, I
 
 Example: ``'bessell,U'``
+
 
 **CTIO_OSIRIS**
 
@@ -91,11 +105,12 @@ Example: ``'ctio_osiris,H'``
 
 **DeCam**
 
-`Dark Energy Camera <https://noirlab.edu/science/documents/scidoc0472>`_
+Dark Energy Camera `total transmissions from SVO <https://svo2.cab.inta-csic.es/theory/fps/index.php?mode=browse&gname=CTIO&gname2=DECam&asttype=>`_
 
 Filters: u, g, r, i, z, Y
 
 Example: ``'decam,r'``
+
 
 **Euclid**
 
@@ -105,6 +120,7 @@ and `VIS single filter <https://svo2.cab.inta-csic.es/svo/theory/fps/index.php?i
 Filters: VIS, Y, J, H
 
 Example: ``'euclid,Y'``
+
 
 **GAIA**
 
@@ -123,6 +139,7 @@ Versions: dr1, dr2, dr2_rev, edr3
 Example (gaia G filter from (E)DR3 passbands):
 ``'gaia,edr3,G'``
 
+
 **HAWK-I**
 
 The `High Acuity Wide Field K-band Imager
@@ -133,6 +150,7 @@ Filters: J, H, Ks
 
 Example: ``'hawki,J'``
 
+
 **Hipparcos**
 
 `Hipparcos Hp filter <http://ulisse.pd.astro.it/Astro/ADPS/Systems/Sys_135/index_135.html>`_
@@ -140,6 +158,7 @@ Example: ``'hawki,J'``
 Filters: Hp
 
 Example: ``'hipparcos,Hp'``
+
 
 **Hubble Space Telescope**
 
@@ -165,6 +184,7 @@ Filters: U, B, V, R, I
 
 Example: ``'ubv,B'``
 
+
 **Johnson-Glass**
 
 Johnson-Glass passbands taken from `Bessell et al. 1988
@@ -174,9 +194,10 @@ Filters: J, H, K
 
 Example: ``'jg,K'``
 
+
 **JWST**
 
-JWST NIRCam filters, downloaded from `NIRCam website <https://jwst-docs.stsci.edu/display/JTI/NIRCam+Filters#NIRCamFilters-filt_trans>`_. The filter functions in the nircam_throughputs/modAB_mean/nrc_plus_ote folder is used.
+JWST NIRCam filters v7.0 (Jan 2025), downloaded from `NIRCam website <https://jwst-docs.stsci.edu/jwst-near-infrared-camera/nircam-instrumentation/nircam-filters#gsc.tab=0>`_. The filter functions are averaged across detectors.
 
 Filters: F070W, F090W,  F115W, F140M, F150W, F150W2, F162M, F164N, F182M, F187N, F200W, F210M, F212N, F250M, F277W, F300M, F322W2, F323N, F335M, F356W, F360M, F405N, F410M, F430M,  F444W, F460M, F466N, F470N, F480M
 
@@ -202,6 +223,7 @@ Filters: J, H, Hcont, K, Kp, Ks, Kcont, Lp, Ms, Brgamma, FeII
 
 Example: ``'nirc2,Ks'``
 
+
 **Kepler**
 
 `Kepler Kp filter <http://svo2.cab.inta-csic.es/theory/fps/index.php?mode=browse&gname=Kepler&asttype=>`_
@@ -220,11 +242,16 @@ IB_2.30, IB_2.33, IB_2.36
 
 Example: ``'naco,H'``
 
+
 **OGLE**
 
-OGLE R-wide filter, provided by Andrzej Udalski
+V- and I-band from `OGLE-IV documentation <https://ogle.astrouw.edu.pl/main/OGLEIV/mosaic.html>`_
 
-Filters: Rw
+The R-wide filter is new in 2026, profile provided by Andrzej Udalski
+
+We have scaled these by the mean of the min and max measured QE from the OGLE-IV docs.
+
+Filters: V, I, Rw
 
 Example: ``'ogle,Rw'``
 
@@ -253,6 +280,7 @@ Filters: F062, F087, F106, F129, F158, W146, F184, F213
 
 Example: ``'roman,wfi,f062'``
 
+
 **Subaru**
 
 Subaru filters from the `SVO Filter Profile Service <http://svo2.cab.inta-csic.es/theory/fps/index.php?mode=browse&gname=Subaru&gname2=HSC&asttype=>`_.
@@ -263,6 +291,7 @@ Instruments: hsc
 
 Example: ``'subaru,hsc,i'``
 
+
 **TESS**
 
 TESS filter: a single wide, red-optical `bandpass <https://heasarc.gsfc.nasa.gov/docs/tess/telescope_information.html>`_
@@ -270,6 +299,7 @@ TESS filter: a single wide, red-optical `bandpass <https://heasarc.gsfc.nasa.gov
 Filters: tess
 
 Example: ``'tess,tess'``
+
 
 **Tycho**
 
@@ -279,6 +309,7 @@ Filters: B, V
 
 Example: ``'tycho,B'``
 
+
 **UKIRT**
 
 `UKIRT Telescope filters <http://www.ukidss.org/technical/photom/photom.html>`_
@@ -286,6 +317,7 @@ Example: ``'tycho,B'``
 Filters: Z, Y, J, H, K
 
 Example: ``'ukirt,K'``
+
 
 **Vera C. Rubin Observatory**
 
@@ -304,6 +336,7 @@ Filters: Z, Y, J, H, K
 
 Example: ``'vista,Y'``
 
+
 **Washington**
 
 Washington filter system from `Bessell et al. 2001 <https://ui.adsabs.harvard.edu/abs/2001PASP..113...66B/abstract>`_
@@ -312,6 +345,7 @@ Filters: C, M, T1, T2
 
 Example: ``'washington,C'``
 
+
 **ZTF**
 
 `ZTF Telescope <https://www.ztf.caltech.edu/page/technical>`_
@@ -319,6 +353,7 @@ Example: ``'washington,C'``
 Filters: g, r, i
 
 Example: ``'ztf,g'``
+
 
 **IRTF**
 
