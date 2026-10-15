@@ -149,7 +149,7 @@ def get_atmosphere_grid(model_dir):
 
     return teff_arr, z_arr, logg_arr
 
-def get_kurucz_atmosphere(metallicity=0, temperature=20000, gravity=4, rebin=False):
+def get_kurucz_atmosphere(metallicity=0, temperature=20000, gravity=4, rebin=False, verbose=True):
     """
     Return atmosphere from the Kurucz pysnphot grid
     (`Kurucz 1993 <http://www.stsci.edu/hst/observatory/crds/k93models.html>`_).
@@ -182,17 +182,20 @@ def get_kurucz_atmosphere(metallicity=0, temperature=20000, gravity=4, rebin=Fal
         (temperature, gravity, metallicity) = get_atmosphere_bounds('k93models',
                                                    metallicity=metallicity,
                                                    temperature=temperature,
-                                                   gravity=gravity)
+                                                   gravity=gravity,
+                                                   verbose=verbose,
+                                                   )
 
         sp = stsyn.grid_to_spec('k93models', temperature, metallicity, gravity)
 
     # Do some error checking for 0 fluxes.
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if len(idx) == 0:
-        print( 'Could not find Kurucz 1993 atmosphere model for')
-        print( '  temperature = %d' % temperature)
-        print( '  metallicity = %.1f' % metallicity)
-        print( '  log gravity = %.1f' % gravity)
+    if verbose:
+        if len(idx) == 0:
+            print( 'Could not find Kurucz 1993 atmosphere model for')
+            print( '  temperature = %d' % temperature)
+            print( '  metallicity = %.1f' % metallicity)
+            print( '  log gravity = %.1f' % gravity)
 
     return sp
 
@@ -210,7 +213,7 @@ def get_kurucz_atmosphere_grid():
     teff_arr, z_arr, logg_arr = get_atmosphere_grid('k93models')
     return teff_arr, z_arr, logg_arr
 
-def get_castelli_atmosphere(metallicity=0, temperature=20000, gravity=4, rebin=False):
+def get_castelli_atmosphere(metallicity=0, temperature=20000, gravity=4, rebin=False, verbose=True):
     """
     Return atmospheres from the synphot ATLAS9 atlas
     (`Castelli & Kurucz 2004 <http://www.stsci.edu/hst/observatory/crds/castelli_kurucz_atlas.html>`_).
@@ -247,17 +250,20 @@ def get_castelli_atmosphere(metallicity=0, temperature=20000, gravity=4, rebin=F
         (temperature, gravity, metallicity) = get_atmosphere_bounds('ck04models',
                                                    metallicity=metallicity,
                                                    temperature=temperature,
-                                                   gravity=gravity)
+                                                   gravity=gravity,
+                                                   verbose=verbose,
+                                                   )
 
         sp = stsyn.grid_to_spec('ck04models', temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if len(idx) == 0:
-        print( 'Could not find Castelli and Kurucz 2004 atmosphere model for')
-        print( '  temperature = %d' % temperature)
-        print( '  metallicity = %.1f' % metallicity)
-        print( '  log gravity = %.1f' % gravity)
+    if verbose:
+        if len(idx) == 0:
+            print( 'Could not find Castelli and Kurucz 2004 atmosphere model for')
+            print( '  temperature = %d' % temperature)
+            print( '  metallicity = %.1f' % metallicity)
+            print( '  log gravity = %.1f' % gravity)
 
     return sp
 
@@ -276,7 +282,7 @@ def get_castelli_atmosphere_grid():
     teff_arr, z_arr, logg_arr = get_atmosphere_grid('ck04models')
     return teff_arr, z_arr, logg_arr
 
-def get_nextgen_atmosphere(metallicity=0, temperature=5000, gravity=4, rebin=False):
+def get_nextgen_atmosphere(metallicity=0, temperature=5000, gravity=4, rebin=False, verbose=True):
     """
     metallicity = [M/H] (def = 0)
     temperature = Kelvin (def = 5000)
@@ -289,17 +295,20 @@ def get_nextgen_atmosphere(metallicity=0, temperature=5000, gravity=4, rebin=Fal
         (temperature, gravity, metallicity) = get_atmosphere_bounds('nextgen',
                                                    metallicity=metallicity,
                                                    temperature=temperature,
-                                                   gravity=gravity)
+                                                   gravity=gravity,
+                                                   verbose=verbose,
+                                                   )
 
         sp = stsyn.grid_to_spec('nextgen', temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if len(idx) == 0:
-        print( 'Could not find NextGen atmosphere model for')
-        print( '  temperature = %d' % temperature)
-        print( '  metallicity = %.1f' % metallicity)
-        print( '  log gravity = %.1f' % gravity)
+    if verbose:
+        if len(idx) == 0:
+            print( 'Could not find NextGen atmosphere model for')
+            print( '  temperature = %d' % temperature)
+            print( '  metallicity = %.1f' % metallicity)
+            print( '  log gravity = %.1f' % gravity)
 
     return sp
 
@@ -312,7 +321,7 @@ def get_nextgen_atmosphere_grid():
     teff_arr, z_arr, logg_arr = get_atmosphere_grid('nextgen')
     return teff_arr, z_arr, logg_arr
 
-def get_amesdusty_atmosphere(metallicity=0, temperature=5000, gravity=4, rebin=False):
+def get_amesdusty_atmosphere(metallicity=0, temperature=5000, gravity=4, rebin=False, verbose=True):
     """
     metallicity = [M/H] (def = 0)
     temperature = Kelvin (def = 5000)
@@ -322,11 +331,12 @@ def get_amesdusty_atmosphere(metallicity=0, temperature=5000, gravity=4, rebin=F
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if len(idx) == 0:
-        print( 'Could not find AMESdusty Allard+ 2000 atmosphere model for')
-        print( '  temperature = %d' % temperature)
-        print( '  metallicity = %.1f' % metallicity)
-        print( '  log gravity = %.1f' % gravity)
+    if verbose:
+        if len(idx) == 0:
+            print( 'Could not find AMESdusty Allard+ 2000 atmosphere model for')
+            print( '  temperature = %d' % temperature)
+            print( '  metallicity = %.1f' % metallicity)
+            print( '  log gravity = %.1f' % gravity)
 
     return sp
 
@@ -340,7 +350,7 @@ def get_amesdusty_atmosphere_grid():
     return teff_arr, z_arr, logg_arr
 
 def get_phoenix_atmosphere(metallicity=0, temperature=5000, gravity=4,
-                               rebin=False):
+                               rebin=False, verbose=True):
     """
     Return atmosphere from the synphot
     `PHOENIX atlas <http://www.stsci.edu/hst/observatory/crds/SIfileInfo/synphottables/index_phoenix_models_html>`_.
@@ -369,17 +379,20 @@ def get_phoenix_atmosphere(metallicity=0, temperature=5000, gravity=4,
         (temperature, gravity, metallicity) = get_atmosphere_bounds('phoenix',
                                                    metallicity=metallicity,
                                                    temperature=temperature,
-                                                   gravity=gravity)
+                                                   gravity=gravity,
+                                                   verbose=verbose,
+                                                   )
 
         sp = stsyn.grid_to_spec('phoenix', temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if len(idx) == 0:
-        print( 'Could not find PHOENIX BT-Settl (Allard+ 2011 atmosphere model for')
-        print( '  temperature = %d' % temperature)
-        print( '  metallicity = %.1f' % metallicity)
-        print( '  log gravity = %.1f' % gravity)
+    if verbose:
+        if len(idx) == 0:
+            print( 'Could not find PHOENIX BT-Settl (Allard+ 2011 atmosphere model for')
+            print( '  temperature = %d' % temperature)
+            print( '  metallicity = %.1f' % metallicity)
+            print( '  log gravity = %.1f' % gravity)
 
     return sp
 
@@ -415,11 +428,12 @@ def get_cmfgenRot_atmosphere(metallicity=0, temperature=24000, gravity=4.3, rebi
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if len(idx) == 0:
-        print( 'Could not find CMFGEN rotating atmosphere model (Fierro+15) for')
-        print( '  temperature = %d' % temperature)
-        print( '  metallicity = %.1f' % metallicity)
-        print( '  log gravity = %.1f' % gravity)
+    if verbose:
+        if len(idx) == 0:
+            print( 'Could not find CMFGEN rotating atmosphere model (Fierro+15) for')
+            print( '  temperature = %d' % temperature)
+            print( '  metallicity = %.1f' % metallicity)
+            print( '  log gravity = %.1f' % gravity)
 
     return sp
 
@@ -516,7 +530,7 @@ def get_cmfgenRot_atmosphere_closest(metallicity=0, temperature=24000, gravity=4
     return sp
 
 
-def get_cmfgenNoRot_atmosphere(metallicity=0, temperature=22500, gravity=3.98, rebin=True):
+def get_cmfgenNoRot_atmosphere(metallicity=0, temperature=22500, gravity=3.98, rebin=True, verbose=True):
     """
     metallicity = [M/H] (def = 0)
     temperature = Kelvin (def = 24000)
@@ -532,11 +546,12 @@ def get_cmfgenNoRot_atmosphere(metallicity=0, temperature=22500, gravity=3.98, r
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if len(idx) == 0:
-        print( 'Could not find CMFGEN rotating atmosphere model (Fierro+15) for')
-        print( '  temperature = %d' % temperature)
-        print( '  metallicity = %.1f' % metallicity)
-        print( '  log gravity = %.1f' % gravity)
+    if verbose:
+        if len(idx) == 0:
+            print( 'Could not find CMFGEN rotating atmosphere model (Fierro+15) for')
+            print( '  temperature = %d' % temperature)
+            print( '  metallicity = %.1f' % metallicity)
+            print( '  log gravity = %.1f' % gravity)
 
     return sp
 
@@ -554,7 +569,8 @@ def get_cmfgenNoRot_atmosphere_grid(rebin=True):
         teff_arr, z_arr, logg_arr = get_atmosphere_grid('cmfgen_norot')
     return teff_arr, z_arr, logg_arr
 
-def get_cmfgenNoRot_atmosphere(metallicity=0, temperature=30000, gravity=4.14):
+# Redefinition of get_cmfgenNoRot_atmosphere and get_cmfgenNoRot_atmosphere_grid
+def get_cmfgenNoRot_atmosphere(metallicity=0, temperature=30000, gravity=4.14, verbose=True):
     """
     metallicity = [M/H] (def = 0)
     temperature = Kelvin (def = 30000)
@@ -564,11 +580,12 @@ def get_cmfgenNoRot_atmosphere(metallicity=0, temperature=30000, gravity=4.14):
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if len(idx) == 0:
-        print( 'Could not find CMFGEN non-rotating atmosphere model (Fierro+15) for')
-        print( '  temperature = %d' % temperature)
-        print( '  metallicity = %.1f' % metallicity)
-        print( '  log gravity = %.1f' % gravity)
+    if verbose:
+        if len(idx) == 0:
+            print( 'Could not find CMFGEN non-rotating atmosphere model (Fierro+15) for')
+            print( '  temperature = %d' % temperature)
+            print( '  metallicity = %.1f' % metallicity)
+            print( '  log gravity = %.1f' % gravity)
 
     return sp
 
@@ -581,7 +598,7 @@ def get_cmfgenNoRot_atmosphere_grid():
     teff_arr, z_arr, logg_arr = get_atmosphere_grid('cmfgenF15_noRot')
     return teff_arr, z_arr, logg_arr
 
-def get_phoenixv16_atmosphere(metallicity=0, temperature=4000, gravity=4, rebin=True):
+def get_phoenixv16_atmosphere(metallicity=0, temperature=4000, gravity=4, rebin=True, verbose=True):
     """
     Return PHOENIX v16 atmospheres from
     `Husser et al. 2013 <https://ui.adsabs.harvard.edu/abs/2013A%26A...553A...6H/abstract>`_.
@@ -625,17 +642,20 @@ def get_phoenixv16_atmosphere(metallicity=0, temperature=4000, gravity=4, rebin=
         (temperature, gravity, metallicity) = get_atmosphere_bounds(atm_model_name,
                                                    metallicity=metallicity,
                                                    temperature=temperature,
-                                                   gravity=gravity)
+                                                   gravity=gravity,
+                                                   verbose=verbose,
+                                                   )
 
         sp = stsyn.grid_to_spec(atm_model_name, temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if len(idx) == 0:
-        print( 'Could not find PHOENIXv16 (Husser+13) atmosphere model for')
-        print( '  temperature = %d' % temperature)
-        print( '  metallicity = %.1f' % metallicity)
-        print( '  log gravity = %.1f' % gravity)
+    if verbose:
+        if len(idx) == 0:
+            print( 'Could not find PHOENIXv16 (Husser+13) atmosphere model for')
+            print( '  temperature = %d' % temperature)
+            print( '  metallicity = %.1f' % metallicity)
+            print( '  log gravity = %.1f' % gravity)
 
     return sp
 
@@ -666,7 +686,7 @@ def get_phoenixv16_atmosphere_grid(rebin=True):
     return teff_arr, z_arr, logg_arr
 
 
-def get_BTSettl_2015_atmosphere(metallicity=0, temperature=2500, gravity=4, rebin=True):
+def get_BTSettl_2015_atmosphere(metallicity=0, temperature=2500, gravity=4, rebin=True, verbose=True):
     """
     Return atmosphere from CIFIST2011_2015 grid
     (`Allard et al. 2012 <https://ui.adsabs.harvard.edu/abs/2012RSPTA.370.2765A/abstract>`_,
@@ -708,18 +728,21 @@ def get_BTSettl_2015_atmosphere(metallicity=0, temperature=2500, gravity=4, rebi
         (temperature, gravity, metallicity) = get_atmosphere_bounds(atm_name,
                                                    metallicity=metallicity,
                                                    temperature=temperature,
-                                                   gravity=gravity)
+                                                   gravity=gravity,
+                                                   verbose=verbose,
+                                                   )
 
         sp = stsyn.grid_to_spec(atm_name, temperature, metallicity, gravity)
 
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if len(idx) == 0:
-        print( 'Could not find BTSettl_2015 atmosphere model for')
-        print( '  temperature = %d' % temperature)
-        print( '  metallicity = %.1f' % metallicity)
-        print( '  log gravity = %.1f' % gravity)
+    if verbose:
+        if len(idx) == 0:
+            print( 'Could not find BTSettl_2015 atmosphere model for')
+            print( '  temperature = %d' % temperature)
+            print( '  metallicity = %.1f' % metallicity)
+            print( '  log gravity = %.1f' % gravity)
 
     return sp
 
@@ -750,7 +773,7 @@ def get_BTSettl_2015_atmosphere_grid(rebin=True):
     return teff_arr, z_arr, logg_arr
 
 
-def get_BTSettl_atmosphere(metallicity=0, temperature=2500, gravity=4.5, rebin=True):
+def get_BTSettl_atmosphere(metallicity=0, temperature=2500, gravity=4.5, rebin=True, verbose=True):
     """
     Return atmosphere from CIFIST2011 grid
     (`Allard et al. 2012 <https://ui.adsabs.harvard.edu/abs/2012RSPTA.370.2765A/abstract>`_)
@@ -839,21 +862,24 @@ def get_BTSettl_atmosphere(metallicity=0, temperature=2500, gravity=4.5, rebin=T
         (temperature, gravity, metallicity) = get_atmosphere_bounds(atm_name,
                                                    metallicity=metallicity,
                                                    temperature=temperature,
-                                                   gravity=gravity)
+                                                   gravity=gravity,
+                                                   verbose=verbose,
+                                                   )
 
         sp = stsyn.grid_to_spec(atm_name, temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if len(idx) == 0:
-        print( 'Could not find BTSettl_2015 atmosphere model for')
-        print( '  temperature = %d' % temperature)
-        print( '  metallicity = %.1f' % metallicity)
-        print( '  log gravity = %.1f' % gravity)
+    if verbose:
+        if len(idx) == 0:
+            print( 'Could not find BTSettl_2015 atmosphere model for')
+            print( '  temperature = %d' % temperature)
+            print( '  metallicity = %.1f' % metallicity)
+            print( '  log gravity = %.1f' % gravity)
 
     return sp
 
-def get_Meisner2023_atmosphere(metallicity=0, temperature=1000, gravity=4.5, rebin=True):
+def get_Meisner2023_atmosphere(metallicity=0, temperature=1000, gravity=4.5, rebin=True, verbose=True):
     """
     Return atmosphere from Meisner2023 grid
     (`Meisner et al. 2023 <https://ui.adsabs.harvard.edu/abs/2023AJ....166...57M/abstract>`_)
@@ -878,17 +904,20 @@ def get_Meisner2023_atmosphere(metallicity=0, temperature=1000, gravity=4.5, reb
         (temperature, gravity, metallicity) = get_atmosphere_bounds(atm_name,
                                                    metallicity=metallicity,
                                                    temperature=temperature,
-                                                   gravity=gravity)
+                                                   gravity=gravity,
+                                                   verbose=verbose,
+                                                   )
 
         sp = stsyn.grid_to_spec(atm_name, temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if len(idx) == 0:
-        print( 'Could not find Meisner2023 atmosphere model for')
-        print( '  temperature = %d' % temperature)
-        print( '  metallicity = %.1f' % metallicity)
-        print( '  log gravity = %.1f' % gravity)
+    if verbose:
+        if len(idx) == 0:
+            print( 'Could not find Meisner2023 atmosphere model for')
+            print( '  temperature = %d' % temperature)
+            print( '  metallicity = %.1f' % metallicity)
+            print( '  log gravity = %.1f' % gravity)
 
     return sp
 
@@ -904,7 +933,7 @@ def get_Meisner2023_atmosphere_grid(rebin=True):
     teff_arr, z_arr, logg_arr = get_atmosphere_grid(atm_name)
     return teff_arr, z_arr, logg_arr
 
-def get_Phillips2020_atmosphere(metallicity=0, temperature=1000, gravity=4.5, rebin=True):
+def get_Phillips2020_atmosphere(metallicity=0, temperature=1000, gravity=4.5, rebin=True, verbose=True):
     """
         Return atmosphere from Phillips et al., 2020 using ATMO model
         (`Phillips et al. 2020 <https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract>`_)
@@ -928,17 +957,20 @@ def get_Phillips2020_atmosphere(metallicity=0, temperature=1000, gravity=4.5, re
         (temperature, gravity, metallicity) = get_atmosphere_bounds(atm_name,
                                                    metallicity=metallicity,
                                                    temperature=temperature,
-                                                   gravity=gravity)
+                                                   gravity=gravity,
+                                                   verbose=verbose,
+                                                   )
 
         sp = stsyn.grid_to_spec(atm_name, temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if len(idx) == 0:
-        print( 'Could not find Phillips2020 atmosphere model for')
-        print( '  temperature = %d' % temperature)
-        print( '  metallicity = %.1f' % metallicity)
-        print( '  log gravity = %.1f' % gravity)
+    if verbose:
+        if len(idx) == 0:
+            print( 'Could not find Phillips2020 atmosphere model for')
+            print( '  temperature = %d' % temperature)
+            print( '  metallicity = %.1f' % metallicity)
+            print( '  log gravity = %.1f' % gravity)
 
     return sp
 
@@ -1012,7 +1044,7 @@ def get_BTSettl_atmosphere_grid(rebin=True):
     return teff_arr, z_arr, logg_arr
 
 
-def get_wdKoester_atmosphere(metallicity=0, temperature=20000, gravity=7):
+def get_wdKoester_atmosphere(metallicity=0, temperature=20000, gravity=7, verbose=True):
     """
     Return white dwarf atmospheres from
     `Koester et al. 2010 <https://ui.adsabs.harvard.edu/abs/2010MmSAI..81..921K/abstract>`_
@@ -1037,11 +1069,12 @@ def get_wdKoester_atmosphere(metallicity=0, temperature=20000, gravity=7):
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if len(idx) == 0:
-        print( 'Could not find WD Koester (Koester+ 2010 atmosphere model for')
-        print( '  temperature = %d' % temperature)
-        print( '  metallicity = %.1f' % metallicity)
-        print( '  log gravity = %.1f' % gravity)
+    if verbose:
+        if len(idx) == 0:
+            print( 'Could not find WD Koester (Koester+ 2010 atmosphere model for')
+            print( '  temperature = %d' % temperature)
+            print( '  metallicity = %.1f' % metallicity)
+            print( '  log gravity = %.1f' % gravity)
 
     return sp
 
@@ -1053,7 +1086,7 @@ def get_wdKoester_atmosphere_grid():
     teff_arr, z_arr, logg_arr = get_atmosphere_grid('wdKoester')
     return teff_arr, z_arr, logg_arr
 
-def get_atlas_phoenix_atmosphere(metallicity=0, temperature=5250, gravity=4):
+def get_atlas_phoenix_atmosphere(metallicity=0, temperature=5250, gravity=4, verbose=True):
     """
     Return atmosphere that is a linear merge of atlas ck04 model and phoenixV16.
 
@@ -1067,17 +1100,20 @@ def get_atlas_phoenix_atmosphere(metallicity=0, temperature=5250, gravity=4):
         (temperature, gravity, metallicity) = get_atmosphere_bounds('merged_atlas_phoenix',
                                                    metallicity=metallicity,
                                                    temperature=temperature,
-                                                   gravity=gravity)
+                                                   gravity=gravity,
+                                                   verbose=verbose,
+                                                   )
 
         sp = stsyn.grid_to_spec('merged_atlas_phoenix', temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if len(idx) == 0:
-        print( 'Could not find ATLAS-PHOENIX merge atmosphere model for')
-        print( '  temperature = %d' % temperature)
-        print( '  metallicity = %.1f' % metallicity)
-        print( '  log gravity = %.1f' % gravity)
+    if verbose:
+        if len(idx) == 0:
+            print( 'Could not find ATLAS-PHOENIX merge atmosphere model for')
+            print( '  temperature = %d' % temperature)
+            print( '  metallicity = %.1f' % metallicity)
+            print( '  log gravity = %.1f' % gravity)
 
     return sp
 
@@ -1090,7 +1126,7 @@ def get_atlas_phoenix_atmosphere_grid():
     teff_arr, z_arr, logg_arr = get_atmosphere_grid('merged_atlas_phoenix')
     return teff_arr, z_arr, logg_arr
         
-def get_BTSettl_phoenix_atmosphere(metallicity=0, temperature=5250, gravity=4):
+def get_BTSettl_phoenix_atmosphere(metallicity=0, temperature=5250, gravity=4, verbose=True):
     """
     Return atmosphere that is a linear merge of BTSettl_CITFITS2011_2015 model
     and phoenixV16.
@@ -1104,17 +1140,20 @@ def get_BTSettl_phoenix_atmosphere(metallicity=0, temperature=5250, gravity=4):
         (temperature, gravity, metallicity) = get_atmosphere_bounds('merged_BTSettl_phoenix',
                                                    metallicity=metallicity,
                                                    temperature=temperature,
-                                                   gravity=gravity)
+                                                   gravity=gravity,
+                                                   verbose=verbose,
+                                                   )
 
         sp = stsyn.grid_to_spec('merged_BTSettl_phoenix', temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if len(idx) == 0:
-        print( 'Could not find ATLAS-PHOENIX merge atmosphere model for')
-        print( '  temperature = %d' % temperature)
-        print( '  metallicity = %.1f' % metallicity)
-        print( '  log gravity = %.1f' % gravity)
+    if verbose:
+        if len(idx) == 0:
+            print( 'Could not find ATLAS-PHOENIX merge atmosphere model for')
+            print( '  temperature = %d' % temperature)
+            print( '  metallicity = %.1f' % metallicity)
+            print( '  log gravity = %.1f' % gravity)
 
     return sp
 
@@ -1130,7 +1169,7 @@ def get_BTSettl_phoenix_atmosphere_grid():
     return teff_arr, z_arr, logg_arr
         
     
-def get_BTSettl_meisner_atmosphere(metallicity=0, temperature=5250, gravity=4):
+def get_BTSettl_meisner_atmosphere(metallicity=0, temperature=5250, gravity=4, verbose=True):
     """
     Return atmosphere that is a linear merge of BTSettl_CITFITS2011_2015 model
     and Meisner2023.
@@ -1144,17 +1183,20 @@ def get_BTSettl_meisner_atmosphere(metallicity=0, temperature=5250, gravity=4):
         (temperature, gravity, metallicity) = get_atmosphere_bounds('merged_BTSettl_meisner',
                                                    metallicity=metallicity,
                                                    temperature=temperature,
-                                                   gravity=gravity)
+                                                   gravity=gravity,
+                                                   verbose=verbose,
+                                                   )
 
         sp = stsyn.grid_to_spec('merged_BTSettl_meisner', temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if len(idx) == 0:
-        print( 'Could not find BTSettl-Meisner merge atmosphere model for')
-        print( '  temperature = %d' % temperature)
-        print( '  metallicity = %.1f' % metallicity)
-        print( '  log gravity = %.1f' % gravity)
+    if verbose:
+        if len(idx) == 0:
+            print( 'Could not find BTSettl-Meisner merge atmosphere model for')
+            print( '  temperature = %d' % temperature)
+            print( '  metallicity = %.1f' % metallicity)
+            print( '  log gravity = %.1f' % gravity)
 
     return sp
 
@@ -1254,7 +1296,9 @@ def get_merged_atmosphere(metallicity=0, temperature=20000, gravity=4.5, verbose
         return get_Meisner2023_atmosphere(metallicity=metallicity,
                                                 temperature=temperature,
                                                 gravity=gravity,
-                                                rebin=rebin)
+                                                rebin=rebin,
+                                                verbose=verbose,
+                                                )
 
     if (temperature <= 1200) & (temperature >= 1000):
         if (gravity >= 3.5):
@@ -1263,14 +1307,18 @@ def get_merged_atmosphere(metallicity=0, temperature=20000, gravity=4.5, verbose
             return get_Meisner2023_atmosphere(metallicity=metallicity,
                                                     temperature=temperature,
                                                     gravity=gravity,
-                                                    rebin=rebin)
+                                                    rebin=rebin,
+                                                    verbose=verbose,
+                                                    )
         if (gravity < 3.5) & (gravity >=2.5):
             if verbose:
                 print( 'Meisner2023 atmosphere')
             return get_Meisner2023_atmosphere(metallicity=metallicity,
                                                     temperature=temperature,
                                                     gravity=gravity,
-                                                    rebin=rebin)
+                                                    rebin=rebin,
+                                                    verbose=verbose,
+                                                    )
 
     if (temperature <= 3800) & (metallicity == 0):
         # High gravity are in BTSettl regime
@@ -1280,14 +1328,18 @@ def get_merged_atmosphere(metallicity=0, temperature=20000, gravity=4.5, verbose
             return get_BTSettl_2015_atmosphere(metallicity=metallicity,
                                                 temperature=temperature,
                                                 gravity=gravity,
-                                                rebin=rebin)
+                                                rebin=rebin,
+                                                verbose=verbose,
+                                                )
 
         if (temperature >= 3200) & (temperature < 3800) & (gravity > 2.5):
             if verbose:
                 print( 'BTSettl/Phoenixv16 merged atmosphere')
             return get_BTSettl_phoenix_atmosphere(metallicity=metallicity,
                                                 temperature=temperature,
-                                                gravity=gravity)
+                                                gravity=gravity,
+                                                verbose=verbose,
+                                                )
 
         # Low gravity is PHOENIX regime
         if gravity <= 2.5:
@@ -1296,7 +1348,9 @@ def get_merged_atmosphere(metallicity=0, temperature=20000, gravity=4.5, verbose
             return get_phoenixv16_atmosphere(metallicity=metallicity,
                                             temperature=temperature,
                                             gravity=gravity,
-                                            rebin=rebin)
+                                            rebin=rebin,
+                                            verbose=verbose,
+                                            )
 
     if (temperature <= 3800) & (metallicity != 0):
         if verbose:
@@ -1304,7 +1358,9 @@ def get_merged_atmosphere(metallicity=0, temperature=20000, gravity=4.5, verbose
         return get_phoenixv16_atmosphere(metallicity=metallicity,
                                         temperature=temperature,
                                         gravity=gravity,
-                                        rebin=rebin)
+                                        rebin=rebin,
+                                        verbose=verbose,
+                                        )
     # For T > 3800, no metallicity or gravity dependence
     if (temperature >= 3800) & (temperature < 5000):
         if verbose:
@@ -1312,28 +1368,36 @@ def get_merged_atmosphere(metallicity=0, temperature=20000, gravity=4.5, verbose
         return get_phoenixv16_atmosphere(metallicity=metallicity,
                                       temperature=temperature,
                                       gravity=gravity,
-                                      rebin=rebin)
+                                      rebin=rebin,
+                                      verbose=verbose,
+                                      )
 
     if (temperature >= 5000) & (temperature < 5500):
         if verbose:
             print( 'ATLAS/Phoenix merged atmosphere')
         return get_atlas_phoenix_atmosphere(metallicity=metallicity,
                                         temperature=temperature,
-                                        gravity=gravity)
+                                        gravity=gravity,
+                                        verbose=verbose,
+                                        )
 
     if (temperature >= 5500) & (temperature < 20000):
         if verbose:
             print( 'ATLAS merged atmosphere')
         return get_castelli_atmosphere(metallicity=metallicity,
                                       temperature=temperature,
-                                      gravity=gravity)
+                                      gravity=gravity,
+                                      verbose=verbose,
+                                      )
 
     if temperature >= 20000:
         if verbose:
             print( 'Still ATLAS merged atmosphere')
         return get_castelli_atmosphere(metallicity=metallicity,
                                        temperature=temperature,
-                                       gravity=gravity)
+                                       gravity=gravity,
+                                       verbose=verbose,
+                                       )
 
         #print('CMFGEN')
         #return get_cmfgenRot_atmosphere_closest(metallicity=metallicity,
@@ -1694,7 +1758,7 @@ def download_CMFGEN_atmospheres(Table_rot, Table_norot):
     t_rot = Table.read(Table_rot, format='ascii')
     t_norot = Table.read(Table_norot, format='ascii')
 
-    tables = [t_rot, t_norot]
+    tables = [t_rot, t_norot] # Unused
     filenames = [t_rot['col1'], t_norot['col1']]
 
     # Hardcoded list of webiste addresses
@@ -1728,7 +1792,8 @@ def download_CMFGEN_atmospheres(Table_rot, Table_norot):
                                 (masses > mass_arr[g]) )
             # Use wget command to pull down the files, and unzip them
             for k in good[0]:
-                full = web[j]+'{1:s}.flx.zip'.format(mass_arr[j],filenames[i][k])
+                # Second format argument unused
+                full = web[j]+'{1:s}.flx.zip'.format(mass_arr[j],filenames[i][k]) 
                 os.system('wget ' + full)
                 os.system('unzip '+ filenames[i][k] + '.flx.zip')
 
@@ -2000,7 +2065,7 @@ def rebin_cmfgen(cdbs_path, rot=True):
     return
 
 
-def organize_PHOENIXv16_atmospheres(path_to_dir, met_str='m00'):
+def organize_PHOENIXv16_atmospheres(path_to_dir, met_str='m00', verbose=True):
     """
     Construct the Phoenix Husser+13 atmopsheres for each model. Combines the
     fluxes from the *HiRES.fits files and the wavelengths of the
@@ -2036,7 +2101,8 @@ def organize_PHOENIXv16_atmospheres(path_to_dir, met_str='m00'):
     temp_arr = np.arange(2300, 7001, 100)
     temp_arr = np.append(temp_arr, np.arange(7000, 12001, 200))
 
-    print( 'Looping though all temps')
+    if verbose:
+        print( 'Looping though all temps')
     # For each temp, build file containing the flux for all gravities
     i = 0
     for temp in temp_arr:
@@ -2064,7 +2130,8 @@ def organize_PHOENIXv16_atmospheres(path_to_dir, met_str='m00'):
 
         # Progress counter for user
         i += 1
-        print( 'Done {0:d} of {1:d}'.format(i, len(temp_arr)))
+        if verbose:
+            print( 'Done {0:d} of {1:d}'.format(i, len(temp_arr)))
 
     # Return to original directory
     os.chdir(start_dir)
@@ -2131,7 +2198,7 @@ def make_PHOENIXv16_catalog(path_to_dir, met_str='m00'):
 
     return
 
-def cdbs_PHOENIXv16(path_to_cdbs_dir):
+def cdbs_PHOENIXv16(path_to_cdbs_dir, verbose=True):
     """
     Put the PHOENIXv16 (Husser+13) fits files into cdbs format. This primarily
     consists of adjusting the flux units from [erg/s/cm^2/cm] to [erg/s/cm^2/A]
@@ -2174,8 +2241,8 @@ def cdbs_PHOENIXv16(path_to_cdbs_dir):
         # Construct new FITS file based on old one
         hdu = fits.open(i)
         header_0 = hdu[0].header
-        header_1 = hdu[1].header
-        sci = hdu[1].data
+        header_1 = hdu[1].header # Unused
+        sci = hdu[1].data # Unused
 
         tbhdu = fits.table_to_hdu(cur_table)
 
@@ -2201,14 +2268,15 @@ def cdbs_PHOENIXv16(path_to_cdbs_dir):
         finalhdu.writeto(i, overwrite=True)
 
         hdu.close()
-        print( 'Done {0:2.0f} of {1:2.0f}'.format(counter, len(files)))
+        if verbose:
+            print( 'Done {0:2.0f} of {1:2.0f}'.format(counter, len(files)))
 
     # Change back to starting directory
     os.chdir(start_dir)
 
     return
 
-def rebin_phoenixV16(cdbs_path):
+def rebin_phoenixV16(cdbs_path, verbose=True):
     """
     Rebin phoenixV16 models to atlas ck04 resolution; this makes
     spectrophotometry MUCH faster
@@ -2311,13 +2379,13 @@ def rebin_phoenixV16(cdbs_path):
             finalhdu = fits.HDUList([prihdu, tbhdu])
             # don't have overwrite to protect original files.
             finalhdu.writeto(outfile)
-
-            print( 'Finished file ' + outfile + ' with gravities: ', logg_exist)
+            if verbose:
+                print( 'Finished file ' + outfile + ' with gravities: ', logg_exist)
 
 
     return
 
-def organize_BTSettl_2015_atmospheres(path_to_dir):
+def organize_BTSettl_2015_atmospheres(path_to_dir, verbose=True):
     """
     Construct cdbs-ready BTSettl_CIFITS_2011_2015 atmospheres for each model.
     Will convert wavelength units to angstroms and flux units to [erg/s/cm^2/A]
@@ -2337,14 +2405,15 @@ def organize_BTSettl_2015_atmospheres(path_to_dir):
         os.mkdir('BTSettl_2015')
 
     # Process each atmosphere file independently
-    print( 'Creating cdbs-ready files')
+    if verbose:
+        print( 'Creating cdbs-ready files')
     files = glob.glob('*.spec.fits')
 
     for i in files:
         hdu = fits.open(i)
         spec = hdu[1].data
         header_0 = hdu[0].header
-        header_1 = hdu[1].header
+        header_1 = hdu[1].header # Unused
 
         wave = spec.field(0)
         flux = spec.field(1)
@@ -2417,7 +2486,7 @@ def make_BTSettl_2015_catalog(path_to_dir):
 
     return
 
-def rebin_BTSettl_2015(cdbs_path=os.environ['PYSYN_CDBS']):
+def rebin_BTSettl_2015(cdbs_path=os.environ['PYSYN_CDBS'], verbose=True):
     """
     Rebin BTSettle_CIFITS2011_2015 models to atlas ck04 resolution; this makes
     spectrophotometry MUCH faster
@@ -2443,8 +2512,9 @@ def rebin_BTSettl_2015(cdbs_path=os.environ['PYSYN_CDBS']):
     # Read in the existing catalog.fits file and rebin every spectrum.
     cat = fits.getdata(cdbs_path + '/grid/BTSettl_2015/catalog.fits')
     files_all = [cat[ii][1].split('[')[0] for ii in range(len(cat))]
-
-    print( 'Rebinning BTSettl spectra')
+    
+    if verbose:
+        print( 'Rebinning BTSettl spectra')
     for ff in range(len(files_all)):
         vals = cat[ff][0].split(',')
         temp = float(vals[0])
@@ -2471,7 +2541,7 @@ def rebin_BTSettl_2015(cdbs_path=os.environ['PYSYN_CDBS']):
 
     return
 
-def make_wavelength_unique(files, dirname):
+def make_wavelength_unique(files, dirname, verbose=True):
     """
     Helper function to go through each BTSettl spectrum and ensure that
     each wavelength point is unique. This is required for rebinning to work.
@@ -2515,12 +2585,13 @@ def make_wavelength_unique(files, dirname):
             tbhdu.header['TUNIT2'] = 'FLAM'
             finalhdu = fits.HDUList([prihdu, tbhdu])
             finalhdu.writeto('{0}/{1}'.format(dirname,i), overwrite=True)
-
-        print('Done {0}'.format(i))
+            
+        if verbose:
+            print('Done {0}'.format(i))
 
     return
 
-def organize_BTSettl_atmospheres():
+def organize_BTSettl_atmospheres(verbose=True):
     """
     Construct cdbs-ready atmospheres for the BTSettl grid (CIFITS2011).
     The code expects tp be run in cdbs/grid/BTSettl, and expects that the
@@ -2537,7 +2608,8 @@ def organize_BTSettl_atmospheres():
     # Will convert flux into Ergs/sec/cm**2/A (FLAM) units and save as a fits file,
     # for faster access later
     for ii in dirs:
-        print('Starting {0}'.format(ii))
+        if verbose:
+            print('Starting {0}'.format(ii))
         os.chdir(ii)
 
         files = glob.glob('*.txt')
@@ -2568,7 +2640,8 @@ def organize_BTSettl_atmospheres():
             hdu_new.writeto('{0}.fits'.format(jj[:-4]), overwrite=True)
             hdu_new.close()
             count += 1
-            print('Done {0} of {1}'.format(count, len(files)))
+            if verbose:
+                print('Done {0} of {1}'.format(count, len(files)))
 
         # Now, clean up all the files made when unzipping the spectra
         cmd1 = 'rm *.bz2'
@@ -2577,16 +2650,17 @@ def organize_BTSettl_atmospheres():
         os.system(cmd1)
         os.system(cmd2)
         #os.system(cmd3)
-        print('==============================')
-        print('Done {0}'.format(ii))
-        print('==============================')
+        if verbose:
+            print('==============================')
+            print('Done {0}'.format(ii))
+            print('==============================')
 
         # Go back to original directory, move to next metallicity directory
         os.chdir(orig_dir)
 
     return
 
-def make_BTSettl_catalog():
+def make_BTSettl_catalog(verbose=True):
     """
     Create cdbs catalog.fits of BTSettl grid.
     THIS IS STEP 2, after organize_BTSettl_atmospheres has
@@ -2635,7 +2709,8 @@ def make_BTSettl_catalog():
             name_str.append('{0}/{1}[Flux]'.format(ii, jj))
 
         # Go back to original directory to move to next metallicity
-        print('Done {0}'.format(ii))
+        if verbose:
+            print('Done {0}'.format(ii))
         os.chdir(start_dir)
 
     # Make catalog
@@ -2649,7 +2724,7 @@ def make_BTSettl_catalog():
 
     return
 
-def rebin_BTSettl(make_unique=False):
+def rebin_BTSettl(make_unique=False, verbose=True):
     """
     Rebin BTSettle models to atlas ck04 resolution; this makes
     spectrophotometry MUCH faster
@@ -2677,12 +2752,15 @@ def rebin_BTSettl(make_unique=False):
     #        tmp.append(ii)
     #files_all = tmp
     #=============================#
-
-    print( 'Rebinning BTSettl spectra')
+    
+    if verbose:
+        print( 'Rebinning BTSettl spectra')
     if make_unique:
-        print('Making unique')
+        if verbose:
+            print('Making unique')
         make_wavelength_unique(files_all, 'BTSettl')
-        print('Done')
+        if verbose:
+            print('Done')
 
     for ff in range(len(files_all)):
         vals = cat[ff][0].split(',')
@@ -2714,12 +2792,13 @@ def rebin_BTSettl(make_unique=False):
             outfile = path + files_all[ff].split('[')[0]
             cmd = 'cp {0} {1}'.format(orig_file, outfile)
             os.system(cmd)
-
-        print('Done {0} of {1}'.format(ff, len(files_all)))
+            
+        if verbose:
+            print('Done {0} of {1}'.format(ff, len(files_all)))
 
     return
 
-def organize_all_Meisner2023_atmospheres():
+def organize_all_Meisner2023_atmospheres(verbose=True):
     """
     Construct cdbs-ready atmospheres for the Meisner2023 grid.
     The code expects tp be run in cdbs/grid/Meisner2023, and expects that the
@@ -2732,7 +2811,8 @@ def organize_all_Meisner2023_atmospheres():
     # Go through each directory, turning each spectrum into a cdbs-ready file.
     # Save as a fits file, for faster access later
     for ii in dirs:
-        print('Starting {0}'.format(ii))
+        if verbose:
+            print('Starting {0}'.format(ii))
         os.chdir(ii)
 
         files = glob.glob('*.fits')
@@ -2765,14 +2845,15 @@ def organize_all_Meisner2023_atmospheres():
             hdu_new.writeto(output_filename, overwrite=True)
             hdu_new.close()
             count += 1
-            print('Done {0} of {1}'.format(count, len(files)))
+            if verbose:
+                print('Done {0} of {1}'.format(count, len(files)))
 
         # Go back to original directory, move to next metallicity directory
         os.chdir(orig_dir)
 
     return
 
-def make_Meisner2023_catalog():
+def make_Meisner2023_catalog(verbose=True):
     """
     Create cdbs catalog.fits of Meisner2023 grid.
     THIS IS STEP 2, after organize_Meisner2023_atmospheres has
@@ -2815,8 +2896,8 @@ def make_Meisner2023_catalog():
             # Construct index and filename strings
             index_str.append('{0},{1},{2:3.2f}'.format(int(temp), metallicity, logg))
             name_str.append('{0}/{1}[Flux]'.format(ii, jj))
-
-        print('Processed directory:', ii)
+        if verbose:
+            print('Processed directory:', ii)
         os.chdir(start_dir)
 
 
@@ -2831,7 +2912,7 @@ def make_Meisner2023_catalog():
 
     return
 
-def rebin_Meisner2023(make_unique=False):
+def rebin_Meisner2023(make_unique=False, verbose=True):
     """
     Rebin Meisner2023 models to atlas ck04 resolution; this makes
     spectrophotometry MUCH faster
@@ -2851,12 +2932,15 @@ def rebin_Meisner2023(make_unique=False):
     # Load the catalog.fits file and extract all spectra file paths
     cat = Table.read('Meisner2023/catalog.fits')
     files_all = [cat[ii]['FILENAME'].split('[')[0] for ii in range(len(cat))]
-
-    print('Rebinning Meisner2023 spectra')
+    
+    if verbose:
+        print('Rebinning Meisner2023 spectra')
     if make_unique:
-        print('Making unique')
+        if verbose:
+            print('Making unique')
         make_wavelength_unique(files_all, 'Meisner2023')
-        print('Done')
+        if verbose:
+            print('Done')
 
     for ff, file in enumerate(files_all):
         vals = cat[ff]['INDEX'].split(',')
@@ -2885,18 +2969,20 @@ def rebin_Meisner2023(make_unique=False):
             finalhdu.writeto(outfile, overwrite=True)
 
         except Exception as e:
-            print(f"Error processing {file}: {e}")
+            if verbose:
+                print(f"Error processing {file}: {e}")
             orig_file = os.path.join('Meisner2023', file)
             outfile = os.path.join(rebin_path, os.path.basename(file))
             os.system(f'cp {orig_file} {outfile}')
-
-        print('Done {0} of {1}'.format(ff + 1, len(files_all)))
+        
+        if verbose:
+            print('Done {0} of {1}'.format(ff + 1, len(files_all)))
 
     return
 
 
 
-def organize_WDKoester_atmospheres(path_to_dir):
+def organize_WDKoester_atmospheres(path_to_dir, verbose=True):
     """
     Construct cdbs-ready wdKoester WD atmospheres for each model. (from Koester 2010)
     Will convert wavelength units to angstroms and flux units to [erg/s/cm^2/A]
@@ -2912,7 +2998,8 @@ def organize_WDKoester_atmospheres(path_to_dir):
     os.chdir(path_to_dir)
 
     # Process each atmosphere file independently
-    print( 'Creating cdbs-ready files')
+    if verbose:
+        print( 'Creating cdbs-ready files')
     files = glob.glob('*.dk.dat.txt')
 
     for i in files:
@@ -2984,7 +3071,7 @@ def make_WDKoester_catalog(path_to_dir):
 
     return
 
-def rebin_WDKoester(cdbs_path=os.environ['PYSYN_CDBS']):
+def rebin_WDKoester(cdbs_path=os.environ['PYSYN_CDBS'], verbose=True):
     """
     Rebin wdKoester models to atlas ck04 resolution; this makes
     spectrophotometry MUCH faster
@@ -3010,8 +3097,9 @@ def rebin_WDKoester(cdbs_path=os.environ['PYSYN_CDBS']):
     # Read in the existing catalog.fits file and rebin every spectrum.
     cat = fits.getdata(cdbs_path + '/grid/wdKoester/catalog.fits')
     files_all = [cat[ii][1].split('[')[0] for ii in range(len(cat))]
-
-    print( 'Rebinning wdKoester spectra')
+    
+    if verbose:
+        print( 'Rebinning wdKoester spectra')
     for ff in range(len(files_all)):
         vals = cat[ff][0].split(',')
         temp = float(vals[0])
