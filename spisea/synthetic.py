@@ -534,14 +534,24 @@ class ResolvedCluster(Cluster):
         companions = Table([system_index], names=['system_idx'])
         companions.add_column(np.zeros(N_comp_tot, dtype=float), name='mass')
 
-        if isinstance(self.imf._multi_props, multiplicity.MultiplicityResolvedDK):
-            companions.add_column(Column(self.imf._multi_props.log_semimajoraxis(star_systems['mass'][companions['system_idx']]), name='log_a'))
-            companions.add_column(Column(self.imf._multi_props.random_e(self.rng.random(N_comp_tot)), name='e'))
-            companions['i'], companions['Omega'], companions['omega'] = self.imf._multi_props.random_keplarian_parameters(
-                self.rng.random(N_comp_tot),
-                self.rng.random(N_comp_tot),
-                self.rng.random(N_comp_tot)
-            )
+        # Resolved if the multiplicity object implements orbital draws.
+        # Offner resolved is not a MultiplicityResolvedDK subclass.
+        multi_props = self.imf._multi_props
+        if (hasattr(multi_props, 'log_semimajoraxis') and
+                hasattr(multi_props, 'random_e') and
+                hasattr(multi_props, 'random_keplarian_parameters')):
+            prim_mass = star_systems['mass'][companions['system_idx']]
+            companions.add_column(Column(
+                multi_props.log_semimajoraxis(prim_mass, rng=self.rng),
+                name='log_a'))
+            companions.add_column(Column(
+                multi_props.random_e(self.rng.random(N_comp_tot)), name='e'))
+            companions['i'], companions['Omega'], companions['omega'] = (
+                multi_props.random_keplarian_parameters(
+                    self.rng.random(N_comp_tot),
+                    self.rng.random(N_comp_tot),
+                    self.rng.random(N_comp_tot),
+                    rng=self.rng))
 
         companions['mass'] = compMass.compressed()
         for key in ['Teff', 'L', 'logg', 'mass_current', 'phase']:
