@@ -48,3 +48,5 @@ new filter sets, data set maintenance
 Anna Pusack -- Added IRTF L-band filter support
 
 Caitlin Begbie -- added brown dwarf physics and capabilities
+
+Riley Patlak -- added merged Sonora and MIST models for evolution and atmospheres

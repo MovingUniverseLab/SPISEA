@@ -1924,7 +1924,7 @@ class COSMIC(StellarEvolution):
 #==============================#
 # Merged model classes
 #==============================#
-class MergedFlameSkimmerRedDiamondbackMISTv12(StellarEvolution):
+class MergedFlameSkimmerRedDiamondbackMIST(StellarEvolution):
     """
     Load the merged Sonora Flame Skimmer, Sonora Red Diamondback, and
     MIST v1.2 evolution grid.
@@ -1946,7 +1946,7 @@ class MergedFlameSkimmerRedDiamondbackMISTv12(StellarEvolution):
     model_dir : str or path-like, optional
         Root directory containing the seven metallicity subdirectories from
         ``iso/z0014`` through ``iso/z045``. When omitted, use the installed SPISEA model location
-        ``evolution/merged/flame_red_diamondback_mist_v12``.
+        ``evolution/merged/flame_red_diamondback_mist``.
     """
 
     def __init__(self, model_dir=None):
@@ -1970,7 +1970,7 @@ class MergedFlameSkimmerRedDiamondbackMISTv12(StellarEvolution):
             model_dir = os.path.join(
                 models_dir,
                 'merged',
-                'flame_red_diamondback_mist_v12',
+                'flame_red_diamondback_mist',
             )
             self._uses_installed_grid = True
         else:
@@ -1985,7 +1985,7 @@ class MergedFlameSkimmerRedDiamondbackMISTv12(StellarEvolution):
             z_list,
         )
         self.model_version_name = (
-            'MergedFlameSkimmerRedDiamondbackMISTv12'
+            'MergedFlameSkimmerRedDiamondbackMIST'
         )
         self.z_solar = 0.0142
         self.metallicity_list = np.array(
