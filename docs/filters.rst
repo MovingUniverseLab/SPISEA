@@ -33,9 +33,11 @@ directories.
 	`Maíz Apellániz (2006)
 	<https://ui.adsabs.harvard.edu/abs/2006AJ....131.1184M/abstract>`_ Appendix A for more details.
 	We assume that filters are defined in pure transmission $T(\lambda)$ and generate photometry 
-	for photon counting detectors. The following filter systems were clearly documented to 
+	multiply in the lambda factor at the time of integration to simulate photon count flux. 
+	The following filter systems were clearly documented to 
 	have been scaled by $\lambda$ in their original source, so we divide it out and 
-	renormalize when initializing these filter objects: 2MASS, TESS, Washington.
+	renormalize when initializing these filter objects: 2MASS,
+	TESS, Washington.
 
 
 Available filters:
