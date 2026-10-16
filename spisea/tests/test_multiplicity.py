@@ -145,7 +145,11 @@ def test_resolvedmult():
     """
     Test creating a MultiplicityResolvedDK object
     and that the parameters it's populated with are correct.
-    Updated to test for specific brown dwarf characteristics.
+
+    Brown-dwarf primaries may have more than one companion.
+    Companion counts are clipped at ``CSF_max`` only when
+    ``companion_max`` is True. Separation checks still use the
+    Fontanive et al. (2018) brown-dwarf log(a) distribution.
     """
     from spisea import synthetic, evolution, atmospheres, reddening, ifmr
     # Fetch isochrone
@@ -207,12 +211,41 @@ def test_resolvedmult():
     bin_centers = 0.5*(bins[1:] + bins[:-1])
     assert all(np.abs(i) < 0.15 for i in n/max(n) - np.sin(np.pi*bin_centers/180))
 
-    #checks for brown dwarf specific features
+    # Brown-dwarf primaries may host more than one companion.
+    # The cluster above uses the DK default (companion_max=False),
+    # so the Poisson draw is not clipped at 1 or at CSF_max.
     bd_idx = np.where(clust_Mult.star_systems['mass'] < 0.08)[0]
+    n_bd = np.asarray(clust_Mult.star_systems['N_companions'][bd_idx])
+    assert np.all(n_bd >= 0)
+    if clust_multiplicity.companion_max:
+        assert np.all(n_bd <= clust_multiplicity.CSF_max), (
+            "BD companion counts exceed CSF_max with companion_max=True."
+        )
+    else:
+        assert np.any(n_bd > 1), (
+            "Expected some BD primaries with more than one companion."
+        )
 
-    #check there is only one possible companion per BD
-    assert all(clust_Mult.star_systems['N_companions'][bd_idx] <= 1), \
-    "Brown dwarf primaries have >1 companion."
+    # Controlled draws, independent of the cluster realization.
+    # Uncapped DK allows n_comp > 1; companion_max clips at CSF_max.
+    # Masses are in solar masses (Msun); counts are dimensionless.
+    bd_draw_masses = np.full(4000, 0.04)  # solar masses (Msun)
+    dk_open = multiplicity.MultiplicityResolvedDK(companion_max=False)
+    mf_open = dk_open.multiplicity_fraction(bd_draw_masses)
+    csf_open = np.full(len(bd_draw_masses), 2.5)
+    n_open = dk_open.draw_n_companions(
+        bd_draw_masses, csf_open, mf_open, np.random.default_rng(0))
+    assert np.any(n_open > 1)
+    assert np.all(n_open >= 1)
+
+    dk_cap = multiplicity.MultiplicityResolvedDK(
+        companion_max=True, CSF_max=1)
+    mf_cap = dk_cap.multiplicity_fraction(bd_draw_masses)
+    csf_cap = np.full(len(bd_draw_masses), 3.0)
+    n_cap = dk_cap.draw_n_companions(
+        bd_draw_masses, csf_cap, mf_cap, np.random.default_rng(0))
+    assert np.all(n_cap <= dk_cap.CSF_max)
+    assert np.all(n_cap >= 1)
 
     comp_rows = []
     start = 0
