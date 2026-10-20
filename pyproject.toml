@@ -36,7 +36,8 @@ optional-dependencies.dev = [
     "wheel",
     "numpydoc",
     "sphinx_rtd_theme",
-    "pytest"
+    "pytest",
+    "pytest-astropy-header",
 ]
 
 classifiers = [
@@ -69,12 +70,14 @@ packages = ["spisea"]
 [tool.setuptools.package-data]
 spisea = ["data/*"]
 
-[tool.pytest]
+[tool.pytest.ini_options]
 minversion = "9.0"
 addopts = ["-ra", "-q"]
 testpaths = [
-    "spisea",
-    "docs",
+    "spisea/tests",
+]
+markers = [
+    "slow: isochrone or cluster tests that need CDBS/evolution grids",
 ]
 
 ### Stuff from setup.cfg that hasn't been ported over.

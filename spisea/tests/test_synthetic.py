@@ -21,6 +21,7 @@ from spisea import reddening, evolution, atmospheres, ifmr
 
 spisea_path = os.path.dirname(spisea.__file__)
 
+@pytest.mark.slow
 def test_isochrone(plot=False):
     logAge = 6.7
     AKs = 2.7
@@ -409,6 +410,7 @@ def test_ResolvedCluster():
 
     return
 
+@pytest.mark.slow
 def test_ResolvedClusterDiffRedden():
     logAge = 6.7
     AKs = 2.4
@@ -681,6 +683,7 @@ def test_ifmr_multiplicity():
 
     return
 
+@pytest.mark.slow
 def test_metallicity():
     """
     Test isochrone generation at different metallicities
@@ -755,6 +758,7 @@ def test_metallicity():
 
     return
 
+@pytest.mark.slow
 def test_cluster_mass():
     # Define cluster parameters
     logAge = 6.7
@@ -908,6 +912,7 @@ def test_keep_low_mass_stars():
     return
 
 
+@pytest.mark.slow
 def test_compact_object_companions():
 
     # Define cluster parameters
@@ -970,6 +975,7 @@ def _require_cosmic():
 
     return
 
+@pytest.mark.slow
 def test_COSMIC_evolve():
     """
     Test the COSMIC external evolution model's evolve() method directly on a
@@ -1504,6 +1510,7 @@ def test_ResolvedCluster_random_state():
     return
 
 
+@pytest.mark.slow
 def test_ResolvedCluster_no_companions():
     """
     Test case where no companions get generated to

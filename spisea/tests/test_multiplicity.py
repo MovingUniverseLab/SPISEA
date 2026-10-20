@@ -3,6 +3,8 @@ import time
 import os
 import spisea
 from spisea.imf import imf, multiplicity
+import pytest
+
 
 def test_create_MultiplicityUnresolved():
     """
@@ -141,6 +143,7 @@ def test_companion_star_fraction():
     np.testing.assert_almost_equal(csf_bd3, 0.50 * 0.01 ** 0.45, decimal=4)
 
 
+@pytest.mark.slow
 def test_resolvedmult():
     """
     Test creating a MultiplicityResolvedDK object

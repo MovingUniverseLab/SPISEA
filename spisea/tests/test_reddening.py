@@ -5,6 +5,7 @@ import pylab as py
 import os
 import pdb
 from astropy import units as u
+import pytest
 
 spisea_path = os.path.dirname(spisea.__file__)
 
@@ -193,6 +194,7 @@ def test_RedLawBrokenPowerLaw(plots=False):
     return
 
 
+@pytest.mark.slow
 def test_red_law_IsochronePhot():
     """
     Make sure each reddening law can run with IsochronePhot.
