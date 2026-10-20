@@ -191,12 +191,12 @@ def get_kurucz_atmosphere(metallicity=0, temperature=20000, gravity=4, rebin=Fal
 
     # Do some error checking for 0 fluxes.
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if verbose:
-        if len(idx) == 0:
-            print( 'Could not find Kurucz 1993 atmosphere model for')
-            print( '  temperature = %d' % temperature)
-            print( '  metallicity = %.1f' % metallicity)
-            print( '  log gravity = %.1f' % gravity)
+    if len(idx) == 0:
+        msg = f"""Could not find Kurucz 1993 atmosphere model for
+  temperature = {temperature:d}
+  metallicity = {metallicity:.1f}
+  log gravity = {gravity:.1f}"""
+        warnings.warn(msg)
 
     return sp
 
@@ -259,12 +259,12 @@ def get_castelli_atmosphere(metallicity=0, temperature=20000, gravity=4, rebin=F
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if verbose:
-        if len(idx) == 0:
-            print( 'Could not find Castelli and Kurucz 2004 atmosphere model for')
-            print( '  temperature = %d' % temperature)
-            print( '  metallicity = %.1f' % metallicity)
-            print( '  log gravity = %.1f' % gravity)
+    if len(idx) == 0:
+        msg = f"""Could not find Castelli and Kurucz 2004 atmosphere model for
+  temperature = {temperature:d}
+  metallicity = {metallicity:.1f}
+  log gravity = {gravity:.1f}"""
+        warnings.warn(msg)
 
     return sp
 
@@ -304,12 +304,12 @@ def get_nextgen_atmosphere(metallicity=0, temperature=5000, gravity=4, rebin=Fal
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if verbose:
-        if len(idx) == 0:
-            print( 'Could not find NextGen atmosphere model for')
-            print( '  temperature = %d' % temperature)
-            print( '  metallicity = %.1f' % metallicity)
-            print( '  log gravity = %.1f' % gravity)
+    if len(idx) == 0:
+        msg = f"""Could not find NextGen atmosphere model for
+  temperature = {temperature:d}
+  metallicity = {metallicity:.1f}
+  log gravity = {gravity:.1f}"""
+        warnings.warn(msg)
 
     return sp
 
@@ -332,12 +332,12 @@ def get_amesdusty_atmosphere(metallicity=0, temperature=5000, gravity=4, rebin=F
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if verbose:
-        if len(idx) == 0:
-            print( 'Could not find AMESdusty Allard+ 2000 atmosphere model for')
-            print( '  temperature = %d' % temperature)
-            print( '  metallicity = %.1f' % metallicity)
-            print( '  log gravity = %.1f' % gravity)
+    if len(idx) == 0:
+        msg = f"""Could not find AMESdusty Allard+ 2000 atmosphere model for
+  temperature = {temperature:d}
+  metallicity = {metallicity:.1f}
+  log gravity = {gravity:.1f}"""
+        warnings.warn(msg)
 
     return sp
 
@@ -388,12 +388,12 @@ def get_phoenix_atmosphere(metallicity=0, temperature=5000, gravity=4,
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if verbose:
-        if len(idx) == 0:
-            print( 'Could not find PHOENIX BT-Settl (Allard+ 2011 atmosphere model for')
-            print( '  temperature = %d' % temperature)
-            print( '  metallicity = %.1f' % metallicity)
-            print( '  log gravity = %.1f' % gravity)
+    if len(idx) == 0:
+        msg = f"""Could not find PHOENIX BT-Settl (Allard+ 2011 atmosphere model for
+  temperature = {temperature:d}
+  metallicity = {metallicity:.1f}
+  log gravity = {gravity:.1f}"""
+        warnings.warn(msg)
 
     return sp
 
@@ -429,12 +429,12 @@ def get_cmfgenRot_atmosphere(metallicity=0, temperature=24000, gravity=4.3, rebi
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if verbose:
-        if len(idx) == 0:
-            print( 'Could not find CMFGEN rotating atmosphere model (Fierro+15) for')
-            print( '  temperature = %d' % temperature)
-            print( '  metallicity = %.1f' % metallicity)
-            print( '  log gravity = %.1f' % gravity)
+    if len(idx) == 0:
+        msg = f"""Could not find CMFGEN rotating atmosphere model (Fierro+15) for
+  temperature = {temperature:d}
+  metallicity = {metallicity:.1f}
+  log gravity = {gravity:.1f}"""
+        warnings.warn(msg)
 
     return sp
 
@@ -547,12 +547,12 @@ def get_cmfgenNoRot_atmosphere(metallicity=0, temperature=22500, gravity=3.98, r
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if verbose:
-        if len(idx) == 0:
-            print( 'Could not find CMFGEN rotating atmosphere model (Fierro+15) for')
-            print( '  temperature = %d' % temperature)
-            print( '  metallicity = %.1f' % metallicity)
-            print( '  log gravity = %.1f' % gravity)
+    if len(idx) == 0:
+        msg = f"""Could not find CMFGEN rotating atmosphere model (Fierro+15) for
+  temperature = {temperature:d}
+  metallicity = {metallicity:.1f}
+  log gravity = {gravity:.1f}"""
+        warnings.warn(msg)
 
     return sp
 
@@ -581,12 +581,12 @@ def get_cmfgenNoRot_atmosphere(metallicity=0, temperature=30000, gravity=4.14, v
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if verbose:
-        if len(idx) == 0:
-            print( 'Could not find CMFGEN non-rotating atmosphere model (Fierro+15) for')
-            print( '  temperature = %d' % temperature)
-            print( '  metallicity = %.1f' % metallicity)
-            print( '  log gravity = %.1f' % gravity)
+    if len(idx) == 0:
+        msg = f"""Could not find CMFGEN non-rotating atmosphere model (Fierro+15) for
+  temperature = {temperature:d}
+  metallicity = {metallicity:.1f}
+  log gravity = {gravity:.1f}"""
+        warnings.warn(msg)
 
     return sp
 
@@ -651,12 +651,12 @@ def get_phoenixv16_atmosphere(metallicity=0, temperature=4000, gravity=4, rebin=
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if verbose:
-        if len(idx) == 0:
-            print( 'Could not find PHOENIXv16 (Husser+13) atmosphere model for')
-            print( '  temperature = %d' % temperature)
-            print( '  metallicity = %.1f' % metallicity)
-            print( '  log gravity = %.1f' % gravity)
+    if len(idx) == 0:
+        msg = f"""Could not find PHOENIXv16 (Husser+13) atmosphere model for
+  temperature = {temperature:d}
+  metallicity = {metallicity:.1f}
+  log gravity = {gravity:.1f}"""
+        warnings.warn(msg)
 
     return sp
 
@@ -738,12 +738,12 @@ def get_BTSettl_2015_atmosphere(metallicity=0, temperature=2500, gravity=4, rebi
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if verbose:
-        if len(idx) == 0:
-            print( 'Could not find BTSettl_2015 atmosphere model for')
-            print( '  temperature = %d' % temperature)
-            print( '  metallicity = %.1f' % metallicity)
-            print( '  log gravity = %.1f' % gravity)
+    if len(idx) == 0:
+        msg = f"""Could not find BTSettl_2015 atmosphere model for
+  temperature = {temperature:d}
+  metallicity = {metallicity:.1f}
+  log gravity = {gravity:.1f}"""
+        warnings.warn(msg)
 
     return sp
 
@@ -871,12 +871,12 @@ def get_BTSettl_atmosphere(metallicity=0, temperature=2500, gravity=4.5, rebin=T
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if verbose:
-        if len(idx) == 0:
-            print( 'Could not find BTSettl_2015 atmosphere model for')
-            print( '  temperature = %d' % temperature)
-            print( '  metallicity = %.1f' % metallicity)
-            print( '  log gravity = %.1f' % gravity)
+    if len(idx) == 0:
+        msg = f"""Could not find BTSettl_2015 atmosphere model for'
+  temperature = {temperature:d}
+  metallicity = {metallicity:.1f}
+  log gravity = {gravity:.1f}"""
+        warnings.warn(msg)
 
     return sp
 
@@ -913,12 +913,12 @@ def get_Meisner2023_atmosphere(metallicity=0, temperature=1000, gravity=4.5, reb
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if verbose:
-        if len(idx) == 0:
-            print( 'Could not find Meisner2023 atmosphere model for')
-            print( '  temperature = %d' % temperature)
-            print( '  metallicity = %.1f' % metallicity)
-            print( '  log gravity = %.1f' % gravity)
+    if len(idx) == 0:
+        msg = f"""Could not find Meisner2023 atmosphere model for
+  temperature = {temperature:d}
+  metallicity = {metallicity:.1f}
+  log gravity = {gravity:.1f}"""
+        warnings.warn(msg)
 
     return sp
 
@@ -966,12 +966,12 @@ def get_Phillips2020_atmosphere(metallicity=0, temperature=1000, gravity=4.5, re
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if verbose:
-        if len(idx) == 0:
-            print( 'Could not find Phillips2020 atmosphere model for')
-            print( '  temperature = %d' % temperature)
-            print( '  metallicity = %.1f' % metallicity)
-            print( '  log gravity = %.1f' % gravity)
+    if len(idx) == 0:
+        msg = f"""Could not find Phillips2020 atmosphere model for
+  temperature = {temperature:d}
+  metallicity = {metallicity:.1f}
+  log gravity = {gravity:.1f}"""
+        warnings.warn(msg)
 
     return sp
 
@@ -1070,12 +1070,12 @@ def get_wdKoester_atmosphere(metallicity=0, temperature=20000, gravity=7, verbos
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if verbose:
-        if len(idx) == 0:
-            print( 'Could not find WD Koester (Koester+ 2010 atmosphere model for')
-            print( '  temperature = %d' % temperature)
-            print( '  metallicity = %.1f' % metallicity)
-            print( '  log gravity = %.1f' % gravity)
+    if len(idx) == 0:
+        msg = f"""Could not find WD Koester (Koester+ 2010 atmosphere model for
+  temperature = {temperature:d}
+  metallicity = {metallicity:.1f}
+  log gravity = {gravity:.1f}"""
+        warnings.warn(msg)
 
     return sp
 
@@ -1109,12 +1109,12 @@ def get_atlas_phoenix_atmosphere(metallicity=0, temperature=5250, gravity=4, ver
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if verbose:
-        if len(idx) == 0:
-            print( 'Could not find ATLAS-PHOENIX merge atmosphere model for')
-            print( '  temperature = %d' % temperature)
-            print( '  metallicity = %.1f' % metallicity)
-            print( '  log gravity = %.1f' % gravity)
+    if len(idx) == 0:
+        msg = f"""Could not find ATLAS-PHOENIX merge atmosphere model for
+  temperature = {temperature:d}
+  metallicity = {metallicity:.1f}
+  log gravity = {gravity:.1f}"""
+        warnings.warn(msg)
 
     return sp
 
@@ -1149,12 +1149,12 @@ def get_BTSettl_phoenix_atmosphere(metallicity=0, temperature=5250, gravity=4, v
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if verbose:
-        if len(idx) == 0:
-            print( 'Could not find ATLAS-PHOENIX merge atmosphere model for')
-            print( '  temperature = %d' % temperature)
-            print( '  metallicity = %.1f' % metallicity)
-            print( '  log gravity = %.1f' % gravity)
+    if len(idx) == 0:
+        msg = f"""Could not find ATLAS-PHOENIX merge atmosphere model for
+  temperature = {temperature:d}
+  metallicity = {metallicity:.1f}
+  log gravity = {gravity:.1f}"""
+        warnings.warn(msg)
 
     return sp
 
@@ -1192,12 +1192,12 @@ def get_BTSettl_meisner_atmosphere(metallicity=0, temperature=5250, gravity=4, v
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
-    if verbose:
-        if len(idx) == 0:
-            print( 'Could not find BTSettl-Meisner merge atmosphere model for')
-            print( '  temperature = %d' % temperature)
-            print( '  metallicity = %.1f' % metallicity)
-            print( '  log gravity = %.1f' % gravity)
+    if len(idx) == 0:
+        msg = f"""Could not find BTSettl-Meisner merge atmosphere model for
+  temperature = {temperature:d}
+  metallicity = {metallicity:.1f}
+  log gravity = {gravity:.1f}"""
+        warnings.warn(msg)
 
     return sp
 
