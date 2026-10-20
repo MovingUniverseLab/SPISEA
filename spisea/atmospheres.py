@@ -570,7 +570,6 @@ def get_cmfgenNoRot_atmosphere_grid(rebin=True):
         teff_arr, z_arr, logg_arr = get_atmosphere_grid('cmfgen_norot')
     return teff_arr, z_arr, logg_arr
 
-# Redefinition of get_cmfgenNoRot_atmosphere and get_cmfgenNoRot_atmosphere_grid
 def get_cmfgenNoRot_atmosphere(metallicity=0, temperature=30000, gravity=4.14, verbose=False):
     """
     metallicity = [M/H] (def = 0)
