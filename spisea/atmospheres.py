@@ -1758,7 +1758,7 @@ def download_CMFGEN_atmospheres(Table_rot, Table_norot):
     t_rot = Table.read(Table_rot, format='ascii')
     t_norot = Table.read(Table_norot, format='ascii')
 
-    tables = [t_rot, t_norot] # Unused
+    tables = [t_rot, t_norot]
     filenames = [t_rot['col1'], t_norot['col1']]
 
     # Hardcoded list of webiste addresses
@@ -1792,7 +1792,6 @@ def download_CMFGEN_atmospheres(Table_rot, Table_norot):
                                 (masses > mass_arr[g]) )
             # Use wget command to pull down the files, and unzip them
             for k in good[0]:
-                # Second format argument unused
                 full = web[j]+'{1:s}.flx.zip'.format(mass_arr[j],filenames[i][k]) 
                 os.system('wget ' + full)
                 os.system('unzip '+ filenames[i][k] + '.flx.zip')
@@ -2241,8 +2240,8 @@ def cdbs_PHOENIXv16(path_to_cdbs_dir, verbose=True):
         # Construct new FITS file based on old one
         hdu = fits.open(i)
         header_0 = hdu[0].header
-        header_1 = hdu[1].header # Unused
-        sci = hdu[1].data # Unused
+        header_1 = hdu[1].header
+        sci = hdu[1].data
 
         tbhdu = fits.table_to_hdu(cur_table)
 
@@ -2413,7 +2412,7 @@ def organize_BTSettl_2015_atmospheres(path_to_dir, verbose=True):
         hdu = fits.open(i)
         spec = hdu[1].data
         header_0 = hdu[0].header
-        header_1 = hdu[1].header # Unused
+        header_1 = hdu[1].header
 
         wave = spec.field(0)
         flux = spec.field(1)
