@@ -2,6 +2,8 @@
 from spisea import evolution, atmospheres, synthetic
 import numpy as np
 import pdb
+import pytest
+from astropy.table import Table
 
 def test_evo_model_grid_num():
     """
@@ -25,24 +27,29 @@ def test_evolution_models():
     age_all_arr = [6.7, 8.0, 9.7]
     age_all_MIST_arr = [5.2, 6.7, 9.7, 10.13]
     bd_test = [6.0, 6.5, 7.4, 8.4, 10.0]
+    flame_mist_test = [5.0, 7.0, 9.7, np.log10(9.0e9), 10.0, np.log10(15.0e9)]
 
     # Metallicity ranges to test (if applicable)
     metal_range = [-2.5, -1.5, 0, 0.25, 0.4]
     metal_solar = [0]
     metal_Marley = [-0.5, 0.0, 0.5]
+    metal_flame_mist = [-1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5]
 
     # Array of evolution models to test
     evo_models = [evolution.MISTv1(version=1.2), evolution.MergedBaraffePisaEkstromParsec(), 
                       evolution.Parsec(), evolution.Baraffe15(), evolution.Ekstrom12(), evolution.Pisa(),
                       evolution.Phillips2020(), evolution.Marley2021(),
-                      evolution.MergedPhillipsBaraffePisaEkstromParsec()]
+                      evolution.MergedPhillipsBaraffePisaEkstromParsec(),
+        evolution.MergedFlameSkimmerRedDiamondbackMIST()]
 
 
     # Array of age_ranges for the specific evolution models to test
-    age_vals = [age_all_MIST_arr, age_all_arr, age_all_arr, age_young_arr, age_young_arr, age_young_arr, age_all_arr, age_all_arr, bd_test]
+    age_vals = [age_all_MIST_arr, age_all_arr, age_all_arr, age_young_arr, age_young_arr, age_young_arr, age_all_arr, age_all_arr, bd_test,
+        flame_mist_test]
 
     # Array of metallicities for the specific evolution models to test
-    metal_vals = [metal_range, metal_solar, metal_solar, metal_solar, metal_solar, metal_solar, metal_solar, metal_Marley, metal_solar]
+    metal_vals = [metal_range, metal_solar, metal_solar, metal_solar, metal_solar, metal_solar, metal_solar, metal_Marley, metal_solar,
+        metal_flame_mist]
 
     assert len(evo_models) == len(age_vals) == len(metal_vals)
 
@@ -90,6 +97,129 @@ def test_synthpop_MIST_extension():
     assert np.min(evo2['mass']) < np.min(evo1['mass'])
 
     return
+
+
+def test_flameskimmer_evolution_local_loader(tmp_path):
+    """Test the merged-grid loader without relying on the shared model tree."""
+    model_root = tmp_path / 'flame_red_diamondback_mist'
+
+    columns = {
+        'mass': [0.011, 0.080, 0.110],
+        'mass_current': [0.011, 0.080, 0.109],
+        'logL': [-5.0, -3.0, -2.0],
+        'logT': [2.7, 3.2, 3.5],
+        'logR': [-1.0, -0.9, -0.8],
+        'logg': [4.0, 4.5, 5.0],
+        'logT_WR': [2.7, 3.2, 3.5],
+        'phase': [90, 90, 0],
+        'isWR': [False, False, False],
+    }
+
+    filenames = ('iso_9.00.fits', 'iso_9.954243.fits',
+                 'iso_10.176091.fits')
+    for z_dir in ('z0045', 'z014', 'z045'):
+        output_dir = model_root / 'iso' / z_dir
+        output_dir.mkdir(parents=True)
+        for filename in filenames:
+            Table(columns).write(output_dir / filename, format='fits')
+
+    evo = evolution.MergedFlameSkimmerRedDiamondbackMIST(
+        model_dir=model_root
+    )
+
+    assert evo._isochrone_filename(np.log10(9.0e9)) == 'iso_9.954243.fits'
+    assert evo._isochrone_filename(np.log10(15.0e9)) == 'iso_10.176091.fits'
+
+    for metallicity in (-0.5, 0.0, 0.5):
+        iso = evo.isochrone(age=1.0e9, metallicity=metallicity)
+        assert iso.meta['log_age_act'] == 9.0
+        assert iso.meta['metallicity_act'] == metallicity
+        assert np.min(iso['mass']) < 0.08
+        assert np.all(np.isfinite(iso['logL']))
+        assert np.all(np.isfinite(iso['logT']))
+        assert np.all(np.isfinite(iso['logg']))
+
+    iso_9_gyr = evo.isochrone(age=9.0e9, metallicity=0.0)
+    iso_15_gyr = evo.isochrone(age=15.0e9, metallicity=0.0)
+    assert iso_9_gyr.meta['log_age_act'] == pytest.approx(np.log10(9.0e9))
+    assert iso_15_gyr.meta['log_age_act'] == pytest.approx(np.log10(15.0e9))
+
+    with pytest.raises(ValueError):
+        evo.isochrone(age=0.0, metallicity=0.0)
+    with pytest.raises(ValueError):
+        evo.isochrone(age=1.0e9, metallicity=0.6)
+
+
+@pytest.mark.parametrize('metallicity', [-0.5, 0.0, 0.5])
+@pytest.mark.parametrize('age', [1.0e5, 1.0e9, 9.0e9, 15.0e9])
+def test_flameskimmer_installed_evolution(metallicity, age):
+    """Smoke-test the FITS files supplied by the updated evolution archive."""
+    evo = evolution.MergedFlameSkimmerRedDiamondbackMIST()
+    iso = evo.isochrone(age=age, metallicity=metallicity)
+
+    assert len(iso) > 0
+    assert iso.meta['metallicity_act'] == metallicity
+    assert np.min(iso['mass']) <= 0.012
+    for column in ('mass', 'mass_current', 'logL', 'logT', 'logR', 'logg'):
+        assert np.all(np.isfinite(iso[column]))
+
+
+@pytest.mark.parametrize(
+    'temperature, expected',
+    [
+        (50.0, 'flame'),
+        (2200.0, 'flame'),
+        (2200.1, 'transition'),
+        (2499.9, 'transition'),
+        (2500.0, 'phoenix'),
+        (4999.9, 'phoenix'),
+        (5000.0, 'atlas_phoenix'),
+        (5499.9, 'atlas_phoenix'),
+        (5500.0, 'atlas'),
+        (20000.0, 'atlas'),
+    ],
+)
+def test_flameskimmer_atmosphere_dispatch(monkeypatch, temperature, expected):
+    """Verify every exact boundary in the new merged-atmosphere dispatcher."""
+    def fake_loader(name):
+        def loader(**kwargs):
+            return name
+        return loader
+
+    monkeypatch.setattr(atmospheres, 'get_flameskimmer_atmosphere',
+                        fake_loader('flame'))
+    monkeypatch.setattr(atmospheres, 'get_flameskimmer_phoenix_atmosphere',
+                        fake_loader('transition'))
+    monkeypatch.setattr(atmospheres, 'get_phoenixv16_atmosphere',
+                        fake_loader('phoenix'))
+    monkeypatch.setattr(atmospheres, 'get_atlas_phoenix_atmosphere',
+                        fake_loader('atlas_phoenix'))
+    monkeypatch.setattr(atmospheres, 'get_castelli_atmosphere',
+                        fake_loader('atlas'))
+
+    result = atmospheres.get_merged_atmosphere_atlas_phoenix_sonora(
+        metallicity=0.0,
+        temperature=temperature,
+        gravity=4.5,
+        rebin=True,
+    )
+    assert result == expected
+
+
+@pytest.mark.parametrize('metallicity', [-0.5, 0.0, 0.5])
+@pytest.mark.parametrize('temperature', [1000, 2200, 2300, 2400, 2500])
+def test_flameskimmer_installed_atmospheres(metallicity, temperature):
+    """Smoke-test real spectra from the updated SPISEA atmosphere archive."""
+    spectrum = atmospheres.get_merged_atmosphere(
+        metallicity=metallicity,
+        temperature=temperature,
+        gravity=4.5,
+        rebin=True,
+    )
+    flux = np.asarray(spectrum(spectrum.waveset))
+    assert flux.size > 0
+    assert np.all(np.isfinite(flux))
+    assert np.any(flux > 0)
 
 def test_COSMIC_init():
     """
@@ -182,15 +312,22 @@ def test_atmosphere_models():
         atmospheres.get_phoenix_atmosphere,
         atmospheres.get_wdKoester_atmosphere,
         atmospheres.get_Phillips2020_atmosphere,
-        atmospheres.get_Meisner2023_atmosphere
+        atmospheres.get_Meisner2023_atmosphere,
+        atmospheres.get_flameskimmer_atmosphere,
+        atmospheres.get_merged_atmosphere_atlas_phoenix_sonora,
+        atmospheres.get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement
     ]
 
     # Array of metallicities
     metals_range = [-2.0, 0, 0.15]
     bd_metals_range = [-1.0, -0.5, 0, 0.3]
+    flameskimmer_metals_range = [-1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5]
     metals_solar = [0]
     metals_arr = [metals_solar, metals_range, metals_range, metals_solar, metals_range, metals_range, metals_range,
-                  metals_solar, metals_solar, bd_metals_range]
+                  metals_solar, metals_solar, bd_metals_range,
+        flameskimmer_metals_range,
+        flameskimmer_metals_range,
+        flameskimmer_metals_range]
 
     assert len(atm_arr) == len(metals_arr)
 
@@ -200,10 +337,17 @@ def test_atmosphere_models():
 
         # Loop through metallicities
         for jj in metals_arr[ii]:
+            call_kwargs = {'metallicity': jj}
+            if atm_func is atmospheres.get_flameskimmer_atmosphere:
+                # Flame Skimmer covers cool atmospheres (approximately 50--2400 K).
+                call_kwargs.update(temperature=1000, gravity=4.5)
+
             try:
-                test = atm_func(metallicity=jj)
-            except:
-                raise Exception('ATM TEST FAILED: {0}, metal = {1}'.format(atm_func, jj))
+                test = atm_func(**call_kwargs)
+            except Exception as error:
+                raise Exception(
+                    'ATM TEST FAILED: {0}, metal = {1}'.format(atm_func, jj)
+                ) from error
 
         print('Done {0}'.format(atm_func))
 
@@ -316,3 +460,86 @@ def test_filters():
     print('Filters done')
 
     return
+
+def _assert_valid_atmosphere_spectrum(spectrum):
+    """Check that an atmosphere contains finite, non-negative flux."""
+    flux = spectrum(spectrum.waveset)
+    flux_values = np.asarray(
+        getattr(flux, 'value', flux),
+        dtype=float,
+    )
+
+    assert len(flux_values) > 0
+    assert np.all(np.isfinite(flux_values))
+    assert np.all(flux_values >= 0)
+    assert np.any(flux_values > 0)
+
+
+def test_atlas_phoenix_sonora_merged_atmosphere():
+    """Test the new merged atmosphere across its routing boundaries."""
+    metallicities = [
+        -1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5
+    ]
+    temperatures = [
+        250, 1000, 2200, 2300, 2400,
+        2500, 3500, 5250, 6000, 12000
+    ]
+
+    atm_func = (
+        atmospheres
+        .get_merged_atmosphere_atlas_phoenix_sonora
+    )
+
+    for metallicity in metallicities:
+        for temperature in temperatures:
+            spectrum = atm_func(
+                metallicity=metallicity,
+                temperature=temperature,
+                gravity=4.5,
+                rebin=True,
+            )
+            _assert_valid_atmosphere_spectrum(spectrum)
+
+
+def test_atlas_phoenix_sonora_merged_atmosphere_w_bb_supplement():
+    """Test normal, white-dwarf, and blackbody routing."""
+    cases = [
+        dict(
+            metallicity=-1.0,
+            temperature=1000,
+            gravity=4.5,
+        ),
+        dict(
+            metallicity=-0.25,
+            temperature=2350,
+            gravity=4.5,
+        ),
+        dict(
+            metallicity=0.25,
+            temperature=5250,
+            gravity=4.5,
+        ),
+        dict(
+            metallicity=0.0,
+            temperature=3000,
+            gravity=7.0,
+        ),
+        dict(
+            metallicity=0.0,
+            temperature=20000,
+            gravity=10.0,
+        ),
+    ]
+
+    atm_func = getattr(
+        atmospheres,
+        "get_merged_atmosphere_atlas_phoenix_sonora_"
+        "w_bb_supplement",
+    )
+
+    for parameters in cases:
+        spectrum = atm_func(
+            rebin=True,
+            **parameters,
+        )
+        _assert_valid_atmosphere_spectrum(spectrum)

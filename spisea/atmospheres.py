@@ -690,6 +690,258 @@ def get_phoenixv16_atmosphere_grid(rebin=True):
     return teff_arr, z_arr, logg_arr
 
 
+def get_flameskimmer_atmosphere(metallicity=0, temperature=1000,
+                                 gravity=4, rebin=True):
+    """
+    Return a Sonora Flame Skimmer equilibrium-chemistry atmosphere with
+    C/O = 1.
+
+    The available grid has native [M/H] = -1.0, -0.5, 0.0, and +0.5,
+    temperatures from 50 to 2400 K, and a temperature-dependent gravity
+    range. Inputs between catalog nodes (including quarter-dex metallicities)
+    are interpolated by ``stsynphot``. Inputs outside the grid are clipped to
+    the nearest supported temperature/gravity bounds, following the behavior
+    of the other SPISEA atmosphere loaders. Metallicities below -1 are not
+    clipped into this grid. The evolution model may supply [M/H]=-1
+    brown-dwarf evolution as a warned proxy below -1, but corresponding
+    brown-dwarf photometry is not guaranteed where atmosphere coverage is
+    missing.
+
+    Parameters
+    ----------
+    metallicity : float
+        Metallicity [M/H].
+    temperature : float
+        Effective temperature in K.
+    gravity : float
+        Surface gravity log(g) in cgs.
+    rebin : bool
+        Load the Castelli-sampled grid when True (default), or the native
+        Flame Skimmer wavelength sampling when False.
+    """
+    if rebin:
+        atm_model_name = 'FlameSkimmer_rebin'
+    else:
+        atm_model_name = 'FlameSkimmer'
+
+    requested_metallicity = metallicity
+    try:
+        sp = stsyn.grid_to_spec(atm_model_name, temperature, metallicity,
+                                gravity)
+    except Exception as original_error:
+        # Do not use get_atmosphere_bounds() here: its generic fallback snaps
+        # an interpolated metallicity (for example -0.75) to the nearest
+        # native node. Instead clamp T/logg to the common support of the two
+        # bracketing native metallicities and preserve the requested [M/H].
+        temperature, gravity = _get_common_interpolation_bounds(
+            atm_model_name,
+            metallicity=requested_metallicity,
+            temperature=temperature,
+            gravity=gravity,
+        )
+        try:
+            sp = stsyn.grid_to_spec(
+                atm_model_name, temperature, requested_metallicity, gravity
+            )
+        except Exception as bounded_error:
+            raise RuntimeError(
+                'Flame Skimmer interpolation failed after clamping to the '
+                'common temperature/gravity support; requested '
+                '[M/H]={0:.3f}, T={1:.3f} K, logg={2:.6f}.'.format(
+                    requested_metallicity, temperature, gravity
+                )
+            ) from bounded_error
+
+    idx = np.where(sp(sp.waveset) != 0)[0]
+    if len(idx) == 0:
+        print('Could not find Flame Skimmer atmosphere model for')
+        print('  temperature = %d' % temperature)
+        print('  metallicity = %.1f' % metallicity)
+        print('  log gravity = %.1f' % gravity)
+
+    return sp
+
+
+def get_flameskimmer_atmosphere_grid(rebin=True):
+    """Return the parameter grid for the Flame Skimmer atmospheres."""
+    if rebin:
+        atm_model_name = 'FlameSkimmer_rebin'
+    else:
+        atm_model_name = 'FlameSkimmer'
+
+    return get_atmosphere_grid(atm_model_name)
+
+
+def _get_common_interpolation_bounds(model_dir, metallicity, temperature,
+                                     gravity):
+    """Clamp T/logg while preserving an in-grid interpolated metallicity.
+
+    ``stsynphot`` can interpolate a quarter-dex metallicity only where both
+    neighboring native-metallicity grids have valid temperature and gravity
+    support. This helper computes that common support and never substitutes a
+    different metallicity.
+    """
+    teff_arr, z_arr, logg_arr = get_atmosphere_grid(model_dir)
+    teff_arr = np.asarray(teff_arr, dtype=float)
+    z_arr = np.asarray(z_arr, dtype=float)
+    logg_arr = np.asarray(logg_arr, dtype=float)
+
+    native_metallicities = np.sort(np.unique(z_arr))
+    if (metallicity < native_metallicities.min() or
+            metallicity > native_metallicities.max()):
+        raise ValueError(
+            'Requested [M/H]={0:.3f} is outside the {1} atmosphere grid '
+            'range [{2:.3f}, {3:.3f}].'.format(
+                metallicity, model_dir, native_metallicities.min(),
+                native_metallicities.max()
+            )
+        )
+
+    lower_candidates = native_metallicities[
+        native_metallicities <= metallicity
+    ]
+    upper_candidates = native_metallicities[
+        native_metallicities >= metallicity
+    ]
+    lower_metallicity = lower_candidates.max()
+    upper_metallicity = upper_candidates.min()
+    bracket = np.unique([lower_metallicity, upper_metallicity])
+
+    common_teff_min = max(
+        teff_arr[np.isclose(z_arr, value)].min() for value in bracket
+    )
+    common_teff_max = min(
+        teff_arr[np.isclose(z_arr, value)].max() for value in bracket
+    )
+    if common_teff_min > common_teff_max:
+        raise ValueError(
+            'No common temperature support for [M/H]={0:.3f} in {1}.'
+            .format(metallicity, model_dir)
+        )
+    bounded_temperature = float(np.clip(
+        temperature, common_teff_min, common_teff_max
+    ))
+
+    gravity_minima = []
+    gravity_maxima = []
+    for value in bracket:
+        metal_mask = np.isclose(z_arr, value)
+        metal_teff = teff_arr[metal_mask]
+        metal_logg = logg_arr[metal_mask]
+        temperature_nodes = np.sort(np.unique(metal_teff))
+
+        lower_nodes = temperature_nodes[
+            temperature_nodes <= bounded_temperature
+        ]
+        upper_nodes = temperature_nodes[
+            temperature_nodes >= bounded_temperature
+        ]
+        lower_temperature = (
+            lower_nodes.max() if len(lower_nodes) else temperature_nodes.min()
+        )
+        upper_temperature = (
+            upper_nodes.min() if len(upper_nodes) else temperature_nodes.max()
+        )
+
+        for temperature_node in np.unique(
+                [lower_temperature, upper_temperature]):
+            node_mask = np.isclose(metal_teff, temperature_node)
+            node_logg = metal_logg[node_mask]
+            gravity_minima.append(node_logg.min())
+            gravity_maxima.append(node_logg.max())
+
+    common_gravity_min = max(gravity_minima)
+    common_gravity_max = min(gravity_maxima)
+    if common_gravity_min > common_gravity_max:
+        raise ValueError(
+            'No common gravity support for [M/H]={0:.3f}, T={1:.1f} K '
+            'in {2}.'.format(metallicity, bounded_temperature, model_dir)
+        )
+
+    bounded_gravity = float(np.clip(
+        gravity, common_gravity_min, common_gravity_max
+    ))
+    return bounded_temperature, bounded_gravity
+
+
+def _atmosphere_grid_supports_request(model_dir, metallicity, temperature,
+                                      gravity):
+    """Return True only when a grid covers the request without clipping.
+
+    This is used by the merged-atmosphere router. Direct model-specific
+    loaders retain SPISEA's historical clipping behavior, while the router
+    follows the Flame/Phoenix policy: when Flame has no coverage at the
+    requested T, [M/H], and logg, PHOENIX leads instead.
+    """
+    try:
+        bounded_temperature, bounded_gravity = _get_common_interpolation_bounds(
+            model_dir,
+            metallicity=metallicity,
+            temperature=temperature,
+            gravity=gravity,
+        )
+    except (ValueError, RuntimeError):
+        return False
+    return (
+        np.isclose(bounded_temperature, temperature, rtol=0.0, atol=1.0e-8)
+        and np.isclose(bounded_gravity, gravity, rtol=0.0, atol=1.0e-8)
+    )
+
+
+def get_flameskimmer_phoenix_atmosphere(metallicity=0, temperature=2350,
+                                         gravity=4):
+    """
+    Return the precomputed Flame Skimmer--PHOENIX v16 transition spectrum.
+
+    The catalog nodes are 2200, 2300, 2400, and 2500 K. The 2200-K node is
+    pure Flame Skimmer, the 2500-K node is pure PHOENIX, and the two interior
+    nodes are linearly weighted flux blends. Below Flame Skimmer's native
+    short-wavelength endpoint, synphot supplies zero Flame flux; consequently
+    the interior-node optical flux is only the weighted PHOENIX contribution.
+    This underestimates blue flux by construction and is recorded in the grid
+    validation output.
+    """
+    atm_model_name = 'merged_flameskimmer_phoenix'
+
+    requested_metallicity = metallicity
+    try:
+        sp = stsyn.grid_to_spec(atm_model_name, temperature, metallicity,
+                                gravity)
+    except Exception as original_error:
+        temperature, gravity = _get_common_interpolation_bounds(
+            atm_model_name,
+            metallicity=requested_metallicity,
+            temperature=temperature,
+            gravity=gravity,
+        )
+        try:
+            sp = stsyn.grid_to_spec(
+                atm_model_name, temperature, requested_metallicity, gravity
+            )
+        except Exception as bounded_error:
+            raise RuntimeError(
+                'Flame Skimmer--PHOENIX interpolation failed after '
+                'clamping to common support; requested [M/H]={0:.3f}, '
+                'T={1:.3f} K, logg={2:.6f}.'.format(
+                    requested_metallicity, temperature, gravity
+                )
+            ) from bounded_error
+
+    idx = np.where(sp(sp.waveset) != 0)[0]
+    if len(idx) == 0:
+        print('Could not find Flame Skimmer--PHOENIX atmosphere model for')
+        print('  temperature = %d' % temperature)
+        print('  metallicity = %.1f' % metallicity)
+        print('  log gravity = %.1f' % gravity)
+
+    return sp
+
+
+def get_flameskimmer_phoenix_atmosphere_grid():
+    """Return the parameter grid for the Flame Skimmer--PHOENIX blend."""
+    return get_atmosphere_grid('merged_flameskimmer_phoenix')
+
+
 def get_BTSettl_2015_atmosphere(metallicity=0, temperature=2500, gravity=4, rebin=True):
     """
     Return atmosphere from CIFIST2011_2015 grid
@@ -1291,7 +1543,7 @@ def get_merged_atmosphere(metallicity=0, temperature=20000, gravity=4.5, verbose
     temperature ranges where we switch between model grids, to
     ensure a smooth transition.
     """
-        
+
     # For T < 3800, atmosphere depends on metallicity + gravity.
     # If solar metallicity, use BTSettl 2015 grid. Only solar metallicity is
     # currently available here, so if non-solar metallicity, just stick with
@@ -1431,22 +1683,360 @@ def get_merged_atmosphere_grid(rebin=True):
 
     super_tarr = np.concatenate((Meisner2023_atmosphere_arrs[0][0], BTSettl_2015_atmosphere_arrs[0][0],
                                 BTSettl_phoenix_atmosphere_arrs[0][0],
-                                phoenixv16_atmosphere_arrs[0][0], atlas_phoenix_atmosphere_arrs[0][0], 
+                                phoenixv16_atmosphere_arrs[0][0], atlas_phoenix_atmosphere_arrs[0][0],
                                 castelli_atmosphere_arrs[0][0]))
 
     super_zarr = np.concatenate((Meisner2023_atmosphere_arrs[1][0], BTSettl_2015_atmosphere_arrs[1][0],
                                 BTSettl_phoenix_atmosphere_arrs[1][0],
-                                phoenixv16_atmosphere_arrs[1][0], atlas_phoenix_atmosphere_arrs[1][0], 
+                                phoenixv16_atmosphere_arrs[1][0], atlas_phoenix_atmosphere_arrs[1][0],
                                 castelli_atmosphere_arrs[1][0]))
 
     super_loggarr = np.concatenate((Meisner2023_atmosphere_arrs[2][0], BTSettl_2015_atmosphere_arrs[2][0],
                                 BTSettl_phoenix_atmosphere_arrs[2][0],
-                                phoenixv16_atmosphere_arrs[2][0], atlas_phoenix_atmosphere_arrs[2][0], 
+                                phoenixv16_atmosphere_arrs[2][0], atlas_phoenix_atmosphere_arrs[2][0],
                                 castelli_atmosphere_arrs[2][0]))
 
     return super_tarr, super_zarr, super_loggarr
 
 def get_merged_atmosphere_w_bb_supplement(metallicity=0, temperature=20000, gravity=4.5, verbose=False,
+                              rebin=True):
+    """
+    Return a stellar atmosphere from a suite of different model grids,
+    depending  on the input temperature, (all values in K).
+    IF OUTSIDE SUPPORTED GRID, WILL RETURN BB ATMOSPHERE
+
+    Parameters
+    ----------
+    metallicity: float
+        The stellar metallicity, in terms of [Z]
+
+    temperature: float
+        The stellar temperature, in units of K
+
+    gravity: float
+        The stellar gravity, in cgs units
+
+    rebin: boolean
+        If true, rebins the atmospheres so that they are the same
+        resolution as the Castelli+04 atmospheres. Default is False,
+        which is often sufficient synthetic photometry in most cases.
+
+    verbose: boolean
+        True for verbose output
+
+    Notes
+    -----
+    The underlying stellar model grid used changes as a function of
+    stellar temperature (in K):
+
+    * T > 20,000: ATLAS
+    * 5500 <= T < 20,000: ATLAS
+    * 5000 <= T < 5500: ATLAS/PHOENIXv16 merge
+    * 3800 <= T < 5000: PHOENIXv16
+
+    For T < 3800, there is an additional gravity and metallicity
+    dependence:
+
+    If T < 3800 and [M/H] = 0:
+
+    * T < 3800, logg < 2.5: PHOENIX v16
+    * 3200 <= T < 3800, logg > 2.5: BTSettl_CIFITS2011_2015/PHOENIXV16 merge
+    * 1200 < T <= 3200, logg > 2.5: BTSettl_CIFITS2011_2015
+    * 1000 <= T <= 1200, logg >= 2.5: Meisner2023
+    * 250 <= T < 1000: Meisner2023
+
+    Otherwise, if T < 3800 and [M/H] != 0:
+
+    * T < 3800: PHOENIX v16
+
+    References:
+
+    * ATLAS: ATLAS9 models (`Castelli & Kurucz 2004 <http://www.stsci.edu/hst/observatory/crds/castelli_kurucz_atlas.html>`_)
+    * PHOENIXv16 (`Husser et al. 2013 <https://ui.adsabs.harvard.edu/abs/2013A%26A...553A...6H/abstract>`_)
+    * BTSettl_CIFITS2011_2015: Baraffee+15, Allard+ (https://phoenix.ens-lyon.fr/Grids/BT-Settl/CIFIST2011_2015/SPECTRA/)
+    * Meisner2023: ATMO 1D models (`Meisner et al. 2023 <https://ui.adsabs.harvard.edu/abs/2023AJ....166...57M/abstract>`_)
+
+    LTE WARNING:
+
+    The ATLAS atmospheres are calculated with LTE, and so they
+    are less accurate when non-LTE conditions apply (e.g. T > 20,000
+    K). Ultimately we'd like to add a non-LTE atmosphere grid for
+    the hottest stars in the future.
+
+    HOW BOUNDARIES BETWEEN MODELS ARE TREATED:
+
+    At the boundary between two models grids a temperature range is defined
+    where the resulting atmosphere is a weighted average between the two
+    grids. Near one boundary one model
+    is weighted more heavily, while at the other boundary the other
+    model is weighted more heavily. These are calculated in the
+    temperature ranges where we switch between model grids, to
+    ensure a smooth transition.
+    """
+
+    if (gravity >= 9.8):
+        if verbose:
+            print('BB atmosphere')
+        return get_bb_atmosphere(temperature=temperature,
+                                 metallicity=metallicity,
+                                 gravity=gravity,
+                                 verbose=verbose)
+    if (temperature < 4.6e3) & (gravity >= 6.5):
+        if verbose:
+            print('BB atmosphere')
+        return get_bb_atmosphere(temperature=temperature,
+                                 metallicity=metallicity,
+                                 gravity=gravity,
+                                 verbose=verbose)
+
+    if (temperature < 3.5e3) & (gravity  < 6.5) & (gravity > 6):
+        if verbose:
+            print('BB atmosphere')
+        return get_bb_atmosphere(temperature=temperature,
+                                 metallicity=metallicity,
+                                 gravity=gravity,
+                                 verbose=verbose)
+
+    if gravity > 6:
+        if verbose:
+            print('WD or BB atmosphere')
+        return get_wd_atmosphere(metallicity=metallicity,
+                                 temperature=temperature,
+                                 gravity=gravity,
+                                 verbose=verbose)
+
+    return get_merged_atmosphere(metallicity=metallicity,
+                                 temperature=temperature,
+                                 gravity=gravity,
+                                 verbose=verbose,
+                                 rebin=rebin)
+
+def get_merged_atmosphere_w_bb_supplement_grid(bb_supplement_tarr='default', bb_supplement_zarr='default', bb_supplement_loggarr='default', rebin=True):
+    """
+    Return the atmosphere parameter grid used by
+    get_merged_atmosphere_w_bb_supplement.
+
+    This is the standard merged atmosphere grid plus the white dwarf grid and
+    blackbody supplement points for high-gravity regions.
+    """
+    super_tarr, super_zarr, super_loggarr = get_merged_atmosphere_grid(rebin=rebin)
+
+    wd_tarr, wd_zarr, wd_loggarr = get_wdKoester_atmosphere_grid()
+    super_tarr = np.concatenate((super_tarr, wd_tarr))
+    super_zarr = np.concatenate((super_zarr, wd_zarr))
+    super_loggarr = np.concatenate((super_loggarr, wd_loggarr))
+
+    if bb_supplement_tarr == 'default':
+        X_highg, Y_highg = np.meshgrid(np.logspace(np.log10(2e3), np.log10(2e4), 35),
+                                       np.linspace(9.8, 11.6, 8))
+        X_cool_highg, Y_cool_highg = np.meshgrid(np.logspace(np.log10(2e3), np.log10(4.6e3), 20),
+                                                 np.linspace(6.5, 9.7, 10))
+        X_cool_midg, Y_cool_midg = np.meshgrid(np.logspace(np.log10(2e3), np.log10(3.5e3), 15),
+                                               np.linspace(6.1, 6.4, 4))
+
+        bb_supplement_tarr = np.concatenate((X_highg.ravel(), X_cool_highg.ravel(), X_cool_midg.ravel()))
+        bb_supplement_loggarr = np.concatenate((Y_highg.ravel(), Y_cool_highg.ravel(), Y_cool_midg.ravel()))
+        bb_supplement_zarr = np.zeros(len(bb_supplement_tarr))
+
+
+    super_tarr = np.concatenate((super_tarr, bb_supplement_tarr))
+    super_zarr = np.concatenate((super_zarr, bb_supplement_zarr))
+    super_loggarr = np.concatenate((super_loggarr, bb_supplement_loggarr))
+
+    return super_tarr, super_zarr, super_loggarr
+
+
+def get_merged_atmosphere_atlas_phoenix_sonora(metallicity=0, temperature=20000, gravity=4.5, verbose=False,
+                              rebin=True):
+    """
+    Return a stellar atmosphere from a suite of different model grids,
+    depending  on the input temperature, (all values in K).
+
+    Parameters
+    ----------
+    metallicity: float
+        The stellar metallicity, in terms of [Z]
+
+    temperature: float
+        The stellar temperature, in units of K
+
+    gravity: float
+        The stellar gravity, in cgs units
+
+    rebin: boolean
+        If true, rebins the atmospheres so that they are the same
+        resolution as the Castelli+04 atmospheres. Default is False,
+        which is often sufficient synthetic photometry in most cases.
+
+    verbose: boolean
+        True for verbose output
+
+    Notes
+    -----
+    The underlying atmosphere grid changes with effective temperature:
+
+    * T <= 2200 K: Flame Skimmer
+    * 2200 < T < 2500 K: Flame Skimmer/PHOENIX v16 weighted blend
+    * 2500 <= T < 5000 K: PHOENIX v16
+    * 5000 <= T < 5500 K: ATLAS/PHOENIX v16 weighted blend
+    * T >= 5500 K: ATLAS
+
+    For [M/H] < -1, cool atmospheres remain routed to PHOENIX at the requested
+    metallicity rather than silently clipping Flame Skimmer to -1. The
+    evolution loader can return [M/H]=-1 brown-dwarf evolution as a warned
+    proxy, but photometry for old/low-metallicity brown dwarfs remains outside
+    the validated Flame atmosphere range and may be unavailable downstream.
+
+    References:
+
+    * ATLAS: ATLAS9 models (`Castelli & Kurucz 2004 <http://www.stsci.edu/hst/observatory/crds/castelli_kurucz_atlas.html>`_)
+    * PHOENIXv16 (`Husser et al. 2013 <https://ui.adsabs.harvard.edu/abs/2013A%26A...553A...6H/abstract>`_)
+    * Sonora Flame Skimmer: equilibrium chemistry with C/O = 1
+
+    LTE WARNING:
+
+    The ATLAS atmospheres are calculated with LTE, and so they
+    are less accurate when non-LTE conditions apply (e.g. T > 20,000
+    K). Ultimately we'd like to add a non-LTE atmosphere grid for
+    the hottest stars in the future.
+
+    HOW BOUNDARIES BETWEEN MODELS ARE TREATED:
+
+    At the boundary between two models grids a temperature range is defined
+    where the resulting atmosphere is a weighted average between the two
+    grids. Near one boundary one model
+    is weighted more heavily, while at the other boundary the other
+    model is weighted more heavily. These are calculated in the
+    temperature ranges where we switch between model grids, to
+    ensure a smooth transition.
+    """
+        
+    if metallicity < -1.0 and temperature < 5000:
+        if verbose:
+            print('PHOENIX v16 atmosphere (low-metallicity fallback; '
+                  'brown-dwarf photometry not guaranteed)')
+        return get_phoenixv16_atmosphere(
+            metallicity=metallicity,
+            temperature=temperature,
+            gravity=gravity,
+            rebin=rebin)
+
+    if temperature <= 2200:
+        flame_model_name = 'FlameSkimmer_rebin' if rebin else 'FlameSkimmer'
+        if not _atmosphere_grid_supports_request(
+                flame_model_name, metallicity, temperature, gravity):
+            if verbose:
+                print('PHOENIX v16 atmosphere (Flame Skimmer has no '
+                      'coverage at the requested parameters)')
+            return get_phoenixv16_atmosphere(
+                metallicity=metallicity,
+                temperature=temperature,
+                gravity=gravity,
+                rebin=rebin)
+        if verbose:
+            print('Flame Skimmer atmosphere')
+        return get_flameskimmer_atmosphere(
+            metallicity=metallicity,
+            temperature=temperature,
+            gravity=gravity,
+            rebin=rebin)
+
+    if (temperature > 2200) & (temperature < 2500):
+        if not _atmosphere_grid_supports_request(
+                'merged_flameskimmer_phoenix', metallicity, temperature,
+                gravity):
+            if verbose:
+                print('PHOENIX v16 atmosphere (Flame/Phoenix transition '
+                      'grid has no coverage at the requested parameters)')
+            return get_phoenixv16_atmosphere(
+                metallicity=metallicity,
+                temperature=temperature,
+                gravity=gravity,
+                rebin=rebin)
+        if verbose:
+            print('Flame Skimmer/PHOENIX v16 merged atmosphere')
+        return get_flameskimmer_phoenix_atmosphere(
+            metallicity=metallicity,
+            temperature=temperature,
+            gravity=gravity)
+
+    if (temperature >= 2500) & (temperature < 5000):
+        if verbose:
+            print( 'Phoenixv16 atmosphere')
+        return get_phoenixv16_atmosphere(metallicity=metallicity,
+                                      temperature=temperature,
+                                      gravity=gravity,
+                                      rebin=rebin)
+
+    if (temperature >= 5000) & (temperature < 5500):
+        if verbose:
+            print( 'ATLAS/Phoenix merged atmosphere')
+        return get_atlas_phoenix_atmosphere(metallicity=metallicity,
+                                        temperature=temperature,
+                                        gravity=gravity)
+
+    if (temperature >= 5500) & (temperature < 20000):
+        if verbose:
+            print( 'ATLAS merged atmosphere')
+        return get_castelli_atmosphere(metallicity=metallicity,
+                                      temperature=temperature,
+                                      gravity=gravity)
+
+    if temperature >= 20000:
+        if verbose:
+            print( 'Still ATLAS merged atmosphere')
+        return get_castelli_atmosphere(metallicity=metallicity,
+                                       temperature=temperature,
+                                       gravity=gravity)
+
+        #print('CMFGEN')
+        #return get_cmfgenRot_atmosphere_closest(metallicity=metallicity,
+        #                               temperature=temperature,
+        #                               gravity=gravity)
+
+
+def get_merged_atmosphere_atlas_phoenix_sonora_grid(rebin=True):
+    """Return the parameter grid selected by :func:`get_merged_atmosphere_atlas_phoenix_sonora`."""
+
+    def select(grid, condition):
+        values = np.asarray(grid, dtype=float)
+        return values[:, condition(values)]
+
+    flameskimmer = select(
+        get_flameskimmer_atmosphere_grid(rebin=rebin),
+        lambda values: values[0] <= 2200,
+    )
+    flameskimmer_phoenix = select(
+        get_flameskimmer_phoenix_atmosphere_grid(),
+        lambda values: (values[0] > 2200) & (values[0] < 2500),
+    )
+    phoenixv16 = select(
+        get_phoenixv16_atmosphere_grid(rebin=rebin),
+        lambda values: (values[0] >= 2500) & (values[0] < 5000),
+    )
+    atlas_phoenix = select(
+        get_atlas_phoenix_atmosphere_grid(),
+        lambda values: (values[0] >= 5000) & (values[0] < 5500),
+    )
+    castelli = select(
+        get_castelli_atmosphere_grid(),
+        lambda values: values[0] >= 5500,
+    )
+
+    components = (
+        flameskimmer,
+        flameskimmer_phoenix,
+        phoenixv16,
+        atlas_phoenix,
+        castelli,
+    )
+    super_tarr = np.concatenate([component[0] for component in components])
+    super_zarr = np.concatenate([component[1] for component in components])
+    super_loggarr = np.concatenate([component[2] for component in components])
+
+    return super_tarr, super_zarr, super_loggarr
+
+def get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement(metallicity=0, temperature=20000, gravity=4.5, verbose=False,
                               rebin=True):
     """
     Return a stellar atmosphere from a suite of different model grids, 
@@ -1474,35 +2064,16 @@ def get_merged_atmosphere_w_bb_supplement(metallicity=0, temperature=20000, grav
 
     Notes
     -----
-    The underlying stellar model grid used changes as a function of 
-    stellar temperature (in K):
-
-    * T > 20,000: ATLAS
-    * 5500 <= T < 20,000: ATLAS
-    * 5000 <= T < 5500: ATLAS/PHOENIXv16 merge
-    * 3800 <= T < 5000: PHOENIXv16
-
-    For T < 3800, there is an additional gravity and metallicity
-    dependence:
-
-    If T < 3800 and [M/H] = 0: 
-    
-    * T < 3800, logg < 2.5: PHOENIX v16
-    * 3200 <= T < 3800, logg > 2.5: BTSettl_CIFITS2011_2015/PHOENIXV16 merge
-    * 1200 < T <= 3200, logg > 2.5: BTSettl_CIFITS2011_2015
-    * 1000 <= T <= 1200, logg >= 2.5: Meisner2023
-    * 250 <= T < 1000: Meisner2023
-
-    Otherwise, if T < 3800 and [M/H] != 0:
-    
-    * T < 3800: PHOENIX v16
+    For ordinary stellar gravities, the atmosphere choice is delegated to
+    :func:`get_merged_atmosphere_atlas_phoenix_sonora`, including its Flame Skimmer--PHOENIX
+    transition. This wrapper adds white-dwarf and blackbody fallbacks for
+    high-gravity objects.
 
     References:
 
     * ATLAS: ATLAS9 models (`Castelli & Kurucz 2004 <http://www.stsci.edu/hst/observatory/crds/castelli_kurucz_atlas.html>`_)
     * PHOENIXv16 (`Husser et al. 2013 <https://ui.adsabs.harvard.edu/abs/2013A%26A...553A...6H/abstract>`_)
-    * BTSettl_CIFITS2011_2015: Baraffee+15, Allard+ (https://phoenix.ens-lyon.fr/Grids/BT-Settl/CIFIST2011_2015/SPECTRA/)
-    * Meisner2023: ATMO 1D models (`Meisner et al. 2023 <https://ui.adsabs.harvard.edu/abs/2023AJ....166...57M/abstract>`_)
+    * Sonora Flame Skimmer: equilibrium chemistry with C/O = 1
 
     LTE WARNING: 
 
@@ -1553,21 +2124,21 @@ def get_merged_atmosphere_w_bb_supplement(metallicity=0, temperature=20000, grav
                                  gravity=gravity,
                                  verbose=verbose)
 
-    return get_merged_atmosphere(metallicity=metallicity,
+    return get_merged_atmosphere_atlas_phoenix_sonora(metallicity=metallicity,
                                  temperature=temperature,
                                  gravity=gravity,
                                  verbose=verbose,
                                  rebin=rebin)
 
-def get_merged_atmosphere_w_bb_supplement_grid(bb_supplement_tarr='default', bb_supplement_zarr='default', bb_supplement_loggarr='default', rebin=True):
+def get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement_grid(bb_supplement_tarr='default', bb_supplement_zarr='default', bb_supplement_loggarr='default', rebin=True):
     """
     Return the atmosphere parameter grid used by
-    get_merged_atmosphere_w_bb_supplement.
+    get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement.
 
     This is the standard merged atmosphere grid plus the white dwarf grid and
     blackbody supplement points for high-gravity regions.
     """
-    super_tarr, super_zarr, super_loggarr = get_merged_atmosphere_grid(rebin=rebin)
+    super_tarr, super_zarr, super_loggarr = get_merged_atmosphere_atlas_phoenix_sonora_grid(rebin=rebin)
 
     wd_tarr, wd_zarr, wd_loggarr = get_wdKoester_atmosphere_grid()
     super_tarr = np.concatenate((super_tarr, wd_tarr))
@@ -3161,5 +3732,3 @@ def rebin_WDKoester(cdbs_path=None, verbose=True):
         finalhdu.writeto(outfile, overwrite=True)
 
     return
-
-
