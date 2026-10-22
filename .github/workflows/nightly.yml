@@ -1,51 +1,59 @@
 name: Nightly
 
+# DISABLED: GitHub-hosted runners do not have the PYSYN_CDBS and
+# SPISEA_MODELS trees (CDBS + evolution/atmosphere grids, ~20 GB) that the
+# full suite needs. To re-enable, restore the schedule trigger and the
+# "full" job below, and run it on a self-hosted runner that already has
+# the grids (or download them before the tests).
+#
 # Full suite, including @pytest.mark.slow isochrone/cluster tests.
-# Needs PYSYN_CDBS and SPISEA_MODELS (CDBS + evolution/atmosphere grids,
-# ~20 GB). GitHub-hosted runners do not include those trees; use a
-# self-hosted runner that already has them, or download the grids
-# before this job.
 
 on:
-  schedule:
-    - cron: "0 8 * * *"
   workflow_dispatch:
+  # schedule:
+  #   - cron: "0 8 * * *"
 
 permissions:
   contents: read
 
 jobs:
-  full:
-    name: Full tests
+  disabled:
+    name: Nightly disabled
     runs-on: ubuntu-latest
-    env:
-      MPLBACKEND: Agg
-      PYSYN_CDBS: ${{ vars.PYSYN_CDBS }}
-      SPISEA_MODELS: ${{ vars.SPISEA_MODELS }}
     steps:
-      - uses: actions/checkout@v4
+      - run: echo "Nightly full suite is disabled; see .github/workflows/nightly.yml."
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
-
-      - name: Require model trees
-        run: |
-          if [ -z "${PYSYN_CDBS}" ] || [ -z "${SPISEA_MODELS}" ]; then
-            echo "Set repository variables PYSYN_CDBS and SPISEA_MODELS"
-            echo "to the CDBS and SPISEA model directories on the runner."
-            exit 1
-          fi
-          if [ ! -d "${PYSYN_CDBS}" ] || [ ! -d "${SPISEA_MODELS}" ]; then
-            echo "Model directories are missing:"
-            echo "  PYSYN_CDBS=${PYSYN_CDBS}"
-            echo "  SPISEA_MODELS=${SPISEA_MODELS}"
-            exit 1
-          fi
-
-      - name: Install SPISEA
-        run: pip install -e ".[dev]"
-
-      - name: Run all tests
-        run: pytest spisea/tests --tb=short
+  # full:
+  #   name: Full tests
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     MPLBACKEND: Agg
+  #     PYSYN_CDBS: ${{ vars.PYSYN_CDBS }}
+  #     SPISEA_MODELS: ${{ vars.SPISEA_MODELS }}
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #
+  #     - uses: actions/setup-python@v5
+  #       with:
+  #         python-version: "3.11"
+  #         cache: pip
+  #
+  #     - name: Require model trees
+  #       run: |
+  #         if [ -z "${PYSYN_CDBS}" ] || [ -z "${SPISEA_MODELS}" ]; then
+  #           echo "Set repository variables PYSYN_CDBS and SPISEA_MODELS"
+  #           echo "to the CDBS and SPISEA model directories on the runner."
+  #           exit 1
+  #         fi
+  #         if [ ! -d "${PYSYN_CDBS}" ] || [ ! -d "${SPISEA_MODELS}" ]; then
+  #           echo "Model directories are missing:"
+  #           echo "  PYSYN_CDBS=${PYSYN_CDBS}"
+  #           echo "  SPISEA_MODELS=${SPISEA_MODELS}"
+  #           exit 1
+  #         fi
+  #
+  #     - name: Install SPISEA
+  #       run: pip install -e ".[dev]"
+  #
+  #     - name: Run all tests
+  #       run: pytest spisea/tests --tb=short
