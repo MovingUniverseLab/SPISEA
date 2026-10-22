@@ -2280,11 +2280,13 @@ def rebin_phoenixV16(cdbs_path, verbose=True):
 
     makes new directory in cdbs/grid: phoenix_v16_rebin
 
-    cdbs_path: path to cdbs directory
+    cdbs_path: path to cdbs directory (default: $PYSYN_CDBS)
 
     verbose: boolean (default True)
         Print progress statements while processing the grid.
     """
+    if cdbs_path is None:
+        cdbs_path = os.environ['PYSYN_CDBS']
     # Get an atlas ck04 model, we will use this to set wavelength grid
     sp_atlas = get_castelli_atmosphere()
 
@@ -2489,7 +2491,7 @@ def make_BTSettl_2015_catalog(path_to_dir):
 
     return
 
-def rebin_BTSettl_2015(cdbs_path=os.environ['PYSYN_CDBS'], verbose=True):
+def rebin_BTSettl_2015(cdbs_path=None, verbose=True):
     """
     Rebin BTSettle_CIFITS2011_2015 models to atlas ck04 resolution; this makes
     spectrophotometry MUCH faster
@@ -3100,18 +3102,20 @@ def make_WDKoester_catalog(path_to_dir):
 
     return
 
-def rebin_WDKoester(cdbs_path=os.environ['PYSYN_CDBS'], verbose=True):
+def rebin_WDKoester(cdbs_path=None, verbose=True):
     """
     Rebin wdKoester models to atlas ck04 resolution; this makes
     spectrophotometry MUCH faster
 
     makes new directory in cdbs/grid: wdKoester_rebin
 
-    cdbs_path: path to cdbs directory
+    cdbs_path: path to cdbs directory (default: $PYSYN_CDBS)
 
     verbose: boolean (default True)
         Print progress statements while processing the grid.
     """
+    if cdbs_path is None:
+        cdbs_path = os.environ['PYSYN_CDBS']
     # Get an atlas ck04 model, we will use this to set wavelength grid
     sp_atlas = get_castelli_atmosphere()
 
