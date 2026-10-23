@@ -2273,7 +2273,7 @@ def cdbs_PHOENIXv16(path_to_cdbs_dir, verbose=True):
 
     return
 
-def rebin_phoenixV16(cdbs_path, verbose=True):
+def rebin_phoenixV16(cdbs_path=None, verbose=True):
     """
     Rebin phoenixV16 models to atlas ck04 resolution; this makes
     spectrophotometry MUCH faster
