@@ -1338,11 +1338,6 @@ class IsochronePhot(Isochrone):
             if verbose:
                 print(f'Generating new isochrone of log(t)={logAge:.2f}, AKs={AKs:.2f}, d={distance} pc')
 
-                user_input = input(f"Isochrone file {self.save_file} does not exist or needs to be regenerated. Do you want to proceed? (yes/no): ").strip().lower()
-                if user_input != 'yes':
-                    print("Operation canceled by the user.")
-                    return
-
             super().__init__(logAge, AKs, distance,
                              metallicity=metallicity,
                              evo_model=evo_model, atm_func=atm_func,
