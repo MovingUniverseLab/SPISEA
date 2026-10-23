@@ -1280,9 +1280,6 @@ class IsochronePhot(Isochrone):
         Define magnitude system for synthetic photometry. Default
         is 'Vega', with alternative options 'AB' and 'ST'.
 
-    confirm_recomp : boolean, optional
-        If true, will ask for user confirmation before recalculating the isochrone photometry
-
     verbose : boolean, optional
         If true, will print out information about the isochrone generation and photometry calculation.
     """
@@ -1298,7 +1295,6 @@ class IsochronePhot(Isochrone):
         min_mass=None, max_mass=None, rebin=True, recomp=False,
         filters=['ubv,U', 'ubv,B', 'ubv,V', 'ubv,R', 'ubv,I'],
         mag_sys='Vega',
-        confirm_recomp=False,
         verbose=False
     ):
         self.metallicity = metallicity
@@ -1347,17 +1343,6 @@ class IsochronePhot(Isochrone):
             if verbose:
                 print(f'Generating new isochrone of log(t)={logAge:.2f}, AKs={AKs:.2f}, d={distance} pc')
 
-                if confirm_recomp:
-                    while True:
-                        user_input = input(f"Isochrone file {self.save_file} does not exist or needs to be regenerated. Do you want to proceed? (y/n): ").strip().lower()
-                        if user_input == 'y':
-                            break
-                        elif user_input == 'n':
-                            print("Operation canceled by the user.")
-                            return
-                        else:
-                            print("Invalid input. Please enter 'y' or 'n'.")
-
             super().__init__(logAge, AKs, distance,
                              metallicity=metallicity,
                              evo_model=evo_model, atm_func=atm_func,
@@ -1389,7 +1374,7 @@ class IsochronePhot(Isochrone):
                 comp_filters.append(ii)
 
         # Compute additional filters if needed
-        if len(comp_filters)>0:
+        if len(comp_filters) > 0:
             self.verbose = True
             print('Missing photometry for',len(comp_filters),'filter - recomputing these columns:',comp_filters)
 
