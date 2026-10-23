@@ -1976,12 +1976,12 @@ def cdbs_cmfgen(path_to_dir, path_to_cdbs_dir, verbose=True):
 
     return
 
-def rebin_cmfgen(cdbs_path, rot=True, verbose=True):
+def rebin_cmfgen(cdbs_path=None, rot=True, verbose=True):
     """
     Rebin cmfgen_rot and cmfgen_norot models to atlas ck04 resolution;
     this makes spectrophotometry MUCH faster
 
-    cdbs_path: path to cdbs directory
+    cdbs_path: path to cdbs directory (default: $PYSYN_CDBS)
     rot=True for rotating models (cmfgen_rot), False for non-rotating models
 
     makes new directory in cdbs/grid: cmfgen_rot_rebin or cmfgen_norot_rebin
@@ -1989,6 +1989,8 @@ def rebin_cmfgen(cdbs_path, rot=True, verbose=True):
     verbose: boolean (default True)
         Print progress statements while processing the grid.
     """
+    if cdbs_path is None:
+        cdbs_path = os.environ['PYSYN_CDBS']
     # Get an atlas ck04 model, we will use this to set wavelength grid
     sp_atlas = get_castelli_atmosphere()
 
