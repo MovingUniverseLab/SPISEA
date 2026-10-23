@@ -1976,12 +1976,12 @@ def cdbs_cmfgen(path_to_dir, path_to_cdbs_dir, verbose=True):
 
     return
 
-def rebin_cmfgen(cdbs_path, rot=True, verbose=True):
+def rebin_cmfgen(cdbs_path=None, rot=True, verbose=True):
     """
     Rebin cmfgen_rot and cmfgen_norot models to atlas ck04 resolution;
     this makes spectrophotometry MUCH faster
 
-    cdbs_path: path to cdbs directory
+    cdbs_path: path to cdbs directory (default: $PYSYN_CDBS)
     rot=True for rotating models (cmfgen_rot), False for non-rotating models
 
     makes new directory in cdbs/grid: cmfgen_rot_rebin or cmfgen_norot_rebin
@@ -1989,6 +1989,8 @@ def rebin_cmfgen(cdbs_path, rot=True, verbose=True):
     verbose: boolean (default True)
         Print progress statements while processing the grid.
     """
+    if cdbs_path is None:
+        cdbs_path = os.environ['PYSYN_CDBS']
     # Get an atlas ck04 model, we will use this to set wavelength grid
     sp_atlas = get_castelli_atmosphere()
 
@@ -2273,7 +2275,7 @@ def cdbs_PHOENIXv16(path_to_cdbs_dir, verbose=True):
 
     return
 
-def rebin_phoenixV16(cdbs_path, verbose=True):
+def rebin_phoenixV16(cdbs_path=None, verbose=True):
     """
     Rebin phoenixV16 models to atlas ck04 resolution; this makes
     spectrophotometry MUCH faster
@@ -2498,11 +2500,13 @@ def rebin_BTSettl_2015(cdbs_path=None, verbose=True):
 
     makes new directory in cdbs/grid: BTSettl_2015_rebin
 
-    cdbs_path: path to cdbs directory
+    cdbs_path: path to cdbs directory (default: $PYSYN_CDBS)
 
     verbose: boolean (default True)
         Print progress statements while processing the grid.
     """
+    if cdbs_path is None:
+        cdbs_path = os.environ['PYSYN_CDBS']
     # Get an atlas ck04 model, we will use this to set wavelength grid
     sp_atlas = get_castelli_atmosphere()
 
@@ -2741,28 +2745,34 @@ def make_BTSettl_catalog(verbose=True):
 
     return
 
-def rebin_BTSettl(make_unique=False, verbose=True):
+def rebin_BTSettl(cdbs_path=None, make_unique=False, verbose=True):
     """
     Rebin BTSettle models to atlas ck04 resolution; this makes
     spectrophotometry MUCH faster
 
-    makes new directory: BTSettl_rebin
+    makes new directory in cdbs/grid: BTSettl_rebin
 
-    Code expects to be run in cdbs/grid directory
+    cdbs_path: path to cdbs directory (default: $PYSYN_CDBS)
+
+    make_unique: boolean (default False)
+        Run make_wavelength_unique on the BTSettl spectra before rebinning.
 
     verbose: boolean (default True)
         Print progress statements while processing the grid.
     """
+    if cdbs_path is None:
+        cdbs_path = os.environ['PYSYN_CDBS']
     # Get an atlas ck04 model, we will use this to set wavelength grid
     sp_atlas = get_castelli_atmosphere()
 
     # Create cdbs/grid directory for rebinned models
-    path = 'BTSettl_rebin/'
+    orig_path = cdbs_path + '/grid/BTSettl/'
+    path = cdbs_path + '/grid/BTSettl_rebin/'
     if not os.path.exists(path):
         os.mkdir(path)
 
     # Read in the existing catalog.fits file and rebin every spectrum.
-    cat = fits.getdata('BTSettl/catalog.fits')
+    cat = fits.getdata(orig_path + 'catalog.fits')
     files_all = [cat[ii][1].split('[')[0] for ii in range(len(cat))]
 
     #==============================#
@@ -2778,7 +2788,7 @@ def rebin_BTSettl(make_unique=False, verbose=True):
     if make_unique:
         if verbose:
             print('Making unique')
-        make_wavelength_unique(files_all, 'BTSettl', verbose=verbose)
+        make_wavelength_unique(files_all, cdbs_path + '/grid/BTSettl', verbose=verbose)
         if verbose:
             print('Done')
 
@@ -2808,7 +2818,7 @@ def rebin_BTSettl(make_unique=False, verbose=True):
             finalhdu.writeto(outfile, overwrite=True)
         except:
             pdb.set_trace()
-            orig_file = '{0}/{1}'.format('BTSettl/', files_all[ff].split('[')[0])
+            orig_file = orig_path + files_all[ff].split('[')[0]
             outfile = path + files_all[ff].split('[')[0]
             cmd = 'cp {0} {1}'.format(orig_file, outfile)
             os.system(cmd)
@@ -2938,28 +2948,34 @@ def make_Meisner2023_catalog(verbose=True):
 
     return
 
-def rebin_Meisner2023(make_unique=False, verbose=True):
+def rebin_Meisner2023(cdbs_path=None, make_unique=False, verbose=True):
     """
     Rebin Meisner2023 models to atlas ck04 resolution; this makes
     spectrophotometry MUCH faster
 
-    makes new directory: Meisner2023_rebin
+    makes new directory in cdbs/grid: Meisner2023_rebin
 
-    Code expects to be run in cdbs/grid directory
+    cdbs_path: path to cdbs directory (default: $PYSYN_CDBS)
+
+    make_unique: boolean (default False)
+        Run make_wavelength_unique on the Meisner2023 spectra before rebinning.
 
     verbose: boolean (default True)
         Print progress statements while processing the grid.
     """
+    if cdbs_path is None:
+        cdbs_path = os.environ['PYSYN_CDBS']
     # Get an atlas ck04 model, we will use this to set wavelength grid
     sp_atlas = get_castelli_atmosphere()
 
     # Create a directory for rebinned Meisner2023 models
-    rebin_path = 'Meisner2023_rebin/'
+    orig_path = os.path.join(cdbs_path, 'grid', 'Meisner2023')
+    rebin_path = os.path.join(cdbs_path, 'grid', 'Meisner2023_rebin')
     if not os.path.exists(rebin_path):
         os.mkdir(rebin_path)
 
     # Load the catalog.fits file and extract all spectra file paths
-    cat = Table.read('Meisner2023/catalog.fits')
+    cat = Table.read(os.path.join(orig_path, 'catalog.fits'))
     files_all = [cat[ii]['FILENAME'].split('[')[0] for ii in range(len(cat))]
     
     if verbose:
@@ -2967,7 +2983,7 @@ def rebin_Meisner2023(make_unique=False, verbose=True):
     if make_unique:
         if verbose:
             print('Making unique')
-        make_wavelength_unique(files_all, 'Meisner2023', verbose=verbose)
+        make_wavelength_unique(files_all, orig_path, verbose=verbose)
         if verbose:
             print('Done')
 
@@ -2999,7 +3015,7 @@ def rebin_Meisner2023(make_unique=False, verbose=True):
 
         except Exception as e:
             print(f"Error processing {file}: {e}")
-            orig_file = os.path.join('Meisner2023', file)
+            orig_file = os.path.join(orig_path, file)
             outfile = os.path.join(rebin_path, os.path.basename(file))
             os.system(f'cp {orig_file} {outfile}')
         
