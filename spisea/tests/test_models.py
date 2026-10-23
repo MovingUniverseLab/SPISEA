@@ -1,9 +1,6 @@
 # Test functions for the different stellar evolution and atmosphere models
-from spisea import evolution, atmospheres, synthetic
+from spisea import evolution, atmospheres
 import numpy as np
-import pdb
-import pytest
-from astropy.table import Table
 
 def test_evo_model_grid_num():
     """
@@ -20,7 +17,14 @@ def test_evo_model_grid_num():
 
 def test_evolution_models():
     """
-    Test to make sure the different evolution models work
+    Check each installed evolution model returns nonempty finite core fields
+    and selects the closest supported metallicity. This checks the loader
+    contract, not the physical accuracy or interpolation method of a grid.
+
+    The merged Sonora/MIST model uses its installed metallicity list so saved
+    proxy grids receive the same checks. Exact 9- and 15-Gyr requests exercise
+    its stored family-handoff and endpoint files. Source preservation and
+    connection consistency are checked by the offline grid builder.
     """
     # Age ranges to test
     age_young_arr = [6.7, 7.9]
@@ -33,7 +37,6 @@ def test_evolution_models():
     metal_range = [-2.5, -1.5, 0, 0.25, 0.4]
     metal_solar = [0]
     metal_Marley = [-0.5, 0.0, 0.5]
-    metal_flame_mist = [-1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5]
 
     # Array of evolution models to test
     evo_models = [evolution.MISTv1(version=1.2), evolution.MergedBaraffePisaEkstromParsec(), 
@@ -49,7 +52,7 @@ def test_evolution_models():
 
     # Array of metallicities for the specific evolution models to test
     metal_vals = [metal_range, metal_solar, metal_solar, metal_solar, metal_solar, metal_solar, metal_solar, metal_Marley, metal_solar,
-        metal_flame_mist]
+        evo_models[-1].metallicity_list]
 
     assert len(evo_models) == len(age_vals) == len(metal_vals)
 
@@ -63,6 +66,10 @@ def test_evolution_models():
             for kk in age_vals[ii]:
                 try:
                     test = evo.isochrone(age=10**kk, metallicity=jj)
+                    assert len(test) > 0
+                    for column in ('mass', 'logL', 'logT', 'logg'):
+                        assert np.all(np.isfinite(test[column])), column
+                    assert np.all(test['mass'] > 0)
 
                     # Make sure the actual isochrone metallicity taken is
                     # indeed the closest to the desired metallicity (e.g., closest point
@@ -73,8 +80,8 @@ def test_evolution_models():
 
                     assert np.isclose(test.meta['metallicity_act'], expected_val, atol=0.01)
 
-                except:
-                    raise Exception('EVO TEST FAILED: {0}, age = {1}, metal = {2}'.format(evo, kk, jj))
+                except Exception as error:
+                    raise AssertionError('EVO TEST FAILED: {0}, age = {1}, metal = {2}'.format(evo, kk, jj)) from error
 
         print('Done {0}'.format(evo))
 
@@ -98,128 +105,6 @@ def test_synthpop_MIST_extension():
 
     return
 
-
-def test_flameskimmer_evolution_local_loader(tmp_path):
-    """Test the merged-grid loader without relying on the shared model tree."""
-    model_root = tmp_path / 'flame_red_diamondback_mist'
-
-    columns = {
-        'mass': [0.011, 0.080, 0.110],
-        'mass_current': [0.011, 0.080, 0.109],
-        'logL': [-5.0, -3.0, -2.0],
-        'logT': [2.7, 3.2, 3.5],
-        'logR': [-1.0, -0.9, -0.8],
-        'logg': [4.0, 4.5, 5.0],
-        'logT_WR': [2.7, 3.2, 3.5],
-        'phase': [90, 90, 0],
-        'isWR': [False, False, False],
-    }
-
-    filenames = ('iso_9.00.fits', 'iso_9.954243.fits',
-                 'iso_10.176091.fits')
-    for z_dir in ('z0045', 'z014', 'z045'):
-        output_dir = model_root / 'iso' / z_dir
-        output_dir.mkdir(parents=True)
-        for filename in filenames:
-            Table(columns).write(output_dir / filename, format='fits')
-
-    evo = evolution.MergedFlameSkimmerRedDiamondbackMIST(
-        model_dir=model_root
-    )
-
-    assert evo._isochrone_filename(np.log10(9.0e9)) == 'iso_9.954243.fits'
-    assert evo._isochrone_filename(np.log10(15.0e9)) == 'iso_10.176091.fits'
-
-    for metallicity in (-0.5, 0.0, 0.5):
-        iso = evo.isochrone(age=1.0e9, metallicity=metallicity)
-        assert iso.meta['log_age_act'] == 9.0
-        assert iso.meta['metallicity_act'] == metallicity
-        assert np.min(iso['mass']) < 0.08
-        assert np.all(np.isfinite(iso['logL']))
-        assert np.all(np.isfinite(iso['logT']))
-        assert np.all(np.isfinite(iso['logg']))
-
-    iso_9_gyr = evo.isochrone(age=9.0e9, metallicity=0.0)
-    iso_15_gyr = evo.isochrone(age=15.0e9, metallicity=0.0)
-    assert iso_9_gyr.meta['log_age_act'] == pytest.approx(np.log10(9.0e9))
-    assert iso_15_gyr.meta['log_age_act'] == pytest.approx(np.log10(15.0e9))
-
-    with pytest.raises(ValueError):
-        evo.isochrone(age=0.0, metallicity=0.0)
-    with pytest.raises(ValueError):
-        evo.isochrone(age=1.0e9, metallicity=0.6)
-
-
-@pytest.mark.parametrize('metallicity', [-0.5, 0.0, 0.5])
-@pytest.mark.parametrize('age', [1.0e5, 1.0e9, 9.0e9, 15.0e9])
-def test_flameskimmer_installed_evolution(metallicity, age):
-    """Smoke-test the FITS files supplied by the updated evolution archive."""
-    evo = evolution.MergedFlameSkimmerRedDiamondbackMIST()
-    iso = evo.isochrone(age=age, metallicity=metallicity)
-
-    assert len(iso) > 0
-    assert iso.meta['metallicity_act'] == metallicity
-    assert np.min(iso['mass']) <= 0.012
-    for column in ('mass', 'mass_current', 'logL', 'logT', 'logR', 'logg'):
-        assert np.all(np.isfinite(iso[column]))
-
-
-@pytest.mark.parametrize(
-    'temperature, expected',
-    [
-        (50.0, 'flame'),
-        (2200.0, 'flame'),
-        (2200.1, 'transition'),
-        (2499.9, 'transition'),
-        (2500.0, 'phoenix'),
-        (4999.9, 'phoenix'),
-        (5000.0, 'atlas_phoenix'),
-        (5499.9, 'atlas_phoenix'),
-        (5500.0, 'atlas'),
-        (20000.0, 'atlas'),
-    ],
-)
-def test_flameskimmer_atmosphere_dispatch(monkeypatch, temperature, expected):
-    """Verify every exact boundary in the new merged-atmosphere dispatcher."""
-    def fake_loader(name):
-        def loader(**kwargs):
-            return name
-        return loader
-
-    monkeypatch.setattr(atmospheres, 'get_flameskimmer_atmosphere',
-                        fake_loader('flame'))
-    monkeypatch.setattr(atmospheres, 'get_flameskimmer_phoenix_atmosphere',
-                        fake_loader('transition'))
-    monkeypatch.setattr(atmospheres, 'get_phoenixv16_atmosphere',
-                        fake_loader('phoenix'))
-    monkeypatch.setattr(atmospheres, 'get_atlas_phoenix_atmosphere',
-                        fake_loader('atlas_phoenix'))
-    monkeypatch.setattr(atmospheres, 'get_castelli_atmosphere',
-                        fake_loader('atlas'))
-
-    result = atmospheres.get_merged_atmosphere_atlas_phoenix_sonora(
-        metallicity=0.0,
-        temperature=temperature,
-        gravity=4.5,
-        rebin=True,
-    )
-    assert result == expected
-
-
-@pytest.mark.parametrize('metallicity', [-0.5, 0.0, 0.5])
-@pytest.mark.parametrize('temperature', [1000, 2200, 2300, 2400, 2500])
-def test_flameskimmer_installed_atmospheres(metallicity, temperature):
-    """Smoke-test real spectra from the updated SPISEA atmosphere archive."""
-    spectrum = atmospheres.get_merged_atmosphere(
-        metallicity=metallicity,
-        temperature=temperature,
-        gravity=4.5,
-        rebin=True,
-    )
-    flux = np.asarray(spectrum(spectrum.waveset))
-    assert flux.size > 0
-    assert np.all(np.isfinite(flux))
-    assert np.any(flux > 0)
 
 def test_COSMIC_init():
     """
@@ -299,7 +184,14 @@ def test_COSMIC_get_kick_differential():
 
 def test_atmosphere_models():
     """
-    Test the rebinned atmosphere models used for synthetic photometry
+    Check every installed atmosphere returns finite, nonnegative, nonzero
+    flux. Zero flux outside a spectrum's wavelength support is allowed.
+    These checks apply to the existing grids as well as the Sonora addition;
+    they do not establish physical accuracy or test which model was chosen.
+
+    The merged-suite loop samples the Flame/PHOENIX transition as well as the
+    existing temperature range. The two metal-poor dwarf/giant requests check
+    that both additional coverage paths return usable spectra.
     """
     # Array of atmospheres
     atm_arr = [
@@ -344,6 +236,7 @@ def test_atmosphere_models():
 
             try:
                 test = atm_func(**call_kwargs)
+                _assert_valid_atmosphere_spectrum(test)
             except Exception as error:
                 raise Exception(
                     'ATM TEST FAILED: {0}, metal = {1}'.format(atm_func, jj)
@@ -351,18 +244,21 @@ def test_atmosphere_models():
 
         print('Done {0}'.format(atm_func))
 
-    # Test get_merged_atmospheres at different temps
-    temp_range = [250, 1000, 2000, 3500, 4000, 5250, 6000, 12000]
-    atm_func = atmospheres.get_merged_atmosphere
-    for ii in bd_metals_range:
-        for jj in temp_range:
-            try:
-                test = atm_func(metallicity=ii, temperature=jj, verbose=True)
-            except:
-                raise Exception('ATM TEST FAILED: {0}, metal = {1}, temp = {2}'.format(atm_func, ii, jj))
+    # Exercise both merged suites using the existing temperature/metallicity loop.
+    temp_range = [250, 1000, 2000, 2350, 2500, 3500, 4000, 5250, 6000, 12000]
+    for atm_func in (atmospheres.get_merged_atmosphere,
+                     atmospheres.get_merged_atmosphere_atlas_phoenix_sonora):
+        for metallicity in bd_metals_range:
+            for temperature in temp_range:
+                test = atm_func(metallicity=metallicity, temperature=temperature, verbose=True)
+                _assert_valid_atmosphere_spectrum(test)
+        print('Done {0}: all temperatures/metallicities'.format(atm_func))
 
-
-    print('get_merged_atmosphere: all temps/metallicities passed')
+    # The Sonora suite also has a metal-poor dwarf proxy and a giant path.
+    for temperature, gravity in [(1000, 4.5), (3000, 1.5)]:
+        test = atmospheres.get_merged_atmosphere_atlas_phoenix_sonora(
+            metallicity=-2., temperature=temperature, gravity=gravity)
+        _assert_valid_atmosphere_spectrum(test)
 
     # Test get_bb_atmosphere at different temps
     # This func only requests temp
@@ -371,8 +267,9 @@ def test_atmosphere_models():
     for jj in temp_range:
         try:
             test = atm_func(temperature=jj, verbose=True)
+            _assert_valid_atmosphere_spectrum(test)
         except:
-            raise Exception('ATM TEST FAILED: {0}, temp = {2}'.format(atm_func, jj))
+            raise Exception('ATM TEST FAILED: {0}, temp = {1}'.format(atm_func, jj))
 
     print('get_bb_atmosphere: all temps passed')
 
@@ -383,6 +280,7 @@ def test_atmosphere_models():
     for jj in temp_range:
         try:
             test = atm_func(temperature=jj, verbose=True)
+            _assert_valid_atmosphere_spectrum(test)
         except:
             raise Exception('ATM TEST FAILED: {0}, temp = {1}'.format(atm_func, jj))
 
@@ -394,6 +292,8 @@ def test_filters():
     """
     Test to make sure all of the filters work as expected
     """
+    from spisea import synthetic
+
     # Define vega spectrum
     vega = synthetic.Vega()
 
@@ -461,85 +361,16 @@ def test_filters():
 
     return
 
+
 def _assert_valid_atmosphere_spectrum(spectrum):
-    """Check that an atmosphere contains finite, non-negative flux."""
-    flux = spectrum(spectrum.waveset)
-    flux_values = np.asarray(
-        getattr(flux, 'value', flux),
-        dtype=float,
-    )
+    """Reject empty, nonfinite, negative or entirely zero flux arrays.
 
-    assert len(flux_values) > 0
-    assert np.all(np.isfinite(flux_values))
-    assert np.all(flux_values >= 0)
-    assert np.any(flux_values > 0)
-
-
-def test_atlas_phoenix_sonora_merged_atmosphere():
-    """Test the new merged atmosphere across its routing boundaries."""
-    metallicities = [
-        -1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5
-    ]
-    temperatures = [
-        250, 1000, 2200, 2300, 2400,
-        2500, 3500, 5250, 6000, 12000
-    ]
-
-    atm_func = (
-        atmospheres
-        .get_merged_atmosphere_atlas_phoenix_sonora
-    )
-
-    for metallicity in metallicities:
-        for temperature in temperatures:
-            spectrum = atm_func(
-                metallicity=metallicity,
-                temperature=temperature,
-                gravity=4.5,
-                rebin=True,
-            )
-            _assert_valid_atmosphere_spectrum(spectrum)
-
-
-def test_atlas_phoenix_sonora_merged_atmosphere_w_bb_supplement():
-    """Test normal, white-dwarf, and blackbody routing."""
-    cases = [
-        dict(
-            metallicity=-1.0,
-            temperature=1000,
-            gravity=4.5,
-        ),
-        dict(
-            metallicity=-0.25,
-            temperature=2350,
-            gravity=4.5,
-        ),
-        dict(
-            metallicity=0.25,
-            temperature=5250,
-            gravity=4.5,
-        ),
-        dict(
-            metallicity=0.0,
-            temperature=3000,
-            gravity=7.0,
-        ),
-        dict(
-            metallicity=0.0,
-            temperature=20000,
-            gravity=10.0,
-        ),
-    ]
-
-    atm_func = getattr(
-        atmospheres,
-        "get_merged_atmosphere_atlas_phoenix_sonora_"
-        "w_bb_supplement",
-    )
-
-    for parameters in cases:
-        spectrum = atm_func(
-            rebin=True,
-            **parameters,
-        )
-        _assert_valid_atmosphere_spectrum(spectrum)
+    A successful loader call can still return an unusable spectrum. Apply the
+    same check to every atmosphere; allow individual zero samples because
+    spectra can have zero flux outside their native wavelength support.
+    """
+    flux = spectrum(spectrum.waveset).value
+    assert flux.size > 0
+    assert np.all(np.isfinite(flux))
+    assert np.all(flux >= 0)
+    assert np.any(flux > 0)

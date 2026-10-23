@@ -133,9 +133,47 @@ The default SPISEA grid degrades all atmosphere grids to R = 250 (``spisea_cdbs.
  
 :sup:`e` White dwarf atmospheres only.
 
+Sonora, PHOENIX and ATLAS suite
+-----------------------------------------
+``get_merged_atmosphere_atlas_phoenix_sonora`` adds the C/O = 1 equilibrium
+Flame Skimmer grid to the stellar atmosphere suite. Below 2500 K, requests
+with log(g) >= 2 use Flame through 2200 K and the precomputed Flame/PHOENIX
+flux blend between 2200 and 2500 K. Lower-gravity requests use PHOENIX.
+The log(g) division follows the lower Flame grid boundary; it is a coverage
+choice, not a general physical dwarf/giant classification.
+
+Cool high-gravity requests below [M/H] = -1 explicitly use a -1 Sonora
+atmosphere proxy and warn. PHOENIX requests retain their requested metallicity.
+At 2500-5000 K the suite uses PHOENIX, at 5000-5500 K the ATLAS/PHOENIX
+blend, and at higher temperatures ATLAS. The separate
+``get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement`` wrapper adds
+white-dwarf and blackbody fallbacks. The matching ``_grid`` function reports
+the same gravity-dependent choices, including the proxy coordinates.
+
+Model-specific loaders first try the requested spectrum. On an out-of-bounds
+lookup, Flame, Flame/PHOENIX and PHOENIX clip temperature and gravity to their
+common interpolation support while preserving an in-range metallicity.
+This numerical fallback prevents a quarter-dex metallicity from silently
+snapping to a native node. Parameter changes produce warnings; missing or
+corrupt files are allowed to raise their original errors.
+
+Clipping is an approximation: PHOENIX cannot supply a genuinely cooler
+spectrum below its 2300-K floor, and Flame has temperature-dependent gravity
+limits. The Flame/PHOENIX blend has only the weighted PHOENIX contribution
+outside Flame's native wavelength support, underestimating blue flux there.
+The low-metallicity proxy does not extend native Sonora metallicity coverage.
+
 Model Atmosphere Classes
 -------------------------
 .. autofunction:: atmospheres.get_merged_atmosphere
+
+.. autofunction:: atmospheres.get_flameskimmer_atmosphere
+
+.. autofunction:: atmospheres.get_flameskimmer_phoenix_atmosphere
+
+.. autofunction:: atmospheres.get_merged_atmosphere_atlas_phoenix_sonora
+
+.. autofunction:: atmospheres.get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement
 
 .. autofunction:: atmospheres.get_wd_atmosphere
 
