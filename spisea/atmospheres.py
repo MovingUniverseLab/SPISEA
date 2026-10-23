@@ -2498,11 +2498,13 @@ def rebin_BTSettl_2015(cdbs_path=None, verbose=True):
 
     makes new directory in cdbs/grid: BTSettl_2015_rebin
 
-    cdbs_path: path to cdbs directory
+    cdbs_path: path to cdbs directory (default: $PYSYN_CDBS)
 
     verbose: boolean (default True)
         Print progress statements while processing the grid.
     """
+    if cdbs_path is None:
+        cdbs_path = os.environ['PYSYN_CDBS']
     # Get an atlas ck04 model, we will use this to set wavelength grid
     sp_atlas = get_castelli_atmosphere()
 
