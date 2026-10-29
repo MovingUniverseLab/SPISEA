@@ -1628,3 +1628,107 @@ def test_mag_in_filter():
     assert np.isclose(mag_Kp, star['m_nirc2_Kp'], rtol=5e-2, atol=5e-2)
 
     return
+
+
+class _MockEvoModel:
+    model_version_name = 'v1'
+
+class _MockRedLaw:
+    def __init__(self, name):
+        self.name = name
+
+def _mock_atm_func():
+    pass
+
+def _write_iso_file(path, **meta):
+    t = Table({'mass': [1.0]})
+    t.meta.update(meta)
+    with warnings.catch_warnings():
+        # EVOMODELVERSION needs a HIERARCH card, as in real isochrone files
+        warnings.simplefilter('ignore')
+        t.write(path, overwrite=True)
+
+def test_save_file_mismatches(tmp_path):
+    """
+    save_file_mismatches reports None for a missing file, [] for a match,
+    and (key, file value, requested value) for each mismatched input.
+    """
+    evo, red = _MockEvoModel(), _MockRedLaw('H18b')
+    iso_file = str(tmp_path / 'iso.fits')
+    assert syn.save_file_mismatches(iso_file, evo, _mock_atm_func, red) is None
+
+    _write_iso_file(iso_file, EVOMODEL='_MockEvoModel', ATMFUNC='_mock_atm_func', REDLAW='H18b')
+    assert syn.save_file_mismatches(iso_file, evo, _mock_atm_func, red) == []
+    assert syn.check_save_file(iso_file, evo, _mock_atm_func, red)
+
+    _write_iso_file(iso_file, EVOMODEL='_MockEvoModel', ATMFUNC='_mock_atm_func', REDLAW='N09',
+                    EVOMODELVERSION='v0')
+    assert syn.save_file_mismatches(iso_file, evo, _mock_atm_func, red) == [
+        ('REDLAW', 'N09', 'H18b'), ('EVOMODELVERSION', 'v0', 'v1')]
+    assert not syn.check_save_file(iso_file, evo, _mock_atm_func, red)
+
+def test_check_save_file_verbose(tmp_path, capsys):
+    """
+    check_save_file's verbose messages name the file and each mismatched input.
+    """
+    evo, red = _MockEvoModel(), _MockRedLaw('H18b')
+    iso_file = str(tmp_path / 'iso.fits')
+    syn.check_save_file(iso_file, evo, _mock_atm_func, red, verbose=True)
+    assert f'Isochrone file {iso_file} does not exist.' in capsys.readouterr().out
+
+    _write_iso_file(iso_file, EVOMODEL='_MockEvoModel', ATMFUNC='_mock_atm_func', REDLAW='N09',
+                    EVOMODELVERSION='v0')
+    syn.check_save_file(iso_file, evo, _mock_atm_func, red, verbose=True)
+    out = capsys.readouterr().out
+    assert f'Isochrone file {iso_file} exists, but meta-data does not match:' in out
+    assert '  REDLAW: file has N09, requested H18b' in out
+    assert '  EVOMODELVERSION: file has v0, requested v1' in out
+
+def test_IsochronePhot_warns_before_overwriting(tmp_path, capsys):
+    """
+    IsochronePhot warns, even when not verbose, before regenerating (and so
+    overwriting) a save file made with different inputs, and then does not
+    also print that file's verbose mismatch report. A missing file,
+    recomp=True, or a matching legacy file gives no warning.
+    """
+    class StopRegeneration(Exception):
+        pass
+
+    def isochrone_phot(**kwargs):
+        kwargs.setdefault('iso_dir', str(tmp_path))
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter('always')
+            try:
+                syn.IsochronePhot(6.7, 0.7, 4000, **kwargs)
+            except StopRegeneration:
+                pass
+        overwrite = [w for w in caught if 'made with different inputs' in str(w.message)]
+        return overwrite, capsys.readouterr().out
+
+    iso_file = str(tmp_path / 'iso_6.70_0.70_04000_p0.00.fits')
+    model_meta = dict(EVOMODEL=type(syn.default_evo_model).__name__, ATMFUNC=syn.default_atm_func.__name__)
+    _write_iso_file(iso_file, REDLAW='some_other_law', **model_meta)
+    report = f'Isochrone file {iso_file} exists, but meta-data does not match'
+
+    # Stop at the (expensive) isochrone calculation; the warning comes before it.
+    with patch.object(syn.Isochrone, '__init__', side_effect=StopRegeneration):
+        for verbose in [False, True]:
+            overwrite, out = isochrone_phot(verbose=verbose)
+            assert len(overwrite) == 1
+            assert f'REDLAW: file has some_other_law, requested {syn.default_red_law.name}' in str(overwrite[0].message)
+            assert report not in out
+
+        # Regenerating on request, or a missing file: no warning, usual verbose report
+        overwrite, out = isochrone_phot(recomp=True, verbose=True)
+        assert not overwrite and report in out
+        overwrite, out = isochrone_phot(iso_dir=str(tmp_path / 'empty'), verbose=True)
+        assert not overwrite and 'does not exist' in out
+
+    # A matching legacy file is used instead, so nothing is overwritten
+    legacy = Table({f'm_{syn.get_filter_col_name(f)}': [10.0] for f in ['ubv,U', 'ubv,B', 'ubv,V', 'ubv,R', 'ubv,I']})
+    legacy.meta.update(REDLAW=syn.default_red_law.name, **model_meta)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        legacy.write(str(tmp_path / 'iso_6.70_0.70_04000_p00.fits'))
+    overwrite, out = isochrone_phot(verbose=True)
+    assert not overwrite and report in out

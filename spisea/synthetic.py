@@ -1316,7 +1316,15 @@ class IsochronePhot(Isochrone):
         older_file      = f'{iso_dir}/iso_{logAge:.2f}_{AKs:4.2f}_{str(round(distance)).zfill(5)}_{metal_sign}{metal_value*10:02.0f}.fits'
         oldest_file     = f'{iso_dir}/iso_{logAge:.2f}_{AKs:4.2f}_{str(round(distance)).zfill(5)}.fits'
 
-        new_file_exists = check_save_file(self.save_file, evo_model, atm_func, red_law, verbose=verbose)
+        new_mismatches = save_file_mismatches(self.save_file, evo_model, atm_func, red_law)
+        new_file_exists = new_mismatches == []
+        # A mismatched save_file is overwritten unless a legacy file matches. That is only
+        # known after the legacy checks, so its report waits for them: then it is either the
+        # overwrite warning (regardless of verbose) or, if nothing is overwritten, the usual
+        # verbose printout -- never both.
+        defer_report = bool(new_mismatches) and not recomp
+        if verbose and not defer_report:
+            _report_save_file_check(self.save_file, new_mismatches)
 
         if new_file_exists:
             self.save_file_legacy = None
@@ -1332,6 +1340,13 @@ class IsochronePhot(Isochrone):
 
         # Recalculate isochrone if save_file doesn't exist or recomp == True
         file_exists = new_file_exists or (self.save_file_legacy is not None)
+
+        if defer_report:
+            if file_exists:
+                if verbose:
+                    _report_save_file_check(self.save_file, new_mismatches)
+            else:
+                _warn_save_file_overwrite(self.save_file, new_mismatches)
 
         if  (recomp==True) or (not file_exists):
             self.recalc = True
@@ -1688,12 +1703,15 @@ class IsochronePhotExternalEvolution(IsochronePhot):
         self.filters = filters
 
         # Recalculate atmosphere grid if save_file doesn't exist or recomp == True
-        new_file_exists = check_save_file(self.save_file, evo_model, atm_func, red_law)
+        new_mismatches = save_file_mismatches(self.save_file, evo_model, atm_func, red_law)
+        new_file_exists = new_mismatches == []
         legacy_file_exists = (
             self.save_file_legacy != self.save_file and
             check_save_file(self.save_file_legacy, evo_model, atm_func, red_law)
         )
         file_exists = new_file_exists or legacy_file_exists
+        if new_mismatches and (not file_exists) and (not recomp):
+            _warn_save_file_overwrite(self.save_file, new_mismatches)
 
         if (not file_exists) | (recomp==True):
             self.recalc = True
@@ -2163,6 +2181,30 @@ class iso_table(object):
 
         return
 
+def save_file_mismatches(save_file_path, evo_model, atm_func, red_law):
+    """
+    Compare the meta-data of an existing save_file against the requested
+    evolution model, atmosphere function and reddening law.
+
+    returns None if the file does not exist, otherwise a list of
+    (key, value in the file, requested value) for each item that does
+    not match (empty if everything matches).
+    """
+    if not os.path.exists(save_file_path):
+        return None
+
+    tmp = Table.read(save_file_path)
+
+    expected = [('EVOMODEL', type(evo_model).__name__),
+                ('ATMFUNC', atm_func.__name__),
+                ('REDLAW', red_law.name)]
+    # Model version is only checked if it was logged
+    if 'EVOMODELVERSION' in tmp.meta:
+        expected.append(('EVOMODELVERSION', evo_model.model_version_name))
+
+    return [(key, tmp.meta.get(key), value) for key, value in expected
+            if tmp.meta.get(key) != value]
+
 def check_save_file(save_file_path, evo_model, atm_func, red_law, verbose=False):
     """
     Check to see if save_file exists, as saved by the save_file
@@ -2171,39 +2213,35 @@ def check_save_file(save_file_path, evo_model, atm_func, red_law, verbose=False)
 
     returns a boolean: True is file exists, false otherwise
     """
-    out_bool = False
+    mismatches = save_file_mismatches(save_file_path, evo_model, atm_func, red_law)
+    if verbose:
+        _report_save_file_check(save_file_path, mismatches)
 
-    if not os.path.exists(save_file_path):
-        if verbose: print(f'Isochrone file {save_file_path} does not exist.')
-        return out_bool
+    return mismatches == []
 
-    tmp = Table.read(save_file_path)
+def _format_mismatches(mismatches):
+    return [f'{key}: file has {file_value}, requested {value}' for key, file_value, value in mismatches]
 
-    # See if the meta-data matches: evo model, atm_func, redlaw
-    if ( (tmp.meta['EVOMODEL'] == type(evo_model).__name__) &
-        (tmp.meta['ATMFUNC'] == atm_func.__name__) &
-            (tmp.meta['REDLAW'] == red_law.name) ):
-        out_bool = True
-    else:
-        # If out_bool is false, print out what doesn't match
-        if verbose:
-            print(f'Isochrone file {save_file_path} exists, but meta-data does not match.')
-            if tmp.meta['EVOMODEL'] != type(evo_model).__name__:
-                print(f'  EVOMODEL: {tmp.meta["EVOMODEL"]} != {type(evo_model).__name__}')
-            if tmp.meta['ATMFUNC'] != atm_func.__name__:
-                print(f'  ATMFUNC: {tmp.meta["ATMFUNC"]} != {atm_func.__name__}')
-            if tmp.meta['REDLAW'] != red_law.name:
-                print(f'  REDLAW: {tmp.meta["REDLAW"]} != {red_law.name}')
+def _report_save_file_check(save_file_path, mismatches):
+    """
+    Print the result of save_file_mismatches: the file does not exist,
+    or which meta-data does not match (nothing if it matches).
+    """
+    if mismatches is None:
+        print(f'Isochrone file {save_file_path} does not exist.')
+    elif mismatches:
+        print(f'Isochrone file {save_file_path} exists, but meta-data does not match:')
+        for line in _format_mismatches(mismatches):
+            print(f'  {line}')
 
-    # Check model version if it was logged
-    if 'EVOMODELVERSION' in tmp.meta:
-        if tmp.meta['EVOMODELVERSION'] != evo_model.model_version_name:
-            out_bool=False
-            if verbose:
-                print(f'EVOMODELVERSION does not match: The recorded {tmp.meta["EVOMODELVERSION"]} does not matched the existing version {evo_model.model_version_name}')
-
-
-    return out_bool
+def _warn_save_file_overwrite(save_file_path, mismatches):
+    """
+    Warn that save_file, made with different inputs, is about to be
+    regenerated and overwritten. Issued regardless of verbose.
+    """
+    warnings.warn(f'Isochrone file {save_file_path} was made with different inputs '
+                  f'({"; ".join(_format_mismatches(mismatches))}). '
+                  f'Regenerating it, which overwrites the file.')
 
 
 def get_filter_info(name, vega=vega, rebin=True):
