@@ -857,7 +857,7 @@ def theta_closed(x):
     Pass in float or array of floats (x) and return 0 for x<0
     and 1 for everything else.
     """
-    isFloat = type(x) == float
+    isFloat = isinstance(x, (float, np.floating))
 
     x = np.atleast_1d(x)
     val = (x >= 0).astype('float')
@@ -872,7 +872,7 @@ def theta_open(x):
     Pass in float or array of floats (x) and return 1 for x>0
     and 0 for everything else.
     """
-    isFloat = type(x) == float
+    isFloat = isinstance(x, (float, np.floating))
 
     x = np.atleast_1d(x)
     val = (x > 0).astype('float')
@@ -887,7 +887,7 @@ def delta(x):
     Pass in float or array of floats (x) and return 0.5 for x==0
     and 1.0 for everything else.
     """
-    isFloat = type(x) == float
+    isFloat = isinstance(x, (float, np.floating))
 
     x = np.atleast_1d(x)
     val = np.ones(len(x), dtype=float)
