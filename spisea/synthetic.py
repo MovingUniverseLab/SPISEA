@@ -31,6 +31,7 @@ from spisea.utils.synphot_bridge import (
     observation_bin_edges,
     resample_bandpass,
     resample_source_to,
+    tabulate,
     tabulate_if_needed,
     trim_spectrum,
 )
@@ -2323,7 +2324,10 @@ def get_filter_info(name, vega=vega, rebin=True):
     filt.meta["flux0"] = vega_flux
     filt.meta["mag0"] = vega_mag
 
-    return filt
+    # An stsynphot bandpass is a tree of throughput components, each with a FITS
+    # header that synphot deep-copies in every Observation. As one table it gives
+    # the same magnitudes several times faster.
+    return tabulate(filt)
 
 
 def get_filter_col_name(obs_str):
