@@ -1702,7 +1702,7 @@ def test_IsochronePhot_warns_before_overwriting(tmp_path, capsys):
                 syn.IsochronePhot(6.7, 0.7, 4000, **kwargs)
             except StopRegeneration:
                 pass
-        overwrite = [w for w in caught if 'made with different inputs' in str(w.message)]
+        overwrite = [w for w in caught if 'which overwrites the file' in str(w.message)]
         return overwrite, capsys.readouterr().out
 
     iso_file = str(tmp_path / 'iso_6.70_0.70_04000_p0.00.fits')

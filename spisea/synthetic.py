@@ -2219,8 +2219,12 @@ def check_save_file(save_file_path, evo_model, atm_func, red_law, verbose=False)
 
     return mismatches == []
 
-def _format_mismatches(mismatches):
-    return [f'{key}: file has {file_value}, requested {value}' for key, file_value, value in mismatches]
+def _mismatch_message(save_file_path, mismatches):
+    """
+    Multiline report of the meta-data in save_file that does not match the request.
+    """
+    return '\n'.join([f'Isochrone file {save_file_path} exists, but meta-data does not match:'] +
+                     [f'  {key}: file has {file_value}, requested {value}' for key, file_value, value in mismatches])
 
 def _report_save_file_check(save_file_path, mismatches):
     """
@@ -2230,18 +2234,15 @@ def _report_save_file_check(save_file_path, mismatches):
     if mismatches is None:
         print(f'Isochrone file {save_file_path} does not exist.')
     elif mismatches:
-        print(f'Isochrone file {save_file_path} exists, but meta-data does not match:')
-        for line in _format_mismatches(mismatches):
-            print(f'  {line}')
+        print(_mismatch_message(save_file_path, mismatches))
 
 def _warn_save_file_overwrite(save_file_path, mismatches):
     """
     Warn that save_file, made with different inputs, is about to be
     regenerated and overwritten. Issued regardless of verbose.
     """
-    warnings.warn(f'Isochrone file {save_file_path} was made with different inputs '
-                  f'({"; ".join(_format_mismatches(mismatches))}). '
-                  f'Regenerating it, which overwrites the file.')
+    warnings.warn(_mismatch_message(save_file_path, mismatches) +
+                  '\nRegenerating it, which overwrites the file.')
 
 
 def get_filter_info(name, vega=vega, rebin=True):
