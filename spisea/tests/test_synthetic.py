@@ -290,6 +290,41 @@ def test_IsochronePhot(plot=False):
 
     return
 
+@pytest.mark.parametrize('logAge', [9.7, 10.0])
+def test_sonora_photometry_cluster(tmp_path, logAge):
+    """Generate Sonora/MIST photometry and a resolved low-mass cluster.
+
+    The two ages exercise the Flame Skimmer and Red Diamondback portions of
+    the merged evolution grid. Recompute photometry in a temporary directory
+    so an old cache cannot hide a failure in the new model combination.
+    Check usable J/Kp photometry for both brown dwarfs and low-mass stars;
+    this is an integration test, not a check of physical model accuracy.
+    """
+    iso = syn.IsochronePhot(
+        logAge, 0.0, 10,
+        evo_model=evolution.MergedFlameSkimmerRedDiamondbackMIST(),
+        atm_func=atmospheres.get_merged_atmosphere_atlas_phoenix_sonora,
+        red_law=reddening.RedLawNishiyama09(),
+        filters=['nirc2,J', 'nirc2,Kp'],
+        min_mass=0.02, max_mass=0.3, mass_sampling=5,
+        iso_dir=str(tmp_path), recomp=True, verbose=False
+    )
+
+    my_imf = imf.IMF_broken_powerlaw(
+        np.array([0.02, 0.05, 0.22, 0.3]),
+        np.array([-0.6, -0.25, -1.3]), multiplicity=None
+    )
+    cluster = syn.ResolvedCluster(iso, my_imf, 10, seed=42)
+
+    for table in (iso.points, cluster.star_systems):
+        assert len(table) > 0
+        assert np.any(table['mass'] < 0.08)
+        assert np.any(table['mass'] >= 0.08)
+        for column in ('m_nirc2_J', 'm_nirc2_Kp'):
+            assert column in table.colnames
+            assert np.all(np.isfinite(table[column]))
+
+
 def test_ResolvedCluster():
     # Define cluster parameters
     logAge = 6.7
