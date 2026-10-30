@@ -109,7 +109,7 @@ uses has degraded the resolution of all atmosphere grids to R = 250
      - –
      - –
      - –
-     - 0.1 – 3.0
+     - 0.09 – 10\ :sup:`f`
      - 200 – 500,000
      - Koester (2010)
    * - ``get_bb_atmosphere``
@@ -133,11 +133,72 @@ The default SPISEA grid degrades all atmosphere grids to R = 250 (``spisea_cdbs.
  
 :sup:`e` White dwarf atmospheres only.
 
+:sup:`f` Koester (2010) models end near 3 μm.
+``get_wd_atmosphere`` blends the model with a blackbody from 2.8 to
+3.0 μm and continues that blackbody to 10 μm.
+See :ref:`wd_spectra`.
+
+.. _wd_spectra:
+
+White-dwarf spectra
+-------------------
+``get_wd_atmosphere`` returns a Koester (2010) atmosphere when the
+requested temperature and surface gravity are on that grid. Those
+models end near 3 μm. Mid-infrared filters such as JWST F323N and
+F405N, NIRC2 Lp and Ms, and NSFCam L lie redward of the grid, so
+``extend_spectrum_blackbody`` extends the spectrum with a blackbody
+at the same effective temperature.
+
+The blackbody is scaled to the Koester flux at the red edge of the
+model. From 2.8 to 3.0 μm the returned flux is the weighted average
+
+.. math::
+
+   F_\lambda = (1 - w)\,F_{\mathrm{Koester}} + w\,F_{\mathrm{BB}},
+
+where :math:`w` is linear in wavelength, with :math:`w = 0` at 2.8 μm
+and :math:`w = 1` at 3.0 μm. Blueward of 2.8 μm the spectrum is the
+Koester model. Redward of 3 μm it is the blackbody alone, out to
+10 μm. Near 3 μm the Koester continuum is already within about 1% of
+that blackbody, so the blend changes the flux by a fraction of a
+percent. The second figure shows that residual.
+
+Temperatures or gravities outside the Koester grid return a blackbody
+from 0.05 to 10 μm, with no model segment to blend.
+
+The examples below use log g = 8 and solar metallicity.
+
+.. figure:: figures/wd_koester_bb_sed.png
+   :alt: Koester white-dwarf spectra with a blackbody tail at log g = 8
+   :align: center
+
+   White-dwarf spectra at four effective temperatures.
+   Flux is normalized at 3 μm. The narrow band near 3 μm is the
+   2.8–3.0 μm blend. The orange curve is the blackbody tail returned
+   by ``get_wd_atmosphere``. The dashed curve is that same blackbody
+   drawn at all wavelengths.
+
+.. figure:: figures/wd_koester_bb_join.png
+   :alt: Percent difference between Koester, the blend, and a blackbody near 3 microns
+   :align: center
+
+   Same models, as the percent difference from the blackbody scaled
+   to the Koester red edge. In the 2.8–3.0 μm window the returned
+   spectrum (green) moves from the Koester model to the blackbody.
+   Redward of 3 μm, including JWST F323N and F405N and NIRC2 Lp, the
+   spectrum is the blackbody.
+
+Regenerate the figures from the repository root with::
+
+   python docs/figures/plot_wd_koester_blackbody.py
+
 Model Atmosphere Classes
 -------------------------
 .. autofunction:: atmospheres.get_merged_atmosphere
 
 .. autofunction:: atmospheres.get_wd_atmosphere
+
+.. autofunction:: atmospheres.extend_spectrum_blackbody
 
 .. autofunction:: atmospheres.get_bb_atmosphere
    

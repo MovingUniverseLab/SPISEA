@@ -1628,3 +1628,90 @@ def test_mag_in_filter():
     assert np.isclose(mag_Kp, star['m_nirc2_Kp'], rtol=5e-2, atol=5e-2)
 
     return
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize('log_age', [np.log10(1.0e9), np.log10(8.0e9)],
+                         ids=['1Gyr', '8Gyr'])
+def test_old_isochrone_white_dwarf_photometry(log_age, tmp_path):
+    """
+    Older MISTv1 isochrones must return finite white-dwarf photometry.
+
+    A 1 Gyr and 8 Gyr solar isochrone with ``RedLawFritz11`` and the NIRC2
+    plus JWST filters used for the Galactic Center (AKs = 2.64) includes
+    white dwarfs. Koester spectra end near 3 micron, so JWST F323N and
+    F405N used to raise ``DisjointError`` while building
+    ``IsochronePhot``.
+
+    Parameters
+    ----------
+    log_age : float
+        Isochrone age in log10(years). Tested at 1 Gyr and 8 Gyr.
+    tmp_path : pathlib.Path
+        Pytest directory for the isochrone FITS file.
+
+    Returns
+    -------
+    None
+    """
+    AKs = 2.64
+    distance = 8000.0
+    metallicity = 0.0
+    filt_list = ['nirc2,H', 'nirc2,Kp', 'jwst,F115W', 'jwst,F212N',
+                 'jwst,F323N', 'jwst,F405N']
+
+    evo_model = evolution.MISTv1()
+    raw = evo_model.isochrone(age=10**log_age, metallicity=metallicity)
+
+    # Keep the initial-mass window that has reached the WD sequence.
+    # Every 8th point still samples logg > 7 white dwarfs.
+    is_wd = (np.asarray(raw['phase']) == 101) & (np.asarray(raw['logg']) > 0)
+    wd_mass = np.asarray(raw['mass'][is_wd], dtype=float)
+    assert len(wd_mass) > 0
+    min_mass = float(wd_mass.min()) - 1.0e-3
+    max_mass = float(wd_mass.max()) + 1.0e-3
+
+    iso = syn.IsochronePhot(
+        log_age, AKs, distance,
+        metallicity=metallicity,
+        evo_model=evo_model,
+        atm_func=atmospheres.get_merged_atmosphere,
+        red_law=reddening.RedLawFritz11(),
+        filters=filt_list,
+        iso_dir=str(tmp_path),
+        min_mass=min_mass,
+        max_mass=max_mass,
+        mass_sampling=8,
+        recomp=True,
+    )
+
+    phase = np.asarray(iso.points['phase'])
+    logg = np.asarray(iso.points['logg'], dtype=float)
+    compact = np.where((phase == 101) & (logg > 7))[0]
+    assert len(compact) > 0
+
+    # Every star, including white dwarfs, has a finite magnitude.
+    for filt in filt_list:
+        col = 'm_' + syn.get_filter_col_name(filt)
+        mags = np.asarray(iso.points[col], dtype=float)
+        assert np.all(np.isfinite(mags))
+        assert np.all(mags > 5)
+        assert np.all(mags < 45)
+
+    # F323N and F405N sit entirely redward of the native Koester grid.
+    for filt in ['jwst,F323N', 'jwst,F405N']:
+        col = 'm_' + syn.get_filter_col_name(filt)
+        wd_mags = np.asarray(iso.points[col][compact], dtype=float)
+        assert np.all(np.isfinite(wd_mags))
+
+    # Trimmed spectra must extend past F405N, not stop at ~3 micron.
+    for ss in compact:
+        wave = np.asarray(iso.spec_list[ss].waveset.to(units.AA).value)
+        assert np.max(wave) > 50000
+
+    # AKs = 2.64 makes F115W fainter than F405N for these white dwarfs.
+    m_blue = np.asarray(iso.points['m_jwst_F115W'][compact], dtype=float)
+    m_red = np.asarray(iso.points['m_jwst_F405N'][compact], dtype=float)
+    assert np.all(m_blue > m_red)
+
+    return
