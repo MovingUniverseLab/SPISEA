@@ -3,7 +3,10 @@ numpy <= 1.24.4
 numpydoc
 astropy
 synphot>=1.5
-stsynphot>=1.4
+# Minimum release is stsynphot 1.7.0 (grid-spectrum cache, PR 244).
+# Not on PyPI yet; see docs/getting_started.rst. After the 1.7.0 tag,
+# replace this line with stsynphot>=1.7.
+stsynphot @ git+https://github.com/wei-lingfeng/stsynphot_refactor.git@cache-grid-spectra
 scipy
 pandas
 setuptools<=81.0

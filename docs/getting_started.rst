@@ -28,13 +28,47 @@ Other dependencies:
 
 * python (>=3.7, < 3.12)
 * astropy
-* synphot
-* stsynphot
+* synphot (>= 1.5)
+* stsynphot (>= 1.7.0)
 * scipy
 * numpy (>= 1.17, < 2.0)
 * matplotlib
 * `pytest-astropy-header <https://github.com/astropy/pytest-astropy-header>`_
 * STScI CDBS data package (See :ref:`set-up-cdbs` below for instructions)
+
+.. _synphot-install:
+
+Installing synphot and stsynphot
+--------------------------------
+SPISEA reads model atmospheres with ``stsynphot.grid_to_spec``.
+The minimum versions are ``synphot`` 1.5 and ``stsynphot`` 1.7.0.
+``stsynphot`` 1.7.0 is the release that will contain the merged
+grid-spectrum cache from `stsynphot pull request 244
+<https://github.com/spacetelescope/stsynphot_refactor/pull/244>`_.
+That cache keeps each grid spectrum after the first read, so
+isochrone photometry does not re-read the same atmosphere files
+for every star. The pull request's changelog entry is already
+filed under 1.7.0.
+
+``stsynphot`` 1.7.0 is not on PyPI yet. Install both packages with
+pip from their GitHub repositories. ``synphot`` 1.8.0 is the current
+release and satisfies the 1.5 minimum::
+
+   pip install "synphot @ git+https://github.com/spacetelescope/synphot_refactor.git@1.8.0"
+
+Until pull request 244 is merged, that cache is on Lingfeng Wei's
+branch::
+
+   pip install "stsynphot @ git+https://github.com/wei-lingfeng/stsynphot_refactor.git@cache-grid-spectra"
+
+After the pull request is merged, install ``stsynphot`` from the
+STScI repository. Tag ``1.7.0`` is the minimum version::
+
+   pip install "stsynphot @ git+https://github.com/spacetelescope/stsynphot_refactor.git@1.7.0"
+
+Once that release is on PyPI, the same minimum is::
+
+   pip install "synphot>=1.5" "stsynphot>=1.7"
 
 .. _Build:
 
