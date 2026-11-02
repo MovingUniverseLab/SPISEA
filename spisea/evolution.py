@@ -1939,18 +1939,12 @@ class MergedFlameSkimmerRedDiamondbackMIST(StellarEvolution):
     connections, substitutes a proxy on demand, or alters saved source rows.
     Proxy and interpolation policies are recorded in the FITS metadata.
 
-    Parameters
-    ----------
-    model_dir : str or path-like, optional
-        Grid root containing ``grid_manifest.csv`` and ``iso/``. Defaults to
-        ``SPISEA_MODELS/evolution/merged/flame_red_diamondback_mist``.
+    The grid is loaded from the standard installation directory:
+    ``SPISEA_MODELS/evolution/merged/flame_red_diamondback_mist``.
     """
 
-    def __init__(self, model_dir=None):
-        self._uses_installed_grid = model_dir is None
-        if model_dir is None:
-            model_dir = os.path.join(models_dir, 'merged', 'flame_red_diamondback_mist')
-        model_dir = os.path.abspath(os.fspath(model_dir))
+    def __init__(self):
+        model_dir = os.path.join(models_dir, 'merged', 'flame_red_diamondback_mist')
         # Read once, so special ages and optional metallicities come from the
         # actual saved grid rather than a second hard-coded inventory.
         with open(os.path.join(model_dir, 'grid_manifest.csv'), newline='') as stream:
@@ -1979,8 +1973,7 @@ class MergedFlameSkimmerRedDiamondbackMIST(StellarEvolution):
                 or metallicity > self.metallicity_list.max()):
             raise ValueError('Requested metallicity is outside the precomputed grid. '
                              'Below -1, prepare the proxy grids before requesting them.')
-        if self._uses_installed_grid:
-            self.evo_grid_num = check_evo_grid_number(self.evo_grid_min, models_dir)
+        self.evo_grid_num = check_evo_grid_number(self.evo_grid_min, models_dir)
         actual_metal = float(self.metallicity_list[np.argmin(abs(self.metallicity_list - metallicity))])
         ages = self._ages[actual_metal]
         log_age = math.log10(age)

@@ -128,6 +128,13 @@ log10(initial mass), with radius derived from luminosity and effective
 temperature. Gravity is interpolated independently and is not forced to
 equal GM/R squared. Retained source rows remain unchanged.
 
+The standard directory is
+``SPISEA_MODELS/evolution/merged/flame_red_diamondback_mist``.
+The main ``grid_manifest.csv`` indexes the original grid, and
+``low_metallicity_manifest.csv`` indexes the precomputed below-minus-one
+extension in the same installation. Each manifest's ``file`` entry is relative
+to this directory; the loader reads these saved FITS without building new grids.
+
 The optional extension adds 848 saved isochrones at [M/H] = -4, -3.5, -3,
 -2.5, -2, -1.75, -1.5 and -1.25, for 1,590 total. Each combines the -1
 Sonora sequence with MIST at the saved metallicity. These are explicitly

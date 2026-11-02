@@ -290,39 +290,67 @@ def test_IsochronePhot(plot=False):
 
     return
 
+@pytest.mark.slow
 @pytest.mark.parametrize('logAge', [9.7, 10.0])
-def test_sonora_photometry_cluster(tmp_path, logAge):
-    """Generate Sonora/MIST photometry and a resolved low-mass cluster.
+def test_sonora_photometry_cluster(logAge):
+    """Compare MIST and Sonora/MIST photometry for the same sampled cluster.
 
-    The two ages exercise the Flame Skimmer and Red Diamondback portions of
-    the merged evolution grid. Recompute photometry in a temporary directory
-    so an old cache cannot hide a failure in the new model combination.
-    Check usable J/Kp photometry for both brown dwarfs and low-mass stars;
-    this is an integration test, not a check of physical model accuracy.
+    Use the same atmosphere function, IMF, no multiplicity and random seed
+    to isolate changes from the evolution grid. Both ages cover the Flame
+    and Red families. MIST should retain unmodeled low-mass objects without
+    photometry; the merged model should assign their J/Kp photometry.
+
+    Above 0.15 Msun (outside both connections), require 2% flux agreement:
+    the installed MIST/SynthPop table and original-MIST merged grid have
+    different mass sampling and up to 0.007 dex luminosity differences in
+    these cases. This checks agreement, not exact source-row preservation.
+    In the overlapping connection region allow 50% as a loose regression
+    check, not a physical accuracy claim. Compare fluxes, not percentages
+    of magnitudes. Recompute in the usual test isochrone directory.
     """
-    iso = syn.IsochronePhot(
-        logAge, 0.0, 10,
-        evo_model=evolution.MergedFlameSkimmerRedDiamondbackMIST(),
-        atm_func=atmospheres.get_merged_atmosphere_atlas_phoenix_sonora,
-        red_law=reddening.RedLawNishiyama09(),
-        filters=['nirc2,J', 'nirc2,Kp'],
-        min_mass=0.02, max_mass=0.3, mass_sampling=5,
-        iso_dir=str(tmp_path), recomp=True, verbose=False
-    )
+    iso_dir = f'{spisea_path}/tests/isochrones'
+    filt_list = ['nirc2,J', 'nirc2,Kp']
+    evo_models = [evolution.MISTv1(version=1.2),
+                  evolution.MergedFlameSkimmerRedDiamondbackMIST()]
+    isochrones = []
+    clusters = []
+    for evo_model in evo_models:
+        iso = syn.IsochronePhot(
+            logAge, 0.0, 10, evo_model=evo_model,
+            atm_func=atmospheres.get_merged_atmosphere_atlas_phoenix_sonora,
+            red_law=reddening.RedLawNishiyama09(), filters=filt_list,
+            min_mass=0.02, max_mass=0.5, mass_sampling=1,
+            iso_dir=iso_dir, recomp=True, verbose=False
+        )
+        my_imf = imf.IMF_broken_powerlaw(
+            np.array([0.02, 0.05, 0.22, 0.5]),
+            np.array([-0.6, -0.25, -1.3]), multiplicity=None
+        )
+        cluster = syn.ResolvedCluster(iso, my_imf, 10, seed=42,
+                                      keep_low_mass_stars=True)
+        isochrones.append(iso)
+        clusters.append(cluster.star_systems)
 
-    my_imf = imf.IMF_broken_powerlaw(
-        np.array([0.02, 0.05, 0.22, 0.3]),
-        np.array([-0.6, -0.25, -1.3]), multiplicity=None
-    )
-    cluster = syn.ResolvedCluster(iso, my_imf, 10, seed=42)
+    mist, merged = clusters
+    assert len(mist) > 0
+    np.testing.assert_array_equal(mist['mass'], merged['mass'])
+    low = mist['mass'] < np.min(isochrones[0].points['mass'])
+    high = mist['mass'] >= 0.15
+    connection = (~low) & (~high)
+    assert np.any(low & (mist['mass'] < 0.08))
+    assert np.any(high)
+    assert np.any(connection)
 
-    for table in (iso.points, cluster.star_systems):
-        assert len(table) > 0
-        assert np.any(table['mass'] < 0.08)
-        assert np.any(table['mass'] >= 0.08)
-        for column in ('m_nirc2_J', 'm_nirc2_Kp'):
-            assert column in table.colnames
-            assert np.all(np.isfinite(table[column]))
+    for column in ('m_nirc2_J', 'm_nirc2_Kp'):
+        assert np.all(np.isnan(mist[column][low]))
+        assert np.all(np.isfinite(merged[column]))
+        assert np.all(np.isfinite(mist[column][~low]))
+        # Same filter zero points cancel in this relative flux comparison.
+        flux_ratio = 10**(-0.4 * (merged[column] - mist[column]))
+        np.testing.assert_allclose(flux_ratio[high], 1.0, rtol=0.02,
+                                   err_msg=f'{column}: retained MIST region')
+        np.testing.assert_allclose(flux_ratio[connection], 1.0, rtol=0.5,
+                                   err_msg=f'{column}: connection region')
 
 
 def test_ResolvedCluster():

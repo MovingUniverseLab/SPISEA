@@ -187,11 +187,12 @@ def test_atmosphere_models():
     Check every installed atmosphere returns finite, nonnegative, nonzero
     flux. Zero flux outside a spectrum's wavelength support is allowed.
     These checks apply to the existing grids as well as the Sonora addition;
-    they do not establish physical accuracy or test which model was chosen.
+    they do not establish physical accuracy.
 
-    The merged-suite loop samples the Flame/PHOENIX transition as well as the
-    existing temperature range. The two metal-poor dwarf/giant requests check
-    that both additional coverage paths return usable spectra.
+    The merged-suite loop samples the Flame/PHOENIX transition. Compare real
+    spectra from the merged router and individual loaders to confirm that
+    cool low-gravity objects use PHOENIX at both solar and low metallicity,
+    while dwarfs use Sonora or the Flame/PHOENIX blend.
     """
     # Array of atmospheres
     atm_arr = [
@@ -254,11 +255,21 @@ def test_atmosphere_models():
                 _assert_valid_atmosphere_spectrum(test)
         print('Done {0}: all temperatures/metallicities'.format(atm_func))
 
-    # The Sonora suite also has a metal-poor dwarf proxy and a giant path.
-    for temperature, gravity in [(1000, 4.5), (3000, 1.5)]:
-        test = atmospheres.get_merged_atmosphere_atlas_phoenix_sonora(
-            metallicity=-2., temperature=temperature, gravity=gravity)
-        _assert_valid_atmosphere_spectrum(test)
+    # Check the actual spectra selected on each side of the gravity cut.
+    for metallicity in (0., -2.):
+        for temperature, gravity, loader in (
+                (2000, 1.5, atmospheres.get_phoenixv16_atmosphere),
+                (2350, 1.5, atmospheres.get_phoenixv16_atmosphere),
+                (1000, 4.5, atmospheres.get_flameskimmer_atmosphere),
+                (2350, 4.5, atmospheres.get_flameskimmer_phoenix_atmosphere)):
+            test = atmospheres.get_merged_atmosphere_atlas_phoenix_sonora(
+                metallicity=metallicity, temperature=temperature, gravity=gravity)
+            source_metal = max(metallicity, -1.) if gravity >= 2. else metallicity
+            expected = loader(metallicity=source_metal, temperature=temperature,
+                              gravity=gravity)
+            _assert_valid_atmosphere_spectrum(test)
+            np.testing.assert_allclose(test(test.waveset).value,
+                                       expected(test.waveset).value)
 
     # Test get_bb_atmosphere at different temps
     # This func only requests temp

@@ -143,7 +143,7 @@ The log(g) division follows the lower Flame grid boundary; it is a coverage
 choice, not a general physical dwarf/giant classification.
 
 Cool high-gravity requests below [M/H] = -1 explicitly use a -1 Sonora
-atmosphere proxy and warn. PHOENIX requests retain their requested metallicity.
+atmosphere proxy and warn. Giants are sent to PHOENIX at the requested metallicity.
 At 2500-5000 K the suite uses PHOENIX, at 5000-5500 K the ATLAS/PHOENIX
 blend, and at higher temperatures ATLAS. The separate
 ``get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement`` wrapper adds
@@ -151,11 +151,12 @@ white-dwarf and blackbody fallbacks. The matching ``_grid`` function reports
 the same gravity-dependent choices, including the proxy coordinates.
 
 Model-specific loaders first try the requested spectrum. On an out-of-bounds
-lookup, Flame, Flame/PHOENIX and PHOENIX clip temperature and gravity to their
-common interpolation support while preserving an in-range metallicity.
-This numerical fallback prevents a quarter-dex metallicity from silently
-snapping to a native node. Parameter changes produce warnings; missing or
-corrupt files are allowed to raise their original errors.
+lookup, Flame, Flame/PHOENIX and PHOENIX use the existing
+``get_atmosphere_bounds`` routine, following the other SPISEA loaders.
+This fallback clips temperature and gravity and selects the nearest native
+metallicity. Thus an off-node metallicity may change during a bounds fallback;
+the original in-bounds lookup still interpolates at the requested metallicity.
+Missing or corrupt files are allowed to raise their original errors.
 
 Clipping is an approximation: PHOENIX cannot supply a genuinely cooler
 spectrum below its 2300-K floor, and Flame has temperature-dependent gravity
