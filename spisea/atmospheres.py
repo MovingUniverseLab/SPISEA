@@ -667,11 +667,12 @@ def get_phoenixv16_atmosphere_grid(rebin=True):
 
 
 def get_flameskimmer_atmosphere(metallicity=0, temperature=1000, gravity=4, rebin=True):
-    """Return a C/O=1 equilibrium Flame Skimmer atmosphere.
+    """
+    Return a FlameSkimmer atmosphere with C/O = 1 and equilibrium chemistry.
 
-    Native [M/H] nodes are -1, -0.5, 0 and +0.5. Interpolation is attempted
-    first; out-of-bounds requests use the standard get_atmosphere_bounds
-    fallback, which may also select the nearest metallicity.
+    Available metallicities are -1, -0.5, 0 and +0.5. Values between these
+    are interpolated. Requests outside the grid use get_atmosphere_bounds,
+    as in the other atmosphere loaders.
     """
     atm_model_name = 'FlameSkimmer_rebin' if rebin else 'FlameSkimmer'
     try:
@@ -685,7 +686,9 @@ def get_flameskimmer_atmosphere(metallicity=0, temperature=1000, gravity=4, rebi
 
 
 def get_flameskimmer_atmosphere_grid(rebin=True):
-    """Return the parameter grid for the Flame Skimmer atmospheres."""
+    """
+    Return the temperature, metallicity and gravity arrays for FlameSkimmer.
+    """
     if rebin:
         atm_model_name = 'FlameSkimmer_rebin'
     else:
@@ -696,12 +699,13 @@ def get_flameskimmer_atmosphere_grid(rebin=True):
 
 
 def get_flameskimmer_phoenix_atmosphere(metallicity=0, temperature=2350, gravity=4):
-    """Load the precomputed 2200--2500 K Flame/PHOENIX flux transition.
+    """
+    Return an atmosphere from the FlameSkimmer/PHOENIX grid.
 
-    The endpoints are pure Flame (2200 K) and PHOENIX (2500 K); interior
-    catalog nodes at 2300 and 2400 K use linear flux weights. Flame has zero
-    flux outside its native wavelength support, so the blend underestimates
-    blue flux there. Out-of-bounds requests use get_atmosphere_bounds.
+    From 2200 to 2500 K, this grid combines the flux from both models.
+    The weights change linearly from FlameSkimmer at 2200 K to PHOENIX
+    at 2500 K. At wavelengths outside the FlameSkimmer spectrum, only
+    the weighted PHOENIX flux is available.
     """
     atm_model_name = 'merged_flameskimmer_phoenix'
     try:
@@ -715,7 +719,10 @@ def get_flameskimmer_phoenix_atmosphere(metallicity=0, temperature=2350, gravity
 
 
 def get_flameskimmer_phoenix_atmosphere_grid():
-    """Return the parameter grid for the Flame Skimmer--PHOENIX blend."""
+    """
+    Return the temperature, metallicity and gravity arrays for the
+    FlameSkimmer/PHOENIX grid.
+    """
     return get_atmosphere_grid('merged_flameskimmer_phoenix')
 
 
@@ -1601,24 +1608,35 @@ def get_merged_atmosphere_w_bb_supplement_grid(bb_supplement_tarr='default', bb_
 
 def get_merged_atmosphere_atlas_phoenix_sonora(metallicity=0, temperature=20000,
                                               gravity=4.5, verbose=False, rebin=True):
-    """Choose Flame, PHOENIX or ATLAS using temperature and log(g) in cgs.
+    """
+    Return an atmosphere from FlameSkimmer, PHOENIX or ATLAS.
 
-    Below 2500 K, logg >= 2 uses Flame (T <= 2200 K) or its precomputed
-    PHOENIX blend (2200 < T < 2500 K). Flame's published logg range begins
-    at 2; lower-gravity giants use PHOENIX. Native T-dependent gravity limits
-    are handled by the standard atmosphere-bounds fallback, including dwarfs
-    just above Flame's maximum logg rather than moving them to hot PHOENIX.
+    The model used depends on temperature and surface gravity:
 
-    Cool dwarf requests below [M/H]=-1 explicitly use the -1 atmosphere as
-    a metallicity proxy, with a warning. Giants are sent to PHOENIX at
-    their requested metallicity. Its bounds fallback clips below 2300 K
-    and may select the nearest native metallicity.
-    This is an approximation, not new low-metallicity Sonora coverage.
+    * T <= 2200 K and logg >= 2: FlameSkimmer
+    * 2200 < T < 2500 K and logg >= 2: FlameSkimmer/PHOENIX blend
+    * T < 2500 K and logg < 2: PHOENIX for low-gravity stars
+    * 2500 <= T < 5000 K: PHOENIX
+    * 5000 <= T < 5500 K: ATLAS/PHOENIX blend
+    * T >= 5500 K: ATLAS
 
-    At 2500--5000 K use PHOENIX, at 5000--5500 K use the ATLAS/PHOENIX
-    blend, and at >=5500 K use ATLAS. LTE limitations of ATLAS apply for
-    hot stars. The separate _w_bb_supplement wrapper handles white dwarfs
-    and blackbody fallbacks; this function handles ordinary atmospheres.
+    Cool dwarfs below [M/H] = -1 use the -1 FlameSkimmer atmosphere with
+    a warning. PHOENIX temperatures below 2300 K are raised to 2300 K.
+    Other requests outside a model grid use get_atmosphere_bounds.
+
+    Parameters
+    ----------
+    metallicity: float
+        The stellar metallicity, in terms of [M/H].
+    temperature: float
+        The stellar temperature, in K.
+    gravity: float
+        The surface gravity as log(g) in cgs units.
+    verbose: boolean
+        Print the selected atmosphere function if True.
+    rebin: boolean
+        Use atmospheres rebinned to the Castelli wavelength grid if True.
+        Default is True.
     """
     if temperature < 2500 and gravity >= 2.0:
         if metallicity < -1.0:
@@ -1644,7 +1662,10 @@ def get_merged_atmosphere_atlas_phoenix_sonora(metallicity=0, temperature=20000,
     return loader(**kwargs)
 
 def get_merged_atmosphere_atlas_phoenix_sonora_grid(rebin=True):
-    """Return the parameter grid selected by :func:`get_merged_atmosphere_atlas_phoenix_sonora`."""
+    """
+    Return the temperature, metallicity and gravity arrays used by
+    get_merged_atmosphere_atlas_phoenix_sonora.
+    """
 
     def select(grid, condition):
         values = np.asarray(grid, dtype=float)
@@ -1674,8 +1695,7 @@ def get_merged_atmosphere_atlas_phoenix_sonora_grid(rebin=True):
 
     components = [flameskimmer, flameskimmer_phoenix, phoenixv16,
                   atlas_phoenix, castelli]
-    # Advertise the same explicit -1 proxy that the router uses, so downstream
-    # interpolation grids include metal-poor cool dwarfs as well as giants.
+    # Use the -1 Sonora spectra for cool dwarfs at lower metallicities.
     low_metals = np.unique(np.asarray(phoenix_grid)[1])
     for component in (flameskimmer, flameskimmer_phoenix):
         source = component[:, component[1] == -1.0]
@@ -1692,58 +1712,36 @@ def get_merged_atmosphere_atlas_phoenix_sonora_grid(rebin=True):
 def get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement(metallicity=0, temperature=20000, gravity=4.5, verbose=False,
                               rebin=True):
     """
-    Return a stellar atmosphere from a suite of different model grids, 
-    depending  on the input temperature, (all values in K).
-    IF OUTSIDE SUPPORTED GRID, WILL RETURN BB ATMOSPHERE
+    Return a Sonora/PHOENIX/ATLAS atmosphere, with white-dwarf support.
+
+    Uses get_merged_atmosphere_atlas_phoenix_sonora for ordinary stars.
+    At higher gravities, use a white-dwarf atmosphere or a blackbody.
 
     Parameters
     ----------
     metallicity: float
-        The stellar metallicity, in terms of [Z]
-
+        The stellar metallicity, in terms of [M/H].
     temperature: float
-        The stellar temperature, in units of K
-
+        The stellar temperature, in K.
     gravity: float
-        The stellar gravity, in cgs units
-        
-    rebin: boolean
-        If true, rebins the atmospheres so that they are the same
-        resolution as the Castelli+04 atmospheres. Default is False,
-        which is often sufficient synthetic photometry in most cases.
-
+        The surface gravity as log(g) in cgs units.
     verbose: boolean
-        True for verbose output
+        Print the selected atmosphere function if True.
+    rebin: boolean
+        Use atmospheres rebinned to the Castelli wavelength grid if True.
+        Default is True.
+
+    References
+    ----------
+    * ATLAS: Castelli & Kurucz (2004).
+    * PHOENIXv16: Husser et al. (2013).
+    * Sonora FlameSkimmer: equilibrium chemistry with C/O = 1.
 
     Notes
     -----
-    For ordinary stellar gravities, the atmosphere choice is delegated to
-    :func:`get_merged_atmosphere_atlas_phoenix_sonora`, including its Flame Skimmer--PHOENIX
-    transition. This wrapper adds white-dwarf and blackbody fallbacks for
-    high-gravity objects.
-
-    References:
-
-    * ATLAS: ATLAS9 models (`Castelli & Kurucz 2004 <http://www.stsci.edu/hst/observatory/crds/castelli_kurucz_atlas.html>`_)
-    * PHOENIXv16 (`Husser et al. 2013 <https://ui.adsabs.harvard.edu/abs/2013A%26A...553A...6H/abstract>`_)
-    * Sonora Flame Skimmer: equilibrium chemistry with C/O = 1
-
-    LTE WARNING: 
-
-    The ATLAS atmospheres are calculated with LTE, and so they
-    are less accurate when non-LTE conditions apply (e.g. T > 20,000
-    K). Ultimately we'd like to add a non-LTE atmosphere grid for
-    the hottest stars in the future.
-
-    HOW BOUNDARIES BETWEEN MODELS ARE TREATED: 
-
-    At the boundary between two models grids a temperature range is defined 
-    where the resulting atmosphere is a weighted average between the two 
-    grids. Near one boundary one model
-    is weighted more heavily, while at the other boundary the other 
-    model is weighted more heavily. These are calculated in the 
-    temperature ranges where we switch between model grids, to 
-    ensure a smooth transition.
+    The ATLAS models assume local thermodynamic equilibrium (LTE).
+    They are less accurate for hot stars where this assumption fails,
+    for example above 20,000 K.
     """
     
     if (gravity >= 9.8):
@@ -1785,11 +1783,8 @@ def get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement(metallicity=0, te
 
 def get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement_grid(bb_supplement_tarr='default', bb_supplement_zarr='default', bb_supplement_loggarr='default', rebin=True):
     """
-    Return the atmosphere parameter grid used by
-    get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement.
-
-    This is the standard merged atmosphere grid plus the white dwarf grid and
-    blackbody supplement points for high-gravity regions.
+    Return the atmosphere grid with the white-dwarf and blackbody
+    points used by get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement.
     """
     super_tarr, super_zarr, super_loggarr = get_merged_atmosphere_atlas_phoenix_sonora_grid(rebin=rebin)
 

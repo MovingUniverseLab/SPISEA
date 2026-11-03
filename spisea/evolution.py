@@ -1926,33 +1926,27 @@ class COSMIC(StellarEvolution):
 # Merged model classes
 #==============================#
 class MergedFlameSkimmerRedDiamondbackMIST(StellarEvolution):
-    """Load precomputed Sonora/MIST FITS selected by nearest age and [M/H].
+    """
+    Combined Sonora brown-dwarf and MIST stellar evolution models.
 
-    Flame Skimmer supplies brown dwarfs through 9 Gyr. Above 9 Gyr, Red
-    Diamondback supplies -0.5 <= [M/H] <= +0.5, including linear metallicity
-    interpolation at -0.25 and +0.25; -1 and -0.75 use flagged Flame age
-    extrapolation. The manifest includes exact 9-Gyr (family handoff) and
-    15-Gyr (grid endpoint) files as well as the regular log-age sampling.
+    FlameSkimmer supplies ages up to 9 Gyr. At older ages, Red Diamondback
+    supplies metallicities from -0.5 to +0.5, including interpolated values
+    at -0.25 and +0.25. At -1 and -0.75, older ages are estimated from
+    the last available FlameSkimmer ages.
 
-    Optional precomputed grids below [M/H]=-1 reuse the -1 Sonora sequence
-    as a proxy with MIST at the saved metallicity. This loader never builds
-    connections, substitutes a proxy on demand, or alters saved source rows.
-    Proxy and interpolation policies are recorded in the FITS metadata.
+    Below [M/H] = -1, the brown-dwarf values are taken from the -1 Sonora
+    model and combined with MIST at the requested metallicity.
 
-    The grid is loaded from the standard installation directory:
-    ``SPISEA_MODELS/evolution/merged/flame_red_diamondback_mist``.
+    The files are stored in
+    ``SPISEA_MODELS/evolution/merged/flame_red_diamondback_mist/iso``.
+    ``grid_manifest.csv`` lists the file for each age and metallicity.
     """
 
     def __init__(self):
         model_dir = os.path.join(models_dir, 'merged', 'flame_red_diamondback_mist')
-        # Read once, so special ages and optional metallicities come from the
-        # actual saved grid rather than a second hard-coded inventory.
+        # Read the filenames, ages and metallicities in the installed grid.
         with open(os.path.join(model_dir, 'grid_manifest.csv'), newline='') as stream:
             rows = list(csv.DictReader(stream))
-        proxy_manifest = os.path.join(model_dir, 'low_metallicity_manifest.csv')
-        if os.path.isfile(proxy_manifest):
-            with open(proxy_manifest, newline='') as stream:
-                rows.extend(csv.DictReader(stream))
         self._iso_files = {(float(row['metallicity']), float(row['log_age'])):
                            row['file'] for row in rows}
         self.metallicity_list = np.unique([key[0] for key in self._iso_files])
@@ -1966,13 +1960,15 @@ class MergedFlameSkimmerRedDiamondbackMIST(StellarEvolution):
         self.evo_grid_min = 3.0
 
     def isochrone(self, age=1.e8, metallicity=0.0):
-        """Return saved values unchanged; age is in years, metallicity is [M/H]."""
+        """Return the isochrone closest to the requested age and metallicity.
+
+        Age is in years and metallicity is [M/H].
+        """
         if not np.isfinite(age) or age <= 0:
             raise ValueError('Age must be finite, positive and in years.')
         if (not np.isfinite(metallicity) or metallicity < self.metallicity_list.min()
                 or metallicity > self.metallicity_list.max()):
-            raise ValueError('Requested metallicity is outside the precomputed grid. '
-                             'Below -1, prepare the proxy grids before requesting them.')
+            raise ValueError('Requested metallicity is outside the installed grid.')
         self.evo_grid_num = check_evo_grid_number(self.evo_grid_min, models_dir)
         actual_metal = float(self.metallicity_list[np.argmin(abs(self.metallicity_list - metallicity))])
         ages = self._ages[actual_metal]

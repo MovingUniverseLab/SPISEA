@@ -293,20 +293,15 @@ def test_IsochronePhot(plot=False):
 @pytest.mark.slow
 @pytest.mark.parametrize('logAge', [9.7, 10.0])
 def test_sonora_photometry_cluster(logAge):
-    """Compare MIST and Sonora/MIST photometry for the same sampled cluster.
+    """
+    Test MIST and Sonora/MIST photometry for the same cluster of stars.
 
-    Use the same atmosphere function, IMF, no multiplicity and random seed
-    to isolate changes from the evolution grid. Both ages cover the Flame
-    and Red families. MIST should retain unmodeled low-mass objects without
-    photometry; the merged model should assign their J/Kp photometry.
+    Use the same IMF, random seed and atmosphere function for both models.
+    The merged model should give photometry to stars below the MIST grid.
 
-    Above 0.15 Msun (outside both connections), require 2% flux agreement:
-    the installed MIST/SynthPop table and original-MIST merged grid have
-    different mass sampling and up to 0.007 dex luminosity differences in
-    these cases. This checks agreement, not exact source-row preservation.
-    In the overlapping connection region allow 50% as a loose regression
-    check, not a physical accuracy claim. Compare fluxes, not percentages
-    of magnitudes. Recompute in the usual test isochrone directory.
+    Above 0.15 Msun, require fluxes to agree within 2%. The two MIST tables
+    have slightly different mass sampling. Allow 50% in the connection
+    region, where the models are being joined.
     """
     iso_dir = f'{spisea_path}/tests/isochrones'
     filt_list = ['nirc2,J', 'nirc2,Kp']
@@ -345,10 +340,10 @@ def test_sonora_photometry_cluster(logAge):
         assert np.all(np.isnan(mist[column][low]))
         assert np.all(np.isfinite(merged[column]))
         assert np.all(np.isfinite(mist[column][~low]))
-        # Same filter zero points cancel in this relative flux comparison.
+        # Convert the magnitude difference to a flux ratio.
         flux_ratio = 10**(-0.4 * (merged[column] - mist[column]))
         np.testing.assert_allclose(flux_ratio[high], 1.0, rtol=0.02,
-                                   err_msg=f'{column}: retained MIST region')
+                                   err_msg=f'{column}: stars above 0.15 Msun')
         np.testing.assert_allclose(flux_ratio[connection], 1.0, rtol=0.5,
                                    err_msg=f'{column}: connection region')
 

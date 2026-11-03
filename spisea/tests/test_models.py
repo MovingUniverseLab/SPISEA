@@ -17,14 +17,7 @@ def test_evo_model_grid_num():
 
 def test_evolution_models():
     """
-    Check each installed evolution model returns nonempty finite core fields
-    and selects the closest supported metallicity. This checks the loader
-    contract, not the physical accuracy or interpolation method of a grid.
-
-    The merged Sonora/MIST model uses its installed metallicity list so saved
-    proxy grids receive the same checks. Exact 9- and 15-Gyr requests exercise
-    its stored family-handoff and endpoint files. Source preservation and
-    connection consistency are checked by the offline grid builder.
+    Test to make sure the different evolution models work.
     """
     # Age ranges to test
     age_young_arr = [6.7, 7.9]
@@ -37,6 +30,8 @@ def test_evolution_models():
     metal_range = [-2.5, -1.5, 0, 0.25, 0.4]
     metal_solar = [0]
     metal_Marley = [-0.5, 0.0, 0.5]
+    metal_flameskimmer = [-4.0, -3.5, -3.0, -2.5, -2.0, -1.75, -1.5,
+                         -1.25, -1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5]
 
     # Array of evolution models to test
     evo_models = [evolution.MISTv1(version=1.2), evolution.MergedBaraffePisaEkstromParsec(), 
@@ -52,7 +47,7 @@ def test_evolution_models():
 
     # Array of metallicities for the specific evolution models to test
     metal_vals = [metal_range, metal_solar, metal_solar, metal_solar, metal_solar, metal_solar, metal_solar, metal_Marley, metal_solar,
-        evo_models[-1].metallicity_list]
+        metal_flameskimmer]
 
     assert len(evo_models) == len(age_vals) == len(metal_vals)
 
@@ -184,15 +179,7 @@ def test_COSMIC_get_kick_differential():
 
 def test_atmosphere_models():
     """
-    Check every installed atmosphere returns finite, nonnegative, nonzero
-    flux. Zero flux outside a spectrum's wavelength support is allowed.
-    These checks apply to the existing grids as well as the Sonora addition;
-    they do not establish physical accuracy.
-
-    The merged-suite loop samples the Flame/PHOENIX transition. Compare real
-    spectra from the merged router and individual loaders to confirm that
-    cool low-gravity objects use PHOENIX at both solar and low metallicity,
-    while dwarfs use Sonora or the Flame/PHOENIX blend.
+    Test the rebinned atmosphere models used for synthetic photometry.
     """
     # Array of atmospheres
     atm_arr = [
@@ -232,7 +219,7 @@ def test_atmosphere_models():
         for jj in metals_arr[ii]:
             call_kwargs = {'metallicity': jj}
             if atm_func is atmospheres.get_flameskimmer_atmosphere:
-                # Flame Skimmer covers cool atmospheres (approximately 50--2400 K).
+                # Use a temperature and gravity covered by FlameSkimmer.
                 call_kwargs.update(temperature=1000, gravity=4.5)
 
             try:
@@ -245,7 +232,7 @@ def test_atmosphere_models():
 
         print('Done {0}'.format(atm_func))
 
-    # Exercise both merged suites using the existing temperature/metallicity loop.
+    # Test both merged atmosphere functions at different temperatures.
     temp_range = [250, 1000, 2000, 2350, 2500, 3500, 4000, 5250, 6000, 12000]
     for atm_func in (atmospheres.get_merged_atmosphere,
                      atmospheres.get_merged_atmosphere_atlas_phoenix_sonora):
@@ -255,7 +242,7 @@ def test_atmosphere_models():
                 _assert_valid_atmosphere_spectrum(test)
         print('Done {0}: all temperatures/metallicities'.format(atm_func))
 
-    # Check the actual spectra selected on each side of the gravity cut.
+    # Cool giants should use PHOENIX; cool dwarfs should use Sonora.
     for metallicity in (0., -2.):
         for temperature, gravity, loader in (
                 (2000, 1.5, atmospheres.get_phoenixv16_atmosphere),
@@ -374,11 +361,9 @@ def test_filters():
 
 
 def _assert_valid_atmosphere_spectrum(spectrum):
-    """Reject empty, nonfinite, negative or entirely zero flux arrays.
-
-    A successful loader call can still return an unusable spectrum. Apply the
-    same check to every atmosphere; allow individual zero samples because
-    spectra can have zero flux outside their native wavelength support.
+    """
+    Check that the spectrum has valid flux values and some light.
+    Individual wavelength bins may have zero flux.
     """
     flux = spectrum(spectrum.waveset).value
     assert flux.size > 0

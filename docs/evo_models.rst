@@ -106,44 +106,35 @@ expand the existing grids, please see
 
 Merged Sonora and MIST grid
 -----------------------------------------
-``MergedFlameSkimmerRedDiamondbackMIST`` reads precomputed FITS isochrones
-from ``SPISEA_MODELS/evolution/merged/flame_red_diamondback_mist``.
-It selects the closest stored metallicity and log age; it does not construct
-connections while loading. Install the associated model files as well as
-the Python code. Filenames and available parameters come from
-``grid_manifest.csv`` and, when installed, ``low_metallicity_manifest.csv``.
+``MergedFlameSkimmerRedDiamondbackMIST`` combines Sonora brown-dwarf models
+with MIST stellar models. Files are stored in
+``SPISEA_MODELS/evolution/merged/flame_red_diamondback_mist/iso``.
+Each metallicity has its own ``z...`` directory. ``grid_manifest.csv`` lists
+all the files, including metallicities below -1. The loader selects the
+closest available metallicity and age.
 
-The reference grid contains 742 isochrones: seven metallicities from
-[M/H] = -1 to +0.5 in 0.25-dex steps, at 106 ages from 0.1 Myr through 15 Gyr.
-The regular log10(age/yr) spacing is 0.05, from 5.00 through 10.15.
-Separate exact 9-Gyr and 15-Gyr files represent the family handoff and grid
-endpoint; both are selected through the manifest without special filename rules.
+The full grid has 1,590 files: 15 metallicities at 106 ages each. The
+metallicities are -4, -3.5, -3, -2.5, -2, -1.75, -1.5, -1.25, -1, -0.75,
+-0.5, -0.25, 0, +0.25 and +0.5. Ages run from 0.1 Myr to 15 Gyr, with
+log10(age/yr) steps of 0.05 through 10.15 and additional files at 9 and 15 Gyr.
 
-Flame Skimmer supplies ages through 9 Gyr. Above 9 Gyr, Red Diamondback
-supplies -0.5 <= [M/H] <= +0.5, with linear interpolation in metallicity at
--0.25 and +0.25. Older -1 and -0.75 sequences use flagged Flame age
-extrapolation. Intermediate metallicities interpolate logarithmic stellar
-fields linearly in [M/H]. The adopted mass connections use limited cubics in
-log10(initial mass), with radius derived from luminosity and effective
-temperature. Gravity is interpolated independently and is not forced to
-equal GM/R squared. Retained source rows remain unchanged.
+FlameSkimmer supplies brown-dwarf ages up to 9 Gyr. At older ages,
+Red Diamondback supplies -0.5 <= [M/H] <= +0.5. Values at -0.25 and +0.25
+are linearly interpolated in metallicity. Older values at -1 and -0.75
+are estimated from the last FlameSkimmer ages. Below [M/H] = -1, the -1
+Sonora brown-dwarf values are combined with MIST at the lower metallicity.
+These low-metallicity brown-dwarf values are approximations.
 
-The standard directory is
-``SPISEA_MODELS/evolution/merged/flame_red_diamondback_mist``.
-The main ``grid_manifest.csv`` indexes the original grid, and
-``low_metallicity_manifest.csv`` indexes the precomputed below-minus-one
-extension in the same installation. Each manifest's ``file`` entry is relative
-to this directory; the loader reads these saved FITS without building new grids.
+The mass connections use limited cubic interpolation in log10(initial mass).
+Radius is calculated from luminosity and effective temperature in the
+connection. Surface gravity is interpolated separately, so it can differ
+from GM/R squared. Values outside the connection are kept from the input
+models. Intermediate metallicities use linear interpolation of the logarithmic
+stellar quantities in [M/H].
 
-The optional extension adds 848 saved isochrones at [M/H] = -4, -3.5, -3,
--2.5, -2, -1.75, -1.5 and -1.25, for 1,590 total. Each combines the -1
-Sonora sequence with MIST at the saved metallicity. These are explicitly
-labeled proxies, not native low-metallicity Sonora calculations. FITS metadata
-and row provenance identify these approximations. Distinct retained MIST
-evolutionary points can share an initial mass; the extension preserves these
-points and their ``mist_eep`` identifiers rather than choosing a branch for
-downstream interpolation by mass. Review the grid's consistency and mass-tie
-reports when using these approximations in scientific work.
+Some MIST evolutionary stages have the same initial mass. Those rows and
+their ``mist_eep`` labels are kept in the low-metallicity files. A mass-only
+interpolator may need to choose between these stages.
 
 ModelMismatch Error
 -----------------------------------------

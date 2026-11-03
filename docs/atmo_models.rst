@@ -136,33 +136,25 @@ The default SPISEA grid degrades all atmosphere grids to R = 250 (``spisea_cdbs.
 Sonora, PHOENIX and ATLAS suite
 -----------------------------------------
 ``get_merged_atmosphere_atlas_phoenix_sonora`` adds the C/O = 1 equilibrium
-Flame Skimmer grid to the stellar atmosphere suite. Below 2500 K, requests
-with log(g) >= 2 use Flame through 2200 K and the precomputed Flame/PHOENIX
-flux blend between 2200 and 2500 K. Lower-gravity requests use PHOENIX.
-The log(g) division follows the lower Flame grid boundary; it is a coverage
-choice, not a general physical dwarf/giant classification.
+FlameSkimmer models to the stellar atmosphere models. Below 2500 K, stars
+with log(g) >= 2 use FlameSkimmer through 2200 K and a FlameSkimmer/PHOENIX
+blend from 2200 to 2500 K. Lower-gravity stars use PHOENIX. The log(g) limit
+comes from the lowest gravity in FlameSkimmer.
 
-Cool high-gravity requests below [M/H] = -1 explicitly use a -1 Sonora
-atmosphere proxy and warn. Giants are sent to PHOENIX at the requested metallicity.
-At 2500-5000 K the suite uses PHOENIX, at 5000-5500 K the ATLAS/PHOENIX
-blend, and at higher temperatures ATLAS. The separate
-``get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement`` wrapper adds
-white-dwarf and blackbody fallbacks. The matching ``_grid`` function reports
-the same gravity-dependent choices, including the proxy coordinates.
+Cool dwarfs below [M/H] = -1 use the -1 FlameSkimmer atmosphere and produce
+a warning. At 2500-5000 K the function uses PHOENIX, at 5000-5500 K it uses
+the ATLAS/PHOENIX blend, and above 5500 K it uses ATLAS. The separate
+``get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement`` function adds
+white-dwarf atmospheres and blackbodies for high-gravity objects.
 
-Model-specific loaders first try the requested spectrum. On an out-of-bounds
-lookup, Flame, Flame/PHOENIX and PHOENIX use the existing
-``get_atmosphere_bounds`` routine, following the other SPISEA loaders.
-This fallback clips temperature and gravity and selects the nearest native
-metallicity. Thus an off-node metallicity may change during a bounds fallback;
-the original in-bounds lookup still interpolates at the requested metallicity.
-Missing or corrupt files are allowed to raise their original errors.
+Requests outside an atmosphere grid use ``get_atmosphere_bounds``, which
+limits the temperature and gravity and chooses the nearest metallicity.
+For PHOENIX, this raises temperatures below 2300 K to 2300 K. Interpolation
+within the grid uses the requested metallicity.
 
-Clipping is an approximation: PHOENIX cannot supply a genuinely cooler
-spectrum below its 2300-K floor, and Flame has temperature-dependent gravity
-limits. The Flame/PHOENIX blend has only the weighted PHOENIX contribution
-outside Flame's native wavelength support, underestimating blue flux there.
-The low-metallicity proxy does not extend native Sonora metallicity coverage.
+The FlameSkimmer/PHOENIX blend has less blue flux where FlameSkimmer has
+no wavelength coverage: only the weighted PHOENIX part contributes there.
+The use of the -1 atmosphere at lower metallicities is also an approximation.
 
 Model Atmosphere Classes
 -------------------------
