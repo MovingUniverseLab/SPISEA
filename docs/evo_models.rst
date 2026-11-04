@@ -33,6 +33,11 @@ Below is a table of the evolution model grids currently supported by SPISEA.
      - 5.01 – 10.30
      - -4.0, -3.5, -3.0, -2.5, -2.0, -1.75, -1.5, -1.25, -1.0, -0.75, -0.5, -0.25, 0, 0.25, 0.5
      - v1.2; Choi et al. (2016)
+   * - ``MISTv2``
+     - 0.10 – 300
+     - 5.00 – 10.30
+     - -4.0 – 0.5, generated with the MIST web interpolator (see class docs)
+     - v2.5; Dotter et al. (2026)
    * - ``MergedBaraffePisaEkstromParsec``
      - 0.08 – 120
      - 6.00 – 10.09
@@ -162,6 +167,9 @@ Base Evolution Model Class
 Specific Evolution Model Classes
 --------------------------------------
 .. autoclass:: evolution.MISTv1
+	       :show-inheritance:
+
+.. autoclass:: evolution.MISTv2
 	       :show-inheritance:
 		  
 .. autoclass:: evolution.MergedBaraffePisaEkstromParsec
