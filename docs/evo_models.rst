@@ -109,9 +109,11 @@ Merged Sonora and MIST grid
 ``MergedFlameSkimmerRedDiamondbackMIST`` combines Sonora brown-dwarf models
 with MIST stellar models. Files are stored in
 ``SPISEA_MODELS/evolution/merged/flame_red_diamondback_mist/iso``.
-Each metallicity has its own ``z...`` directory. ``grid_manifest.csv`` lists
-all the files, including metallicities below -1. The loader selects the
-closest available metallicity and age.
+Each metallicity has its own ``z...`` directory. The loader selects the
+closest available metallicity and age using the lists defined in the class.
+The regular filenames use two decimal places for log age; the additional
+9-Gyr and 15-Gyr files use six decimal places. These models require
+evolution model grid version 3.1 or later.
 
 The full grid has 1,590 files: 15 metallicities at 106 ages each. The
 metallicities are -4, -3.5, -3, -2.5, -2, -1.75, -1.5, -1.25, -1, -0.75,
