@@ -25,9 +25,14 @@ dependencies = [
     "numpy>=1.24.3",
     "scipy>=1.10.1",
     "matplotlib",
+    "pandas",
     "astropy",
     "synphot>=1.5",
-    "stsynphot>=1.4",
+    # Minimum release is stsynphot 1.7.0, which includes the grid-spectrum
+    # cache (https://github.com/spacetelescope/stsynphot_refactor/pull/244).
+    # 1.7.0 is not on PyPI yet. This URL is that pull request. After the
+    # 1.7.0 tag is released, replace this line with "stsynphot>=1.7".
+    "stsynphot @ git+https://github.com/wei-lingfeng/stsynphot_refactor.git@cache-grid-spectra",
 ]
 
 optional-dependencies.dev = [
@@ -36,7 +41,8 @@ optional-dependencies.dev = [
     "wheel",
     "numpydoc",
     "sphinx_rtd_theme",
-    "pytest"
+    "pytest",
+    "pytest-astropy-header",
 ]
 
 classifiers = [
@@ -69,12 +75,14 @@ packages = ["spisea"]
 [tool.setuptools.package-data]
 spisea = ["data/*"]
 
-[tool.pytest]
+[tool.pytest.ini_options]
 minversion = "9.0"
 addopts = ["-ra", "-q"]
 testpaths = [
-    "spisea",
-    "docs",
+    "spisea/tests",
+]
+markers = [
+    "slow: isochrone or cluster tests that need CDBS/evolution grids",
 ]
 
 ### Stuff from setup.cfg that hasn't been ported over.
