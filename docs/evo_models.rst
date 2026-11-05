@@ -104,6 +104,40 @@ If you require other evolution models or need to
 expand the existing grids, please see
 :ref:`add_evo_models`. 
 
+Merged Sonora and MIST grid
+-----------------------------------------
+``MergedFlameSkimmerRedDiamondbackMIST`` combines Sonora brown-dwarf models
+with MIST stellar models. Files are stored in
+``SPISEA_MODELS/evolution/merged/flame_red_diamondback_mist/iso``.
+Each metallicity has its own ``z...`` directory. The loader selects the
+closest available metallicity and age using the lists defined in the class.
+The regular filenames use two decimal places for log age; the additional
+9-Gyr and 15-Gyr files use six decimal places. These models require
+evolution model grid version 3.1 or later.
+
+The full grid has 1,590 files: 15 metallicities at 106 ages each. The
+metallicities are -4, -3.5, -3, -2.5, -2, -1.75, -1.5, -1.25, -1, -0.75,
+-0.5, -0.25, 0, +0.25 and +0.5. Ages run from 0.1 Myr to 15 Gyr, with
+log10(age/yr) steps of 0.05 through 10.15 and additional files at 9 and 15 Gyr.
+
+FlameSkimmer supplies brown-dwarf ages up to 9 Gyr. At older ages,
+Red Diamondback supplies -0.5 <= [M/H] <= +0.5. Values at -0.25 and +0.25
+are linearly interpolated in metallicity. Older values at -1 and -0.75
+are estimated from the last FlameSkimmer ages. Below [M/H] = -1, the -1
+Sonora brown-dwarf values are combined with MIST at the lower metallicity.
+These low-metallicity brown-dwarf values are approximations.
+
+The mass connections use limited cubic interpolation in log10(initial mass).
+Radius is calculated from luminosity and effective temperature in the
+connection. Surface gravity is interpolated separately, so it can differ
+from GM/R squared. Values outside the connection are kept from the input
+models. Intermediate metallicities use linear interpolation of the logarithmic
+stellar quantities in [M/H].
+
+Some MIST evolutionary stages have the same initial mass. Those rows and
+their ``mist_eep`` labels are kept in the low-metallicity files. A mass-only
+interpolator may need to choose between these stages.
+
 ModelMismatch Error
 -----------------------------------------
 Since SPISEA v2.1.4, we began tracking the version of the evolution
@@ -147,6 +181,9 @@ Specific Evolution Model Classes
 
 .. autoclass:: evolution.MergedPhillipsBaraffePisaEkstromParsec
 	       :show-inheritance:
+
+.. autoclass:: evolution.MergedFlameSkimmerRedDiamondbackMIST
+               :show-inheritance:
    
 .. autoclass:: evolution.Phillips2020
 	       :show-inheritance:

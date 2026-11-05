@@ -192,9 +192,40 @@ Regenerate the figures from the repository root with::
 
    python docs/figures/plot_wd_koester_blackbody.py
 
+Sonora, PHOENIX and ATLAS suite
+-----------------------------------------
+``get_merged_atmosphere_atlas_phoenix_sonora`` adds the C/O = 1 equilibrium
+FlameSkimmer models to the stellar atmosphere models. Below 2500 K, stars
+with log(g) >= 2 use FlameSkimmer through 2200 K and a FlameSkimmer/PHOENIX
+blend from 2200 to 2500 K. Lower-gravity stars use PHOENIX. The log(g) limit
+comes from the lowest gravity in FlameSkimmer.
+
+Cool dwarfs below [M/H] = -1 use the -1 FlameSkimmer atmosphere and produce
+a warning. At 2500-5000 K the function uses PHOENIX, at 5000-5500 K it uses
+the ATLAS/PHOENIX blend, and above 5500 K it uses ATLAS. The separate
+``get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement`` function adds
+white-dwarf atmospheres and blackbodies for high-gravity objects.
+
+Requests outside an atmosphere grid use ``get_atmosphere_bounds``, which
+limits the temperature and gravity and chooses the nearest metallicity.
+For PHOENIX, this raises temperatures below 2300 K to 2300 K. Interpolation
+within the grid uses the requested metallicity.
+
+The FlameSkimmer/PHOENIX blend has less blue flux where FlameSkimmer has
+no wavelength coverage: only the weighted PHOENIX part contributes there.
+The use of the -1 atmosphere at lower metallicities is also an approximation.
+
 Model Atmosphere Classes
 -------------------------
 .. autofunction:: atmospheres.get_merged_atmosphere
+
+.. autofunction:: atmospheres.get_flameskimmer_atmosphere
+
+.. autofunction:: atmospheres.get_flameskimmer_phoenix_atmosphere
+
+.. autofunction:: atmospheres.get_merged_atmosphere_atlas_phoenix_sonora
+
+.. autofunction:: atmospheres.get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement
 
 .. autofunction:: atmospheres.get_wd_atmosphere
 
