@@ -36,6 +36,7 @@ Getting Started
 ----------------
 .. toctree::
    :maxdepth: 1
+   :caption: Getting Started
 
    getting_started.rst
    quick_start.rst
@@ -46,6 +47,7 @@ Documentation
 -------------------------
 .. toctree::
    :maxdepth: 1
+   :caption: Documentation
 
    make_isochrone.rst
    make_cluster.rst
@@ -61,10 +63,19 @@ Advanced Documentation
 -----------------------------
 .. toctree::
    :maxdepth: 1
-	      
+   :caption: Advanced Documentation
+
    add_evo_models.rst
    add_atmo_models.rst
    add_filters.rst
+
+API Reference
+-------------
+.. toctree::
+   :maxdepth: 1
+   :caption: API Reference
+
+   api
 
 Contributions
 ---------------

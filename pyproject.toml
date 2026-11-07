@@ -40,7 +40,7 @@ optional-dependencies.dev = [
     "setuptools-scm",
     "wheel",
     "numpydoc",
-    "sphinx_rtd_theme",
+    "pydata-sphinx-theme",
     "pytest",
     "pytest-astropy-header",
 ]
@@ -64,7 +64,7 @@ requires = [
     "setuptools-scm",
     "wheel",
     "numpydoc",
-    "sphinx_rtd_theme",
+    "pydata-sphinx-theme",
     "pytest"
 ]
 build-backend = 'setuptools.build_meta'

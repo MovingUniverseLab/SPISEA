@@ -10,4 +10,4 @@ stsynphot @ git+https://github.com/wei-lingfeng/stsynphot_refactor.git@cache-gri
 scipy
 pandas
 setuptools<=81.0
-docutils<0.18
+pydata-sphinx-theme
