@@ -30,9 +30,9 @@ dependencies = [
     "synphot>=1.5",
     # Minimum release is stsynphot 1.7.0, which includes the grid-spectrum
     # cache (https://github.com/spacetelescope/stsynphot_refactor/pull/244).
-    # 1.7.0 is not on PyPI yet. This URL is that pull request. After the
+    # 1.7.0 is not on PyPI yet. This URL is the commit that merged it. After the
     # 1.7.0 tag is released, replace this line with "stsynphot>=1.7".
-    "stsynphot @ git+https://github.com/wei-lingfeng/stsynphot_refactor.git@cache-grid-spectra",
+    "stsynphot @ git+https://github.com/spacetelescope/stsynphot_refactor.git@50ab29eefdbe279f0ea9c3b9d382933f86089877",
 ]
 
 optional-dependencies.dev = [

@@ -56,15 +56,10 @@ release and satisfies the 1.5 minimum::
 
    pip install "synphot @ git+https://github.com/spacetelescope/synphot_refactor.git@1.8.0"
 
-Until pull request 244 is merged, that cache is on Lingfeng Wei's
-branch::
+Pull request 244 is merged but not yet released. Until then, install
+``stsynphot`` from the commit that merged it::
 
-   pip install "stsynphot @ git+https://github.com/wei-lingfeng/stsynphot_refactor.git@cache-grid-spectra"
-
-After the pull request is merged, install ``stsynphot`` from the
-STScI repository. Tag ``1.7.0`` is the minimum version::
-
-   pip install "stsynphot @ git+https://github.com/spacetelescope/stsynphot_refactor.git@1.7.0"
+   pip install "stsynphot @ git+https://github.com/spacetelescope/stsynphot_refactor.git@50ab29eefdbe279f0ea9c3b9d382933f86089877"
 
 Once that release is on PyPI, the same minimum is::
 
