@@ -1,14 +1,13 @@
 matplotlib
-# stsynphot after PR 244 requires NumPy 2.
+# stsynphot's cache-grid-spectra branch requires NumPy 2.
 numpy>=2
 numpydoc
 astropy
 synphot>=1.5
 # Minimum release is stsynphot 1.7.0 (grid-spectrum cache, PR 244).
-# Not on PyPI yet, so this is the commit that merged PR 244; see
-# docs/getting_started.rst. After the 1.7.0 tag, replace this line with
-# stsynphot>=1.7.
-stsynphot @ git+https://github.com/spacetelescope/stsynphot_refactor.git@50ab29eefdbe279f0ea9c3b9d382933f86089877
+# Not on PyPI yet; see docs/getting_started.rst. After the 1.7.0 tag,
+# replace this line with stsynphot>=1.7.
+stsynphot @ git+https://github.com/wei-lingfeng/stsynphot_refactor.git@cache-grid-spectra
 scipy
 pandas
 setuptools<=81.0
