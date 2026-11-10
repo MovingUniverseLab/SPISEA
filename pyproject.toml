@@ -1,7 +1,7 @@
 [project]
 name = "SPISEA"
 description = "SPISEA (Stellar Population Interface for Synthetic Evolution and Atmospheres) is a package that generates single-age, single-metallicity populations (i.e. star clusters)"
-version = "2.4.1"
+version = "3.1.0"
 authors = [
     {name = "Matt Hosek Jr.", email = "mwhosek@astro.ucla.edu"},
     {name = "Jessica R. Lu", email = "jlu.astro@berkeley.edu"},
@@ -10,7 +10,7 @@ authors = [
     {name = "Natasha Abrams"},
     {name = "Michael Medford"},
     {name = "Lingfeng Wei"},
-    {name = "Macy Huston"},
+    {name = "Mace Huston"},
     {name = "Abhimat Gautam"},
     {name = "Kelly Lockhart"},
     {name = "Dongwon Kim"},
@@ -28,7 +28,11 @@ dependencies = [
     "pandas",
     "astropy",
     "synphot>=1.5",
-    "stsynphot>=1.4",
+    # Minimum release is stsynphot 1.7.0, which includes the grid-spectrum
+    # cache (https://github.com/spacetelescope/stsynphot_refactor/pull/244).
+    # 1.7.0 is not on PyPI yet. This URL is that pull request. After the
+    # 1.7.0 tag is released, replace this line with "stsynphot>=1.7".
+    "stsynphot @ git+https://github.com/wei-lingfeng/stsynphot_refactor.git@cache-grid-spectra",
 ]
 
 optional-dependencies.dev = [
@@ -36,7 +40,7 @@ optional-dependencies.dev = [
     "setuptools-scm",
     "wheel",
     "numpydoc",
-    "sphinx_rtd_theme",
+    "pydata-sphinx-theme",
     "pytest",
     "pytest-astropy-header",
 ]
@@ -60,7 +64,7 @@ requires = [
     "setuptools-scm",
     "wheel",
     "numpydoc",
-    "sphinx_rtd_theme",
+    "pydata-sphinx-theme",
     "pytest"
 ]
 build-backend = 'setuptools.build_meta'

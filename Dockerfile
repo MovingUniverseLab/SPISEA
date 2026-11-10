@@ -4,8 +4,13 @@ RUN apt-get update && apt-get upgrade -y && apt-get clean
 
 RUN apt-get install -y curl python3 python3-dev python3-distutils python3-pip git wget
 
-# synphot + stsynphot replace deprecated pysynphot; set PYSYN_CDBS to your CDBS tree (see below).
-RUN pip3 install astropy synphot stsynphot scipy numpy matplotlib
+# synphot >= 1.5 and stsynphot >= 1.7.0 (grid-spectrum cache, PR 244).
+# stsynphot 1.7.0 is not on PyPI yet; this URL is that pull request.
+# After the 1.7.0 tag, use "stsynphot>=1.7". See docs/getting_started.rst.
+# Set PYSYN_CDBS to your CDBS tree (see below).
+RUN pip3 install astropy scipy numpy matplotlib \
+    "synphot @ git+https://github.com/spacetelescope/synphot_refactor.git@1.8.0" \
+    "stsynphot @ git+https://github.com/wei-lingfeng/stsynphot_refactor.git@cache-grid-spectra"
 
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
