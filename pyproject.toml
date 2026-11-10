@@ -1,7 +1,7 @@
 [project]
 name = "SPISEA"
 description = "SPISEA (Stellar Population Interface for Synthetic Evolution and Atmospheres) is a package that generates single-age, single-metallicity populations (i.e. star clusters)"
-version = "2.4.1"
+version = "3.1.0"
 authors = [
     {name = "Matt Hosek Jr.", email = "mwhosek@astro.ucla.edu"},
     {name = "Jessica R. Lu", email = "jlu.astro@berkeley.edu"},
@@ -10,7 +10,7 @@ authors = [
     {name = "Natasha Abrams"},
     {name = "Michael Medford"},
     {name = "Lingfeng Wei"},
-    {name = "Macy Huston"},
+    {name = "Mace Huston"},
     {name = "Abhimat Gautam"},
     {name = "Kelly Lockhart"},
     {name = "Dongwon Kim"},
