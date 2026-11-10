@@ -1,5 +1,6 @@
 matplotlib
-numpy <= 1.24.4
+# stsynphot's cache-grid-spectra branch requires NumPy 2.
+numpy>=2
 numpydoc
 astropy
 synphot>=1.5

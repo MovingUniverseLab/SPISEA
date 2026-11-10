@@ -14,7 +14,6 @@ build:
   os: ubuntu-22.04
   tools:
     # stsynphot (docs/requirements.txt) requires Python >= 3.11.
-    # numpy<=1.24.4 in that file has no Python 3.12 wheels, so stay on 3.11.
     python: "3.11"
 
 
