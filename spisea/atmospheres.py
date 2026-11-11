@@ -1592,7 +1592,8 @@ def get_merged_atmosphere_w_bb_supplement_grid(bb_supplement_tarr='default', bb_
     super_loggarr = np.concatenate((super_loggarr, bb_supplement_loggarr))
 
     return super_tarr, super_zarr, super_loggarr
-    
+
+
 def get_wd_atmosphere(metallicity=0, temperature=20000, gravity=4, verbose=False):
     """
     Return the white dwarf atmosphere from
@@ -1618,19 +1619,227 @@ def get_wd_atmosphere(metallicity=0, temperature=20000, gravity=4, verbose=False
 
     verbose: boolean
         True for verbose output
+
+    Notes
+    -----
+    Koester spectra stop near 3 micron. From 2.8 to 3.0 micron the
+    returned flux is a linear average of the Koester model and a
+    blackbody, running from all model at 2.8 micron to all blackbody
+    at 3.0 micron. The blackbody then continues alone out to 10 micron
+    so mid-infrared filters overlap the spectrum. Out-of-grid parameters
+    use a blackbody over that full range, with no model segment to blend.
     """
+    # Isochrone wavelengths must stay below 1e5 Angstrom.
+    wave_max = 1.0e5
+
     try:
         if verbose:
             print('wdKoester atmosphere')
 
-        return get_wdKoester_atmosphere(metallicity=metallicity,
+        spectrum = get_wdKoester_atmosphere(metallicity=metallicity,
                                             temperature=temperature,
                                             gravity=gravity)
 
+        # Cover F323N, F405N, Lp, and Ms, which start past 3 micron.
+        spectrum = extend_spectrum_blackbody(spectrum, temperature,
+                                             wave_max=wave_max)
+
+        return spectrum
+
     except stsyn_exceptions.ParameterOutOfBounds:
-        # Use a black-body atmosphere.
-        bbspec = get_bb_atmosphere(temperature=temperature, verbose=verbose)
+        # Use a black-body atmosphere over the same wavelength range.
+        bbspec = get_bb_atmosphere(temperature=temperature, verbose=verbose,
+                                   wave_max=wave_max)
         return bbspec
+
+
+def _blackbody_blend_weight(wave_aa, wave_lo=2.8e4, wave_hi=3.0e4):
+    """
+    Linear blackbody weight across the blend window.
+
+    Parameters
+    ----------
+    wave_aa : array_like
+        Wavelengths in Angstroms. Shape ``[N]``.
+    wave_lo : float, optional
+        Wavelength where the weight is 0 (all model), in Angstroms.
+        Default is 2.8 micron.
+    wave_hi : float, optional
+        Wavelength where the weight is 1 (all blackbody), in Angstroms.
+        Default is 3.0 micron.
+
+    Returns
+    -------
+    weight : numpy.ndarray
+        Blackbody weight in ``[0, 1]``, linear in wavelength. Shape ``[N]``.
+    """
+    wave = np.asarray(wave_aa, dtype=float)
+    weight = (wave - wave_lo) / (wave_hi - wave_lo)
+    weight = np.clip(weight, 0.0, 1.0)
+
+    return weight
+
+
+def _scaled_blackbody_flam(temperature, wave_aa, wave_ref, flux_ref):
+    """
+    Blackbody in FLAM, scaled to a model flux at one wavelength.
+
+    Parameters
+    ----------
+    temperature : float
+        Blackbody temperature in Kelvin.
+    wave_aa : array_like
+        Wavelengths in Angstroms. Shape ``[N]``.
+    wave_ref : float
+        Wavelength, in Angstroms, where the blackbody matches ``flux_ref``.
+    flux_ref : float
+        Model F_lambda at ``wave_ref``, in FLAM.
+
+    Returns
+    -------
+    flux : numpy.ndarray or None
+        Scaled F_lambda in FLAM, shape ``[N]``. ``None`` when the scale
+        is not a positive finite number.
+    """
+    bb = SourceSpectrum(BlackBodyNorm1D, temperature=temperature)
+
+    # Shape of the reference sample: [1].
+    wave_ref_q = np.array([wave_ref], dtype=float) * u.AA
+    bb_ref = convert_flux(wave_ref_q, bb(wave_ref_q), su.FLAM)
+    scale = flux_ref / float(np.asarray(bb_ref.value).ravel()[0])
+
+    if (not np.isfinite(scale)) or (scale <= 0):
+        return None
+
+    wave = np.asarray(wave_aa, dtype=float) * u.AA
+    bb_flux = convert_flux(wave, bb(wave), su.FLAM)
+    flux = np.asarray(bb_flux.value, dtype=float).ravel() * scale
+
+    return flux
+
+
+def extend_spectrum_blackbody(spectrum, temperature, wave_max=1.0e5):
+    """
+    Extend a model spectrum redward with a blackbody tail.
+
+    From 2.8 to 3.0 micron the spectrum is a weighted average of the model
+    and a blackbody. The blackbody weight is linear in wavelength: 0 at
+    2.8 micron (all model) and 1 at 3.0 micron (all blackbody). Redward of
+    3 micron the spectrum is the blackbody alone.
+
+    Parameters
+    ----------
+    spectrum : synphot.spectrum.SourceSpectrum
+        Atmosphere spectrum, evaluated on ``spectrum.waveset``.
+    temperature : float
+        Blackbody temperature in Kelvin. Sets the shape of the tail.
+        The blackbody is scaled to the model flux at the red edge of the
+        model, or at 3 micron when the model extends that far.
+    wave_max : float, optional
+        Longest wavelength of the extended spectrum, in Angstroms.
+        Default is 1e5 (10 micron).
+
+    Returns
+    -------
+    extended : synphot.spectrum.SourceSpectrum
+        Input spectrum if it already reaches ``wave_max``. Otherwise the
+        model blueward of 2.8 micron, the blend from 2.8 to 3.0 micron,
+        and a blackbody tail in FLAM.
+
+    Notes
+    -----
+    Koester (2010) white-dwarf spectra end near 3 micron. Mid-infrared
+    filters such as JWST F323N and F405N do not overlap that grid, and
+    synphot then raises ``DisjointError``. The blend avoids a step at
+    the grid edge. If the model ends blueward of 2.8 micron, the
+    blackbody is attached at the model's red edge instead.
+    """
+    wave_aa = np.asarray(spectrum.waveset.to(u.AA).value, dtype=float)
+
+    # stsynphot grids are PHOTLAM. Work in FLAM, which is the unit SPISEA
+    # uses when it scales spectra to the observer.
+    flux = convert_flux(spectrum.waveset, spectrum(spectrum.waveset), su.FLAM)
+    flux_val = np.asarray(flux.value, dtype=float).ravel()
+
+    # Model already covers the requested wavelength range.
+    if (len(wave_aa) == 0) or (wave_aa[-1] >= wave_max):
+        return spectrum
+
+    # Keep wavelengths increasing so the blend window is well defined.
+    order = np.argsort(wave_aa)
+    wave_aa = wave_aa[order]
+    flux_val = flux_val[order]
+
+    # Defaults are 2.8 and 3.0 micron, in Angstroms.
+    wave_lo, wave_hi = _blackbody_blend_weight.__defaults__
+
+    # Match the blackbody to the model at 3 micron, or at the red edge
+    # when the model stops short of that.
+    if wave_aa[-1] >= wave_hi:
+        wave_ref = wave_hi
+        flux_ref = float(np.interp(wave_hi, wave_aa, flux_val))
+    else:
+        wave_ref = float(wave_aa[-1])
+        flux_ref = float(flux_val[-1])
+
+    if (not np.isfinite(flux_ref)) or (flux_ref <= 0):
+        return spectrum
+
+    # Wavelength pieces. Blue of 2.8 micron is untouched. Inside the
+    # window the model is averaged with the blackbody. Past 3 micron,
+    # or past a model that ends early, only the blackbody is kept.
+    blue = wave_aa <= wave_lo
+    blend = (wave_aa > wave_lo) & (wave_aa <= wave_hi)
+    wave_blue = wave_aa[blue]
+    flux_blue = flux_val[blue]
+    wave_blend = wave_aa[blend]
+
+    if wave_aa[-1] < wave_lo:
+        # No model samples inside the blend window. Start the tail at
+        # the red edge so the spectrum does not jump across a gap.
+        wave_tail_start = float(wave_aa[-1]) * (1.0 + 1.0e-6)
+    elif wave_aa[-1] < wave_hi:
+        wave_tail_start = wave_hi
+    else:
+        wave_tail_start = wave_hi * (1.0 + 1.0e-6)
+
+    if wave_tail_start >= wave_max:
+        wave_tail = np.array([], dtype=float)
+    else:
+        # Log-spaced tail from the pure-blackbody boundary to wave_max.
+        n_tail = 300
+        wave_tail = np.logspace(np.log10(wave_tail_start), np.log10(wave_max),
+                                n_tail)
+
+    # One blackbody scale for the blend and the tail.
+    # Shape of wave_bb: [n_blend + n_tail].
+    wave_bb = np.concatenate([wave_blend, wave_tail])
+    bb_flux = _scaled_blackbody_flam(temperature, wave_bb, wave_ref, flux_ref)
+    if bb_flux is None:
+        return spectrum
+
+    n_blend = len(wave_blend)
+    if n_blend > 0:
+        weight = _blackbody_blend_weight(wave_blend)
+        flux_blend = ((1.0 - weight) * flux_val[blend]
+                      + weight * bb_flux[:n_blend])
+    else:
+        flux_blend = np.array([], dtype=float)
+
+    flux_tail = bb_flux[n_blend:]
+
+    # Shape of wave_out: [n_blue + n_blend + n_tail].
+    wave_out_aa = np.concatenate([wave_blue, wave_blend, wave_tail])
+    flux_out = np.concatenate([flux_blue, flux_blend, flux_tail])
+    keep = np.concatenate([[True], np.diff(wave_out_aa) > 0.0])
+    wave_out = wave_out_aa[keep] * u.AA
+    flux_out = flux_out[keep] * su.FLAM
+
+    meta = dict(getattr(spectrum, 'meta', None) or {})
+    extended = SourceSpectrum(Empirical1D, points=wave_out,
+                              lookup_table=flux_out, meta=meta)
+
+    return extended
 
 
 def get_bd_atmosphere(metallicity=0, temperature=1000, gravity=4, verbose=False):

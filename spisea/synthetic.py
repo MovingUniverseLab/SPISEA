@@ -18,6 +18,7 @@ import pdb
 from synphot.models import ConstFlux1D
 from synphot.spectrum import SourceSpectrum, SpectralElement, Empirical1D
 
+from spisea import __version__ as spisea_version_number
 from spisea import reddening, evolution, filters
 from spisea import atmospheres as atm
 from scipy.spatial import cKDTree as KDTree
@@ -1126,6 +1127,7 @@ class Isochrone(object):
             self.spec_list.append(star)
 
         # Append all the meta data to the summary table.
+        tab.meta['SPISEAVERSION'] = spisea_version_number
         tab.meta['REDLAW'] = red_law.name
         tab.meta['ATMFUNC'] = atm_func.__name__
         tab.meta['EVOMODEL'] = type(evo_model).__name__
@@ -1773,6 +1775,7 @@ class IsochronePhotExternalEvolution(IsochronePhot):
                 self.spec_list.append(star)
 
             # Append all the meta data to the summary table.
+            tab.meta['SPISEAVERSION'] = spisea_version_number
             tab.meta['REDLAW'] = red_law.name
             tab.meta['ATMFUNC'] = atm_func.__name__
             tab.meta['EVOMODEL'] = type(evo_model).__name__
@@ -1933,253 +1936,6 @@ class IsochronePhotExternalEvolution(IsochronePhot):
 
         return
 
-#===================================================#
-# Iso table: same as IsochronePhot object, but doesn't do reddening application
-# or photometry automatically. These are separate functions on the object.
-# NOTE: THIS CLASS IS DEPRECATED, DO NOT USE!
-#===================================================#
-class iso_table(object):
-    def __init__(self, logAge, distance, evo_model=default_evo_model,
-                 atm_func=default_atm_func, mass_sampling=1,
-                 min_mass=None, max_mass=None, wave_range=[5000, 52000],
-                 rebin=True):
-        """
-        Generate an isochrone table containing star mass, temp, radius,
-        luminosity, and logg, as well as a table of spectra for those
-        stars. Also produce set of corresponding spectra which are
-        flux calibrated by distance but not reddened in any way.
-
-        Functions on this object:
-        apply_reddening (Apply reddening with defined redlaw and AKs)
-        make_photometry (make synthetic photometry for spectra)
-
-        Parameters
-        ----------
-        logAge : float
-            The log of the age of the isochrone.
-        distance : float
-            The distance in pc.
-        evo_model : SPISEA evolution object
-            Stellar evolution models used
-        atm_func: SPISEA atmosphere object
-            Atmospheric models used
-        mass_sampling - Sample the raw isochrone every ## steps. The default
-                       is mass_sampling = 10, which takes every 10th point.
-                       The isochrones are already very finely sampled. Must be
-                       an integer value.
-        min_mass: float or None
-            If float, defines the minimum mass in the iso_table.
-            Units: solar masses
-        max_mass: float or None
-            If float, defines the maxmimum mass in the iso_table.
-            Units: solar masses
-        wave_range : list
-            length=2 list with the wavelength min/max of the final spectra.
-            Units are Angstroms.
-        dir_to_VISTA: string (default = './') or None
-            Path to files which define the VISTA bandpasses. If None, will not
-            have access to VISTA filters
-        dir_to_DEC: string (default = './') or None
-            Path to files which define the DECam bandpasses. If None, will not
-            have access to DECam filter
-        dir_to_PS1: string (default = './') or None
-            Path to files which define the PS1 bandpasses. If None, will not
-            have access to PS1 filters
-        rebin: boolean
-            If true, rebin the VISTA filter functions to match the synthetic
-            spectrum. This is very useful to save computation time down the
-            road.
-        """
-        t1 = time.time()
-        c = constants
-
-        # Get solar metallicity models for a population at a specific age.
-        # Takes about 0.1 seconds.
-        evol = evo_model.isochrone(age=10**logAge)  # solar metallicity
-
-        # Eliminate cases where log g is less than 0
-        idx = np.where(evol['logg'] > 0)
-        evol = evol[idx]
-
-        # Trim to desired mass range
-        if min_mass != None:
-            idx = np.where(evol['mass'] >= min_mass)
-            evol = evol[idx]
-        if max_mass != None:
-            idx = np.where(evol['mass'] <= max_mass)
-            evol = evol[idx]
-
-        # Trim down the table by selecting every Nth point where
-        # N = mass sampling factor.
-        evol = evol[::mass_sampling]
-
-        # Determine which stars are WR stars.
-        evol['isWR'] = evol['logT'] != evol['logT_WR']
-
-        # Give luminosity, temperature, mass, radius units (astropy units).
-        L_all = 10**evol['logL'] * c.L_sun # luminsoity in erg/s
-        T_all = 10**evol['logT'] * units.K
-        R_all = np.sqrt(L_all / (4.0 * math.pi * c.sigma_sb * T_all**4))
-        mass_all = evol['mass'] * units.Msun # masses in solar masses
-        logg_all = evol['logg']
-        isWR_all = evol['isWR']
-
-        # Define the table that contains the "average" properties for each star.
-        tab = Table([L_all, T_all, R_all, mass_all, logg_all, isWR_all],
-                    names=['L', 'Teff', 'R', 'mass', 'logg', 'isWR'])
-
-        # Initialize output for stellar spectra
-        self.spec_list = []
-
-        # For each temperature extract the synthetic photometry.
-        for ii in range(len(tab['Teff'])):
-            # Loop is currently taking about 0.11 s per iteration
-
-            gravity = float( logg_all[ii] )
-            L = float( L_all[ii].cgs / (units.erg / units.s)) # in erg/s
-            T = float( T_all[ii] / units.K)               # in Kelvin
-            R = float( R_all[ii].to('pc') / units.pc)              # in pc
-
-            # Get the atmosphere model now. Wavelength is in Angstroms
-            # This is the time-intensive call... everything else is negligable.
-            star = atm_func(temperature=T, gravity=gravity)
-
-            # Trim wavelength range down to JHKL range (0.5 - 5.2 microns)
-            star = trim_spectrum(star, wave_range[0], wave_range[1])
-
-            # Convert into flux observed at Earth (unreddened)
-            star *= (R / distance)**2  # in erg s^-1 cm^-2 A^-1
-
-            # Save the final spectrum to our spec_list for later use.
-            self.spec_list.append(star)
-
-        # Append all the meta data to the summary table.
-
-        tab.meta['ATMFUNC'] = atm_func.__name__
-        tab.meta['EVOMODEL'] = type(evo_model).__name__
-        tab.meta['EVOMODELVERSION'] = evo_model.model_version_name
-        tab.meta['LOGAGE'] = logAge
-        tab.meta['DISTANCE'] = distance
-        tab.meta['WAVEMIN'] = wave_range[0]
-        tab.meta['WAVEMAX'] = wave_range[1]
-
-        self.points = tab
-
-        t2 = time.time()
-        print('Isochrone generation took {0:f} s.'.format(t2-t1))
-
-        return
-
-    def apply_reddening(self, AKs, extinction_law, dAKs=0, dist='uniform', dAKs_max=None):
-        """
-        Apply extinction to the spectra in iso_table, using the defined
-        extinction law
-
-        Parameters:
-        ----------
-        AKs: float
-            Total extinction in AKs
-
-        extinction_law: SPISEA extinction object
-            Extinction law to be used on the spectra
-
-        dAks: float (default = 0)
-            Differential extinction to apply to star, if desired.
-            Will draw reddening from Aks +/- dAks
-
-        dAKs_max: float or None
-            If not none, defines the maximum |dAKs| a star can
-            have in gaussian distribution case
-
-        dist: string, 'uniform' or 'gaussian'
-            Distribution to draw differential reddening from. If uniform,
-            dAKs will cut off at Aks +/- dAKs. Otherwise, will draw
-            from Gaussian of width AKs +/- dAks
-
-        """
-        self.AKs = np.ones(len(self.spec_list))
-        # Apply reddening to each object in the spec list
-        for i in range(len(self.spec_list)):
-            star = self.spec_list[i]
-
-            # Calculate reddening at extinction value using defined
-            # extinction law
-            if dAKs != 0:
-                if dist == 'gaussian':
-                    AKs_act = self.rng.normal(loc=AKs, scale=dAKs)
-                    # Apply dAKs_max if desired. Redo if diff > dAKs_max
-                    if dAKs_max != None:
-                        diff = abs(AKs_act - AKs)
-                        while diff > dAKs_max:
-                            print('While loop active')
-                            AKs_act = self.rng.normal(loc=AKs, scale=dAKs)
-                            diff = abs(AKs_act - AKs)
-                elif dist == 'uniform':
-                    low = AKs - dAKs
-                    high = AKs + dAKs
-                    AKs_act = self.rng.uniform(low=low, high=high)
-                else:
-                    print('dist {0} undefined'.format(dist))
-                    return
-            else:
-                AKs_act = AKs
-
-            star *= extinction_law.extinction_curve(AKs_act, star.waveset)
-
-            # Update the spectrum in spec list
-            self.spec_list[i] = star
-            self.AKs[i] = AKs_act
-
-        # Update the table to reflect the AKs used
-        self.points.meta['AKS'] = AKs
-
-        return
-
-    def make_photometry(self, filters, rebin=True):
-        """
-        Make synthetic photometry for the specified filters. This function
-        udpates the self.points table to include new columns with the
-        photometry.
-
-        Parameters
-        ----------
-        filters : dictionary
-            A dictionary containing the filter name (for the output columns)
-            and the filter specification string that can be processed by synphot.
-
-        rebin: boolean
-            True to rebin filter function (only used if non-zero transmission points are
-            larger than 1500 points)
-
-        """
-        npoints = len(self.points)
-
-        # Loop through the filters, get filter info, make photometry for
-        # all stars in this filter.
-        ts = time.time()
-        for filt_name, filt_str in filters.items():
-            # Define filter info
-            prt_fmt = 'Starting filter: {0:s}   Elapsed time: {1:.2f} seconds'
-            print( prt_fmt.format(filt_name, time.time() - ts))
-            filt = get_filter_info(filt_str, rebin=rebin, vega=vega)
-
-            # Make the column to hold magnitudes in this filter. Add to points table.
-            col_name = 'mag_' + filt_name
-            mag_col = Column(np.zeros(npoints, dtype=float), name=col_name)
-            self.points.add_column(mag_col)
-
-            # Loop through each star in the isochrone and do the filter integration
-            for ss in range(npoints):
-                star = self.spec_list[ss]  # These are already extincted, observed spectra.
-                star_mag = mag_in_filter(star, filt)
-
-                self.points[col_name][ss] = star_mag
-
-
-        endTime = time.time()
-        print( '      Time taken: {0:.2f} seconds'.format(endTime - ts))
-
-        return
 
 def save_file_mismatches(save_file_path, evo_model, atm_func, red_law):
     """
