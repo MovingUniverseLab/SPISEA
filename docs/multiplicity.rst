@@ -12,7 +12,7 @@ To call a multiplicity class and wire it into a cluster::
   from spisea.imf import imf, multiplicity
   from spisea import synthetic
 
-  multi = multiplicity.<class_name>(...)
+  multi = multiplicity.MultiplicityUnresolvedOffner2023()
   imf_obj = imf.Kroupa_2001(multiplicity=multi)
   cluster = synthetic.ResolvedCluster(iso, imf_obj, Mcl)
 
@@ -47,10 +47,15 @@ and the ``COSMIC`` evolution model.
 See the example jupyter notebook `Cluster_w_COSMIC.ipynb <https://github.com/MovingUniverseLab/spisea/blob/main/docs/Cluster_w_COSMIC.ipynb>`_ for an example.
 Note that currently COSMIC, due to being external evolution is significantly slower (2-10x) than the other evolution options.
 
-The default is the SPISEA v2.5
+Examples use
+:class:`~imf.multiplicity.MultiplicityUnresolvedOffner2023`
+(Offner et al. 2023), including brown dwarfs. For orbits, use
+:class:`~imf.multiplicity.MultiplicityResolvedOffner2023`.
+If no multiplicity object is passed to the IMF, all stars are
+single. The SPISEA v2.5
 :class:`~imf.multiplicity.MultiplicityUnresolved` /
-:class:`~imf.multiplicity.MultiplicityResolvedDK` pair. Offner et al.
-2023 is opt-in; see those class docstrings.
+:class:`~imf.multiplicity.MultiplicityResolvedDK` classes remain
+available.
 
 
 Unresolved Multiplicity Classes

@@ -22,11 +22,11 @@ license = "GPL-3.0-or-later"
 license-files = ["LICENSE*"]
 
 dependencies = [
-    "numpy>=1.24.3",
-    "scipy>=1.10.1",
+    "numpy>=2",
+    "scipy>=1.14",
     "matplotlib",
     "pandas",
-    "astropy",
+    "astropy>=7",
     "synphot>=1.5",
     # Minimum release is stsynphot 1.7.0, which includes the grid-spectrum
     # cache (https://github.com/spacetelescope/stsynphot_refactor/pull/244).
@@ -48,6 +48,7 @@ optional-dependencies.dev = [
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.14",
     "Operating System :: OS Independent",
     "Intended Audience :: Developers"
 ]

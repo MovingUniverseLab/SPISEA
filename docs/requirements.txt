@@ -1,14 +1,15 @@
 matplotlib
-# stsynphot's cache-grid-spectra branch requires NumPy 2.
+# Floors match pyproject.toml and the stsynphot URL below
+# (NumPy >= 2, SciPy >= 1.14, Astropy >= 7).
 numpy>=2
 numpydoc
-astropy
+astropy>=7
 synphot>=1.5
 # Minimum release is stsynphot 1.7.0 (grid-spectrum cache, PR 244).
 # Not on PyPI yet; see docs/getting_started.rst. After the 1.7.0 tag,
 # replace this line with stsynphot>=1.7.
 stsynphot @ git+https://github.com/wei-lingfeng/stsynphot_refactor.git@cache-grid-spectra
-scipy
+scipy>=1.14
 pandas
 setuptools<=81.0
 # PyData Sphinx Theme 0.24 needs Sphinx >= 8.2. Read the Docs installs

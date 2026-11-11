@@ -15,10 +15,10 @@ has already been created::
   from spisea.imf import imf, multiplicity
   import numpy as np
 
-  # Define stellar multiplicity properties. Here we 
-  # use the default multiplicity object.
+  # Define stellar multiplicity properties. Here we
+  # use the Offner et al. 2023 unresolved multiplicity object.
   # This is an input for the IMF object.
-  imf_multi = multiplicity.MultiplicityUnresolved()
+  imf_multi = multiplicity.MultiplicityUnresolvedOffner2023()
 
   # Define the IFMR. Here we use the IFMR object
   # IFMR_Raithel18. 
