@@ -1951,6 +1951,13 @@ def save_file_mismatches(save_file_path, evo_model, atm_func, red_law):
 
     tmp = Table.read(save_file_path)
 
+    mismatches = []
+    # Files made before SPISEA version 3 used the older SynPhot and
+    # photometry integration, so they are always regenerated.
+    file_version = tmp.meta.get('SPISEAVERSION')
+    if _spisea_major_version(file_version) < 3:
+        mismatches.append(('SPISEAVERSION', file_version, spisea_version_number))
+
     expected = [('EVOMODEL', type(evo_model).__name__),
                 ('ATMFUNC', atm_func.__name__),
                 ('REDLAW', red_law.name)]
@@ -1958,8 +1965,19 @@ def save_file_mismatches(save_file_path, evo_model, atm_func, red_law):
     if 'EVOMODELVERSION' in tmp.meta:
         expected.append(('EVOMODELVERSION', evo_model.model_version_name))
 
-    return [(key, tmp.meta.get(key), value) for key, value in expected
-            if tmp.meta.get(key) != value]
+    mismatches += [(key, tmp.meta.get(key), value) for key, value in expected
+                   if tmp.meta.get(key) != value]
+    return mismatches
+
+def _spisea_major_version(version):
+    """
+    Major version number of a SPISEA version string, or 0 if it is
+    missing or cannot be read.
+    """
+    try:
+        return int(str(version).split('.')[0])
+    except ValueError:
+        return 0
 
 def check_save_file(save_file_path, evo_model, atm_func, red_law, verbose=False):
     """

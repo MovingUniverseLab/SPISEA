@@ -1729,6 +1729,7 @@ def _mock_atm_func():
 
 def _write_iso_file(path, **meta):
     t = Table({'mass': [1.0]})
+    t.meta['SPISEAVERSION'] = syn.spisea_version_number
     t.meta.update(meta)
     with warnings.catch_warnings():
         # EVOMODELVERSION needs a HIERARCH card, as in real isochrone files
@@ -1753,6 +1754,18 @@ def test_save_file_mismatches(tmp_path):
     assert syn.save_file_mismatches(iso_file, evo, _mock_atm_func, red) == [
         ('REDLAW', 'N09', 'H18b'), ('EVOMODELVERSION', 'v0', 'v1')]
     assert not syn.check_save_file(iso_file, evo, _mock_atm_func, red)
+
+    # Files made before SPISEA version 3, or with no recorded version, are always mismatched
+    for version in ['2.1.0', None]:
+        meta = dict(EVOMODEL='_MockEvoModel', ATMFUNC='_mock_atm_func', REDLAW='H18b')
+        if version is None:
+            t = Table({'mass': [1.0]}, meta=meta)
+            t.write(iso_file, overwrite=True)
+        else:
+            _write_iso_file(iso_file, SPISEAVERSION=version, **meta)
+        assert syn.save_file_mismatches(iso_file, evo, _mock_atm_func, red) == [
+            ('SPISEAVERSION', version, syn.spisea_version_number)]
+        assert not syn.check_save_file(iso_file, evo, _mock_atm_func, red)
 
 def test_check_save_file_verbose(tmp_path, capsys):
     """
@@ -1813,7 +1826,7 @@ def test_IsochronePhot_warns_before_overwriting(tmp_path, capsys):
 
     # A matching legacy file is used instead, so nothing is overwritten
     legacy = Table({f'm_{syn.get_filter_col_name(f)}': [10.0] for f in ['ubv,U', 'ubv,B', 'ubv,V', 'ubv,R', 'ubv,I']})
-    legacy.meta.update(REDLAW=syn.default_red_law.name, **model_meta)
+    legacy.meta.update(SPISEAVERSION=syn.spisea_version_number, REDLAW=syn.default_red_law.name, **model_meta)
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
         legacy.write(str(tmp_path / 'iso_6.70_0.70_04000_p00.fits'))
