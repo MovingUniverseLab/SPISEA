@@ -42,8 +42,8 @@ IsochronePhot, implemented faster cluster generation and test
 functions for primary and companion star mass generation (v2.3),
 updated random state generators (v2.4)
 
-Macy Huston -- bug fixes, SynthPop compatibility updates, magnitude system flexibility,
-new filter sets, data set maintenance 
+Mace Huston -- bug fixes, SynthPop compatibility updates, magnitude system flexibility,
+new filter sets, data set maintenance, energy versus photon flux integration debugging
 
 Anna Pusack -- Added IRTF L-band filter support
 

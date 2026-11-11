@@ -93,11 +93,31 @@ releases will be co-authors in future SPISEA software papers.
 
 Change Log
 ----------
+3.1 (2026-11-10)
+
+* Note: we skipped version 3.0 to re-align the data set and code versions, since the data set released with version 2.5 was released as 3.0.
+* *Major Changes*
+	* Upgrade from pysynphot to synphot/systynphot (significant changes to dependencies)
+	* Bug fix to perform photon count integration instead of energy integration for all filters (see Filters page for details)
+	* New brown dwarf models including non-solar metallicities
+		* New evolution grid: MergedFlameSkimmerRedDiamondbackMIST
+		* New atmosphere grid: FlameSkimmer
+		* New merged atmosphere set get_merged_atmosphere_atlas_phoenix_sonora
+		* Updated evolution and atmosphere grid data sets w/ grid_version=3.1
+* *Minor Changes*
+	* Added opt-in Offner et al. 2023 (Protostars and Planets VII; arXiv:2203.10066) multiplicity model :class:`~imf.multiplicity.MultiplicityUnresolvedOffner2023` / :class:`~imf.multiplicity.MultiplicityResolvedOffner2023`, including brown dwarfs. MF/CSF is a logistic in log-mass; :math:`\gamma(M)` is an error-weighted logistic; :math:`\mu(a)` is a smooth broken power law (:math:`s=0.1` dex); :math:`\sigma(\log_{10} a)` is a 2-parameter logistic. Comparison figures vs the default :class:`~imf.multiplicity.MultiplicityUnresolved` / :class:`~imf.multiplicity.MultiplicityResolvedDK` are in :ref:`multi_obj`.
+	* Companion mass and separation draws (including brown-dwarf q and binaries-only BD systems) now live on the multiplicity object rather than being special-cased in ``imf.py``.
+	* Filter profile updates: 
+		* OGLE filters now account for QE
+		* JWST NIRCam filter profiles updated to v7.0 (Jan 2025)
+		* Updated DECam filters to include full instrument + atmosphere transmission
+	* Improved precision of magnitude summations for clusters with multiplicity
+
 2.5 (2026-07-17)
 
 * *Major Changes*
 	* Addition of brown dwarf models (see `Begbie et al. (2026) <https://arxiv.org/abs/2607.14292>`_)
-		* New evolution grids: `Phillips2020`, Marley2021, and mergedPhillipsMergedPhillipsBaraffePisaEkstromParsec
+		* New evolution grids: `Phillips2020`, Marley2021, and MergedPhillipsBaraffePisaEkstromParsec
 		* New atmosphere grids: Phillips2020, Meisner2023
 		* get_merged_atmosphere now uses Meisner2023 for T < 1000 K and interpolated BTSettl/Meisner2023 for 1000 < T <= 1200
   		* Updated evolution and atmosphere grid data sets w/ grid_version=3.0
@@ -108,8 +128,6 @@ Change Log
 		* New tutorial for creating SPISEA clusters using COSMIC: docs/Cluster_w_COSMIC.ipynb
 
 * *Minor Changes*
-	* Added opt-in Offner et al. 2023 (Protostars and Planets VII; arXiv:2203.10066) multiplicity model, including brown dwarfs. MF/CSF is a logistic in log-mass; :math:`\gamma(M)` is an error-weighted logistic; :math:`\mu(a)` is a smooth broken power law (:math:`s=0.1` dex); :math:`\sigma(\log_{10} a)` is a 2-parameter logistic. Comparison figures vs SPISEA v2.5 are in :ref:`multi_obj`. The SPISEA v2.5 :class:`~imf.multiplicity.MultiplicityUnresolved` / :class:`~imf.multiplicity.MultiplicityResolvedDK` objects remain the default.
-	* Companion mass and separation draws (including brown-dwarf q and binaries-only BD systems) now live on the multiplicity object rather than being special-cased in ``imf.py``.
 	* The MISTv1.2-synthpop model extension was modified to include denser sampling in the gap between the base MISTv1.2 grids and 0.1Msun.
   	* Modified default for MISTv1.2 isochrones: synthpop_extension will be True by default to keep a consistent lower mass limit of 0.1Msun across all ages and metallicities.
 	* Added option to return synthetic photometry in terms of AB or ST mag units in IsochronePhot. Vega mag units remains the default. New meta keyword `MAGSYS` added to output tables to specify magnitude unit system.
