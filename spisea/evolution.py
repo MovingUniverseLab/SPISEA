@@ -1924,6 +1924,73 @@ class COSMIC(StellarEvolution):
 #==============================#
 # Merged model classes
 #==============================#
+class MergedFlameSkimmerRedDiamondbackMIST(StellarEvolution):
+    """
+    Combined Sonora brown-dwarf and MIST stellar evolution models.
+
+    FlameSkimmer supplies ages up to 9 Gyr. At older ages, Red Diamondback
+    supplies metallicities from -0.5 to +0.5, including interpolated values
+    at -0.25 and +0.25. At -1 and -0.75, older ages are estimated from
+    the last available FlameSkimmer ages.
+
+    Below [M/H] = -1, the brown-dwarf values are taken from the -1 Sonora
+    model and combined with MIST at the requested metallicity.
+
+    The files are stored in
+    ``SPISEA_MODELS/evolution/merged/flame_red_diamondback_mist/iso``.
+    Requires evolution model grid version 3.1 or later.
+    """
+
+    def __init__(self):
+        # Available metallicities and their subdirectories.
+        self.metallicity_list = np.array(
+            [-4.0, -3.5, -3.0, -2.5, -2.0, -1.75, -1.5, -1.25,
+             -1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5])
+        z_dirs = ['z0000014', 'z0000045', 'z000014', 'z000045', 'z00014',
+                  'z00025', 'z00045', 'z00080', 'z0014', 'z0025',
+                  'z0045', 'z0080', 'z014', 'z025', 'z045']
+        self.z_solar = 0.0142
+        z_list = self.z_solar * 10.0**self.metallicity_list
+        self.z_file_map = dict(zip(z_list, z_dirs))
+
+        # Log ages from 5.00 to 10.15, plus exactly 9 and 15 Gyr.
+        age_9gyr = np.log10(9.e9)
+        age_15gyr = np.log10(15.e9)
+        age_list = np.round(np.arange(5.0, 10.151, 0.05), 2)
+        age_list = np.sort(np.append(age_list, [age_9gyr, age_15gyr]))
+        # These two filenames use six decimal places.
+        self.age_file_map = {age_9gyr: 'iso_9.954243.fits',
+                             age_15gyr: 'iso_10.176091.fits'}
+        model_dir = os.path.join(models_dir, 'merged', 'flame_red_diamondback_mist')
+        super().__init__(model_dir, age_list, [], z_list)
+        self.model_version_name = 'MergedFlameSkimmerRedDiamondbackMIST'
+        self.evo_grid_min = 3.1
+
+    def isochrone(self, age=1.e8, metallicity=0.0):
+        """Return the isochrone closest to the requested age and metallicity.
+
+        Age is in years and metallicity is [M/H].
+        """
+        if not np.isfinite(age) or age <= 0:
+            raise ValueError('Age must be finite, positive and in years.')
+        if (not np.isfinite(metallicity) or metallicity < self.metallicity_list.min()
+                or metallicity > self.metallicity_list.max()):
+            raise ValueError('Requested metallicity is outside the installed grid.')
+        self.evo_grid_num = check_evo_grid_number(self.evo_grid_min, models_dir)
+        metal_idx = np.argmin(abs(self.metallicity_list - metallicity))
+        actual_metal = float(self.metallicity_list[metal_idx])
+        log_age = math.log10(age)
+        if log_age < self.age_list.min() - 1.e-12 or log_age > self.age_list.max() + 1.e-12:
+            raise ValueError('Requested age is outside the precomputed grid.')
+        actual_age = float(self.age_list[np.argmin(abs(self.age_list - log_age))])
+        iso_file = self.age_file_map.get(actual_age, f'iso_{actual_age:.2f}.fits')
+        z_dir = self.z_file_map[self.z_list[metal_idx]]
+        iso = Table.read(os.path.join(self.model_dir, 'iso', z_dir, iso_file), format='fits')
+        iso.meta.update(log_age=log_age, log_age_act=actual_age,
+                        metallicity_in=metallicity, metallicity_act=actual_metal)
+        return iso
+
+
 class MergedPhillipsBaraffePisaEkstromParsec(StellarEvolution):
     """
     This is a combination of several different evolution models:
