@@ -617,8 +617,11 @@ class IMF_broken_powerlaw(IMF):
 
             t1 = aux_tmp / (self.coeffs[i] * self.k)
             t1 += prim_power(self._m_limits_low[i], self._powers[i])
+            # Only the entries within this segment: beyond it the inverse can be NaN (for a steep segment followed by
+            # others), and 0 * NaN would carry it into the result
             y_i = gamma_closed(x_tmp, self.lamda[i], self.lamda[i+1])
-            y_i *= inv_prim_power(t1, self._powers[i])
+            in_seg = y_i > 0
+            y_i[in_seg] *= inv_prim_power(t1[in_seg], self._powers[i])
 
             # Save results into the y array
             y[idx] += y_i
@@ -857,7 +860,7 @@ def theta_closed(x):
     Pass in float or array of floats (x) and return 0 for x<0
     and 1 for everything else.
     """
-    isFloat = type(x) == float
+    isFloat = isinstance(x, (float, np.floating))
 
     x = np.atleast_1d(x)
     val = (x >= 0).astype('float')
@@ -872,7 +875,7 @@ def theta_open(x):
     Pass in float or array of floats (x) and return 1 for x>0
     and 0 for everything else.
     """
-    isFloat = type(x) == float
+    isFloat = isinstance(x, (float, np.floating))
 
     x = np.atleast_1d(x)
     val = (x > 0).astype('float')
@@ -887,7 +890,7 @@ def delta(x):
     Pass in float or array of floats (x) and return 0.5 for x==0
     and 1.0 for everything else.
     """
-    isFloat = type(x) == float
+    isFloat = isinstance(x, (float, np.floating))
 
     x = np.atleast_1d(x)
     val = np.ones(len(x), dtype=float)
