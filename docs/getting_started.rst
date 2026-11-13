@@ -10,10 +10,10 @@ If you are downloading the code from scratch, please follow the
 instructions below. If you had already downloaded version 1 of the
 code and are switching to version 2, please see :ref:`version`. 
 
-SPISEA is hosted on `GitHub <https://github.com/astropy/SPISEA>`_.
+SPISEA is hosted on `GitHub <https://github.com/MovingUniverseLab/spisea>`_.
 To begin, clone the git repository in your desired code directory::
 
-   git clone https://github.com/astropy/SPISEA.git
+   git clone https://github.com/MovingUniverseLab/spisea.git
 
 The ``main`` branch contains the current release,
 while the ``dev`` branch is for code development.
@@ -26,14 +26,55 @@ The basic SPISEA installation requires ~20 GB of memory, which is
 primarily for the suite of stellar evolution and atmosphere models.
 Other dependencies:
 
-* python (>=3.7, < 3.12)
-* astropy
-* pysynphot
-* scipy
-* numpy (>= 1.17, < 2.0)
+* python (>= 3.11)
+* astropy (>= 7)
+* pandas
+* synphot (>= 1.5)
+* stsynphot (>= 1.7.0; see :ref:`synphot-install`)
+* scipy (>= 1.14)
+* numpy (>= 2)
 * matplotlib
-* `pytest-astropy-header <https://github.com/astropy/pytest-astropy-header>`_
 * STScI CDBS data package (See :ref:`set-up-cdbs` below for instructions)
+
+``pytest`` (>= 9.0) and
+`pytest-astropy-header <https://github.com/astropy/pytest-astropy-header>`_
+are needed only to run the test suite (the ``dev`` extra).
+
+.. _synphot-install:
+
+Installing synphot and stsynphot
+--------------------------------
+SPISEA reads model atmospheres with ``stsynphot.grid_to_spec``.
+The minimum versions are ``synphot`` 1.5 and ``stsynphot`` 1.7.0.
+``stsynphot`` 1.7.0 is the release that will contain the merged
+grid-spectrum cache from `stsynphot pull request 244
+<https://github.com/spacetelescope/stsynphot_refactor/pull/244>`_.
+That cache keeps each grid spectrum after the first read, so
+isochrone photometry does not re-read the same atmosphere files
+for every star. The pull request's changelog entry is already
+filed under 1.7.0.
+
+``synphot`` 1.5 and later is on PyPI::
+
+   pip install "synphot>=1.5"
+
+``stsynphot`` 1.7.0 is not on PyPI yet. Until pull request 244 is
+merged, that cache is on Lingfeng Wei's branch. This is the URL in
+``pyproject.toml``::
+
+   pip install "stsynphot @ git+https://github.com/wei-lingfeng/stsynphot_refactor.git@cache-grid-spectra"
+
+That branch's NumPy, SciPy, and Astropy floors match the SPISEA
+minimums listed above (NumPy >= 2, SciPy >= 1.14, Astropy >= 7).
+
+After the pull request is merged, install ``stsynphot`` from the
+STScI repository. Tag ``1.7.0`` is the minimum version::
+
+   pip install "stsynphot @ git+https://github.com/spacetelescope/stsynphot_refactor.git@1.7.0"
+
+Once that release is on PyPI, the same minimum is::
+
+   pip install "stsynphot>=1.7"
 
 .. _Build:
 
@@ -176,7 +217,7 @@ However, these can be safely ignored since SPISEA doesn't use those functionalit
 
 To further test your SPISEA install, try running the `Quick Start
 notebook
-<https://github.com/astropy/SPISEA/blob/main/docs/Quick_Start_Make_Cluster.ipynb>`_.
+<https://github.com/MovingUniverseLab/spisea/blob/main/docs/Quick_Start_Make_Cluster.ipynb>`_.
 It is also located in ``SPISEA/docs``.
 
 To test the full range of
@@ -185,11 +226,12 @@ run the test functions by going into the ``SPISEA/spisea`` directory and running
 
     pytest
 
-Note that this uses the python
-`pytest
-<https://docs.pytest.org/en/7.1.x/>`_
-package. This will trigger the test functions we have implemented. If all is
-well, you shouldn't get any errors. Warnings are (generally) fine.
+Note that this uses
+`pytest <https://docs.pytest.org/en/stable/>`_
+(>= 9.0) and ``pytest-astropy-header``, which are the ``dev`` extra
+in ``pyproject.toml``. This will trigger the test functions we have
+implemented. If all is well, you shouldn't get any errors. Warnings
+are (generally) fine.
 
 TroubleShooting
 -----------------------
@@ -210,7 +252,7 @@ either or both of the following warnings::
 Build and deploy from Docker
 ==========================
 
-Build your own SPISEA image for Docker Containers. This installation form contains SPISEA deployed in a container and includes the data sets, models and all the necessary paths and code.
+Build your own SPISEA image for Docker Containers. This installation form contains SPISEA deployed in a container and includes the data sets, models and all the necessary paths and code. The image is based on Python 3.14.
 
 Requirements
 -----------------------
@@ -223,8 +265,8 @@ Installation
 
 To create the container image, clone this repository and build the container::
 
-    git clone https://github.com/astropy/SPISEA.git
-    cd SPISEA
+    git clone https://github.com/MovingUniverseLab/spisea.git
+    cd spisea
     docker build -t spisea .
     
 Usage

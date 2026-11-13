@@ -6,7 +6,7 @@ Further Examples
 Additional Jupyter notebooks with tutorials to produce the plots shown
 in the SPISEA paper (`Hosek et al. (2020)
 <https://ui.adsabs.harvard.edu/abs/2020arXiv200606691H/abstract>`_) can be found `here
-<https://github.com/astropy/SPISEA/tree/main/docs/paper_examples>`_.
+<https://github.com/MovingUniverseLab/spisea/tree/main/docs/paper_examples>`_.
 
 Figure 2: HR-Diagrams with Different Evolution Models; CMDs with different Extinction Laws
 --------------------------------------------------------------------------------------------------------

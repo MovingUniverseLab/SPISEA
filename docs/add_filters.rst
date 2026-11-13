@@ -18,5 +18,5 @@ If the user wants to add new photometric filters to SPISEA, there are 4 main ste
      ensure the filter can be loaded properly.
 
 Additional documentation on this is coming soon. In the meantime, let us know on the  Github `issue tracker
-<https://github.com/astropy/SPISEA/issues>`_ if you'd like to
+<https://github.com/MovingUniverseLab/spisea/issues>`_ if you'd like to
 implement new photometric filters.

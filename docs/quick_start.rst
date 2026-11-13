@@ -5,7 +5,7 @@ Quick Start Guide
 ===================
 
 We provide a `jupyter notebook
-<https://github.com/astropy/SPISEA/blob/main/docs/Quick_Start_Make_Cluster.ipynb>`_
+<https://github.com/MovingUniverseLab/spisea/blob/main/docs/Quick_Start_Make_Cluster.ipynb>`_
 as a Quick-Start Guide to demonstrate the steps required to simulate a cluster and interact
 with the resulting output. This guide shows you how to:
 

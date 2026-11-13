@@ -29,13 +29,14 @@ Here is a brief list of things that SPISEA can do:
   
 * make a spectrum of a star cluster in integrated light
 
-SPISEA can be downloaded from `Github <https://github.com/astropy/SPISEA>`_. Please cite `Hosek et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020arXiv200606691H/abstract>`_  if you use SPISEA in
+SPISEA can be downloaded from `Github <https://github.com/MovingUniverseLab/spisea>`_. Please cite `Hosek et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020arXiv200606691H/abstract>`_  if you use SPISEA in
 your research. 
 
 Getting Started
 ----------------
 .. toctree::
    :maxdepth: 1
+   :caption: Getting Started
 
    getting_started.rst
    quick_start.rst
@@ -46,6 +47,7 @@ Documentation
 -------------------------
 .. toctree::
    :maxdepth: 1
+   :caption: Documentation
 
    make_isochrone.rst
    make_cluster.rst
@@ -61,10 +63,19 @@ Advanced Documentation
 -----------------------------
 .. toctree::
    :maxdepth: 1
-	      
+   :caption: Advanced Documentation
+
    add_evo_models.rst
    add_atmo_models.rst
    add_filters.rst
+
+API Reference
+-------------
+.. toctree::
+   :maxdepth: 1
+   :caption: API Reference
+
+   api
 
 Contributions
 ---------------
@@ -82,11 +93,31 @@ releases will be co-authors in future SPISEA software papers.
 
 Change Log
 ----------
+3.1 (2026-11-10)
+
+* Note: we skipped version 3.0 to re-align the data set and code versions, since the data set released with version 2.5 was released as 3.0.
+* *Major Changes*
+	* Upgrade from pysynphot to synphot/systynphot (significant changes to dependencies)
+	* Bug fix to perform photon count integration instead of energy integration for all filters (see Filters page for details)
+	* New brown dwarf models including non-solar metallicities
+		* New evolution grid: MergedFlameSkimmerRedDiamondbackMIST
+		* New atmosphere grid: FlameSkimmer
+		* New merged atmosphere set get_merged_atmosphere_atlas_phoenix_sonora
+		* Updated evolution and atmosphere grid data sets w/ grid_version=3.1
+* *Minor Changes*
+	* Added opt-in Offner et al. 2023 (Protostars and Planets VII; arXiv:2203.10066) multiplicity model :class:`~imf.multiplicity.MultiplicityUnresolvedOffner2023` / :class:`~imf.multiplicity.MultiplicityResolvedOffner2023`, including brown dwarfs. MF/CSF is a logistic in log-mass; :math:`\gamma(M)` is an error-weighted logistic; :math:`\mu(a)` is a smooth broken power law (:math:`s=0.1` dex); :math:`\sigma(\log_{10} a)` is a 2-parameter logistic. Comparison figures vs the default :class:`~imf.multiplicity.MultiplicityUnresolved` / :class:`~imf.multiplicity.MultiplicityResolvedDK` are in :ref:`multi_obj`.
+	* Companion mass and separation draws (including brown-dwarf q and binaries-only BD systems) now live on the multiplicity object rather than being special-cased in ``imf.py``.
+	* Filter profile updates: 
+		* OGLE filters now account for QE
+		* JWST NIRCam filter profiles updated to v7.0 (Jan 2025)
+		* Updated DECam filters to include full instrument + atmosphere transmission
+	* Improved precision of magnitude summations for clusters with multiplicity
+
 2.5 (2026-07-17)
 
 * *Major Changes*
 	* Addition of brown dwarf models (see `Begbie et al. (2026) <https://arxiv.org/abs/2607.14292>`_)
-		* New evolution grids: `Phillips2020`, Marley2021, and mergedPhillipsMergedPhillipsBaraffePisaEkstromParsec
+		* New evolution grids: `Phillips2020`, Marley2021, and MergedPhillipsBaraffePisaEkstromParsec
 		* New atmosphere grids: Phillips2020, Meisner2023
 		* get_merged_atmosphere now uses Meisner2023 for T < 1000 K and interpolated BTSettl/Meisner2023 for 1000 < T <= 1200
   		* Updated evolution and atmosphere grid data sets w/ grid_version=3.0
@@ -164,9 +195,9 @@ Change Log
     operating system used
 
 2.1.10 (2023-06-01)
-  * Added support for Roman Space Telescope filters (via pysynphot)
+  * Added support for Roman Space Telescope filters (via stsynphot)
     
-    * Note: this requires the pysynphot ``cdbs/mtab`` and
+    * Note: this requires the ``cdbs/mtab`` and
       ``cdbs/comp/`` directories to be at least the 2021-07-16 version or later. See :ref:`getting_started` for how to download these files
 
 2.1.9 (2023-01-10)
