@@ -1739,5 +1739,4 @@ def _finalize_q_draw(q_values, return_scalar, n_comp):
     if n_comp == 1:
         return q_values[:, 0]
     return q_values
->>>>>>> 3315215e22d441a6c43bd5be10f8d1d7c4f178d1
 
