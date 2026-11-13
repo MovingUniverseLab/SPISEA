@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SPISEA Data Downloads</title>
+  <style>
+    :root {
+      --brand:    #003262; /* Berkeley Blue */
+      --accent:   #FDB515; /* California Gold */
+      --bg:       #f8f9fa;
+      --surface:  #ffffff;
+      --border:   #dee2e6;
+      --text:     #212529;
+      --muted:    #6c757d;
+      --required: #c0392b;
+      --optional: #2471a3;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    header {
+      background: var(--brand);
+      color: #fff;
+      padding: 2rem 2rem 1.5rem;
+      border-bottom: 4px solid var(--accent);
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+
+    header p {
+      margin-top: .4rem;
+      color: rgba(255,255,255,.8);
+      font-size: .95rem;
+    }
+
+    header a { color: var(--accent); text-decoration: none; }
+    header a:hover { text-decoration: underline; }
+
+    main {
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 0 1.5rem 3rem;
+    }
+
+    section { margin-bottom: 2.5rem; }
+
+    section h2 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--brand);
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: .35rem;
+      margin-bottom: 1rem;
+    }
+
+    .note {
+      background: #fff8e1;
+      border-left: 4px solid var(--accent);
+      padding: .75rem 1rem;
+      border-radius: 0 4px 4px 0;
+      font-size: .9rem;
+      margin-bottom: 1.2rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      font-size: .9rem;
+    }
+
+    thead {
+      background: var(--brand);
+      color: #fff;
+    }
+
+    thead th {
+      padding: .65rem 1rem;
+      text-align: left;
+      font-weight: 600;
+      letter-spacing: .03em;
+      white-space: nowrap;
+    }
+
+    tbody tr:nth-child(even) { background: #f2f5f8; }
+    tbody tr:hover { background: #e8edf3; }
+
+    tbody td {
+      padding: .7rem 1rem;
+      vertical-align: top;
+      border-top: 1px solid var(--border);
+    }
+
+    .file-link {
+      font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+      font-size: .85rem;
+      color: var(--brand);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .file-link:hover { text-decoration: underline; color: #0a4f9f; }
+
+    .size {
+      white-space: nowrap;
+      color: var(--muted);
+      font-size: .85rem;
+    }
+    .size .compressed { font-weight: 600; color: var(--text); }
+
+    .badge {
+      display: inline-block;
+      padding: .15em .55em;
+      border-radius: 3px;
+      font-size: .78rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+      margin: .1em .15em .1em 0;
+      white-space: nowrap;
+    }
+    .badge-req  { background: #fde8e8; color: var(--required); border: 1px solid #f5c6c6; }
+    .badge-opt  { background: #dbeafe; color: var(--optional); border: 1px solid #bfdbfe; }
+    .badge-ver  { background: #e8f5e9; color: #1b5e20;         border: 1px solid #c8e6c9; }
+
+    .desc-text { font-size: .88rem; }
+    .desc-text p { margin-top: .35rem; }
+
+    .compat-cell { min-width: 140px; }
+
+    .external-link {
+      font-size: .88rem;
+      color: var(--muted);
+    }
+    .external-link a { color: var(--optional); }
+
+    .cdbs-note {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem 1.2rem;
+      font-size: .88rem;
+    }
+    .cdbs-note ul { margin: .5rem 0 0 1.2rem; }
+    .cdbs-note li { margin-bottom: .4rem; }
+    .cdbs-note a { color: var(--optional); }
+
+    code {
+      font-family: "SF Mono", "Fira Code", Menlo, Consolas, monospace;
+      font-size: .85em;
+      background: #eef1f4;
+      padding: .1em .35em;
+      border-radius: 3px;
+    }
+
+    footer {
+      text-align: center;
+      font-size: .82rem;
+      color: var(--muted);
+      padding: 1.5rem;
+      border-top: 1px solid var(--border);
+      margin-top: 2rem;
+    }
+    footer a { color: var(--optional); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>SPISEA &mdash; Data Downloads</h1>
+  <p>Stellar Population Interface for Synthetic Evolution and Atmospheres &nbsp;|&nbsp;
+     <a href="https://github.com/MovingUniverseLab/spisea">GitHub</a> &nbsp;|&nbsp;
+     <a href="https://spisea.readthedocs.io">Documentation</a>
+  </p>
+</header>
+
+<main>
+
+  <section>
+    <h2>SPISEA Model Files</h2>
+    <div class="note">
+      These files are hosted at <code>https://w.astro.berkeley.edu/~jlu/spisea/</code>.
+      See the <a href="https://spisea.readthedocs.io/en/latest/getting_started.html">installation guide</a>
+      for setup instructions including where to unpack each archive.
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>File</th>
+          <th>Size (compressed&nbsp;/&nbsp;unzipped)</th>
+          <th>Description</th>
+          <th>SPISEA version</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr>
+          <td>
+            <a class="file-link" href="https://w.astro.berkeley.edu/~jlu/spisea/spisea_models.tar.gz">
+              spisea_models.tar.gz
+            </a><br>
+            <span class="badge badge-req">REQUIRED</span>
+          </td>
+          <td class="size">
+            <span class="compressed">4.1 GB</span><br>23 GB unzipped
+          </td>
+          <td class="desc-text">
+            Stellar <strong>evolution</strong> model grids specific to SPISEA. Expands into an
+            <code>evolution/</code> directory. Unpack in the same parent directory as your
+            <code>cdbs/</code> folder and point <code>SPISEA_MODELS</code> to that parent.
+            <p>Current data: <span class="badge badge-ver">grid_version 3.1</span></p>
+          </td>
+          <td class="compat-cell">
+            <span class="badge badge-ver">SPISEA v3.1+</span>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <a class="file-link" href="https://w.astro.berkeley.edu/~jlu/spisea/spisea_cdbs.tar.gz">
+              spisea_cdbs.tar.gz
+            </a><br>
+            <span class="badge badge-req">REQUIRED</span>
+          </td>
+          <td class="size">
+            <span class="compressed">155 MB</span><br>354 MB unzipped
+          </td>
+          <td class="desc-text">
+            Low-resolution (<em>R</em>&thinsp;=&thinsp;250) stellar <strong>atmosphere</strong> model grids.
+            Expands directly into <code>cdbs/grid/</code>. This is the default atmosphere grid used
+            by SPISEA for synthetic photometry and is sufficient for most use cases.
+            <p>Current data: <span class="badge badge-ver">grid_version 3.1</span></p>
+          </td>
+          <td class="compat-cell">
+            <span class="badge badge-ver">SPISEA v3.1+</span>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <a class="file-link" href="https://w.astro.berkeley.edu/~jlu/spisea/spisea_cdbs_highres.tar.gz">
+              spisea_cdbs_highres.tar.gz
+            </a><br>
+            <span class="badge badge-opt">OPTIONAL</span>
+          </td>
+          <td class="size">
+            <span class="compressed">54 GB</span><br>80 GB unzipped
+          </td>
+          <td class="desc-text">
+            Higher-resolution stellar atmosphere grids for applications requiring finer spectral detail.
+            Expands into <code>cdbs/grid/</code> alongside the standard grid.
+            <strong>Not required for most use cases.</strong> SPISEA uses the low-resolution
+            atmospheres by default; see the
+            <a href="https://spisea.readthedocs.io/en/latest/atmo_models.html">atmosphere models page</a>
+            to change this default.
+            <p>Current data: <span class="badge badge-ver">grid_version 3.1</span></p>
+          </td>
+          <td class="compat-cell">
+            <span class="badge badge-ver">SPISEA v3.1+</span>
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>STScI CDBS Files</h2>
+    <p class="note">
+      These files are hosted by the Space Telescope Science Institute, not by this site.
+      Download them directly from the
+      <a href="https://archive.stsci.edu/hlsp/reference-atlases">STScI Reference Atlases page</a>.
+    </p>
+
+    <div class="cdbs-note">
+      <p>SPISEA uses the STScI CDBS infrastructure for HST filter throughputs and additional atmosphere models.
+      You need to set up a <code>cdbs/</code> directory containing <code>comp/</code>,
+      <code>mtab/</code>, and <code>grid/</code> sub-directories. Download these two files from STScI
+      and untar them; the sub-directories will appear under <code>grp/redcat/trds/</code> inside the archive:</p>
+      <ul>
+        <li>
+          <code>synphot1_throughput-master.tar</code> &mdash;
+          HST filter throughputs (<code>comp/</code> and <code>mtab/</code> directories).
+          Use a version dated <strong>2024-03-22 or later</strong> to enable Roman Space Telescope filters.
+        </li>
+        <li>
+          <code>synphot5_pheonix-models.tar</code> &mdash;
+          Phoenix atmosphere models (<code>grid/</code> directory).
+        </li>
+      </ul>
+      <p style="margin-top:.6rem">
+        After untarring, move <code>comp/</code>, <code>mtab/</code>, and <code>grid/</code> directly
+        into your top-level <code>cdbs/</code> directory, then point the <code>PYSYN_CDBS</code>
+        environment variable there.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Version Compatibility Notes</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>SPISEA Code Version</th>
+          <th>Data Grid Version</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge badge-ver">v3.1</span> (2026-11-10)</td>
+          <td>grid_version 3.1</td>
+          <td>Current release. Requires updated <code>spisea_models.tar.gz</code> and
+              <code>spisea_cdbs.tar.gz</code> (grid_version 3.1). Adds brown dwarf models
+              with non-solar metallicities (FlameSkimmer/RedDiamondback atmospheres).
+              Migrated from pysynphot to synphot/stsynphot.</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-ver">v2.5</span> (2026-07-17)</td>
+          <td>grid_version 3.0</td>
+          <td>Brown dwarf support (Phillips2020, Marley2021 evolution; Phillips2020, Meisner2023
+              atmospheres). Added COSMIC binary evolution. Data grid version 3.0 was released
+              alongside this code version (note: the data grid was labeled 3.0 and the code version
+              2.5 to re-align numbering).</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-ver">v2.2&ndash;v2.4</span> (2026-01&ndash;03)</td>
+          <td>grid_version &lt; 3.0</td>
+          <td>See release notes for data requirements. These versions added SynthPop
+              compatibility, Roman filter support, Euclid filters, and Rubin Observatory
+              filters.</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-ver">v2.1.4&ndash;v2.1.15</span> (2022&ndash;2025)</td>
+          <td>grid_version 1.1+</td>
+          <td>Grid version tracking introduced in v2.1.4. Expanded MISTv1 age range, added
+              Roman/NACO filter support, various extinction law additions.</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-ver">v2.0&ndash;v2.1.3</span> (2020&ndash;2022)</td>
+          <td>Unversioned</td>
+          <td>Original SPISEA release (renamed from PyPopStar in v2.0). No grid version
+              tracking.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+</main>
+
+<footer>
+  SPISEA is developed by the <a href="https://galacticcenter.astro.berkeley.edu">Moving Universe Lab</a>
+  at UC&nbsp;Berkeley. If you use SPISEA in your research, please cite
+  <a href="https://ui.adsabs.harvard.edu/abs/2020arXiv200606691H/abstract">Hosek et al. (2020)</a>.
+</footer>
+
+</body>
+</html>
+
