@@ -688,7 +688,8 @@ class ResolvedCluster(Cluster):
         star_systems_teff_non_nan = np.nan_to_num(star_systems['Teff'], nan=-99)
         star_systems_phase_non_nan = np.nan_to_num(star_systems['phase'], nan=-99)
         if (self.ifmr == None) and (not keep_low_mass_stars):
-            print('Remove low mass stars below grid and compact objects')
+            if self.verbose:
+                print('Remove low mass stars below grid and compact objects')
             # Keep only those stars with Teff assigned and masses in grid
             min_iso = np.min(self.iso.points['mass'])
             max_iso = np.max(self.iso.points['mass'])
@@ -697,7 +698,8 @@ class ResolvedCluster(Cluster):
             idx = on_grid
 
         elif not keep_low_mass_stars:
-            print('Remove low mass stars, keep compact objects')
+            if self.verbose:
+                print('Remove low mass stars, keep compact objects')
             # Keep stars (with Teff) and any other compact objects (with phase info).
             min_iso = np.min(self.iso.points['mass'])
             max_iso = np.max(self.iso.points['mass'])
