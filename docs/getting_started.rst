@@ -97,18 +97,25 @@ SPISEA uses the STScI CDBS infrastructure to store
 model atmospheres and HST filter throughputs.
 In particular, it expects a top-level ``cdbs`` directory
 with 3 sub-directories: ``comp``, ``mtab``,
-and ``grid``. If you already have these set-up then you may
+and ``grid``. Which archives to download, and which SPISEA
+version they match, is listed on the `SPISEA Data Downloads
+<https://w.astro.berkeley.edu/~jlu/spisea/index.html>`_ page.
+If you already have these set-up then you may
 proceed to the next section. Otherwise, follow the steps below.
 
 #. Create a cdbs directory on your machine::
 
      mkdir <your_path>/cdbs
 
-#. The CDBS files can be downloaded from this STScI `website
-   <https://archive.stsci.edu/hlsp/reference-atlases>`_.
-   Download the ``synphot1_throughput-master.tar`` and
-   ``synphot5_pheonix-models.tar`` files and place them in your
-   cdbs directory.
+#. Download these two files from the STScI `Reference Atlases
+   <https://archive.stsci.edu/hlsp/reference-atlases>`_ page
+   and place them in your cdbs directory:
+
+   * ``synphot1_throughput-master.tar`` — HST filter throughputs
+     (``comp/`` and ``mtab/``). Use a version dated 2024-03-22 or
+     later so the Roman filters work.
+   * ``synphot5_pheonix-models.tar`` — Phoenix atmosphere models
+     (``grid/``).
 
 #. Untar each of the files. Once completed, a new directory named ``grp`` will appear.
 
@@ -125,9 +132,6 @@ called ``comp``, ``mtab``, and ``grid``.
 You will add additional atmosphere models to ``cdbs/grid`` in
 the :ref:`models` section below.
 
-Note: To use the Roman filters, the CDBS data version should be from
-2024-03-22 or later.
-
 
 .. _models:
 
@@ -138,47 +142,46 @@ order to function. The evolution models are
 stand-alone and specific to SPISEA. The atmosphere model grids use the
 STScI CDBS conventions and should be placed in the ``cdbs/grid`` directory.
 
-You will need to download 2 files:
+Current archives, sizes, and which SPISEA version each grid matches
+are on the `SPISEA Data Downloads
+<https://w.astro.berkeley.edu/~jlu/spisea/index.html>`_ page.
+The steps below use ``<your_path>/models/`` as the parent of the
+``cdbs`` directory from :ref:`set-up-cdbs`. Put each ``.tar.gz`` in
+that parent directory before unpacking it.
 
-* `spisea_models.tar.gz
-  <https://w.astro.berkeley.edu/~jlu/spisea/spisea_models.tar.gz>`_ (4.1 GB; 23 GB unzipped)
+#. Download `spisea_models.tar.gz
+   <https://w.astro.berkeley.edu/~jlu/spisea/spisea_models.tar.gz>`_
+   (3.9 GB; 23 GB unzipped). This file is required. It is the stellar
+   evolution grids (grid_version 3.1, for SPISEA 3.1 and later).
+   Unpack it so it creates ``evolution/``::
 
-* `spisea_cdbs.tar.gz <https://w.astro.berkeley.edu/~jlu/spisea/spisea_cdbs.tar.gz>`_  (155 MB; 354 MB unzipped)
+      cd <your_path>/models/
+      tar -xvf spisea_models.tar.gz
 
-You may **optionally** download a third file, which contains
-higher-resolution stellar atmospheres. Note that this file is quite
-large, and is not necessary for most SPISEA use cases:
+#. Download `spisea_cdbs.tar.gz
+   <https://w.astro.berkeley.edu/~jlu/spisea/spisea_cdbs.tar.gz>`_
+   (126 MB; 354 MB unzipped). This file is required. It is the
+   low-resolution atmosphere grids (R = 250, grid_version 3.1).
+   SPISEA uses these by default. Unpack it in the same directory so
+   the atmospheres land in ``cdbs/grid``::
 
-* `spisea_cdbs_highres.tar.gz <https://w.astro.berkeley.edu/~jlu/spisea/spisea_cdbs_highres.tar.gz>`_ (54 GB; 80 GB unzipped)
+      cd <your_path>/models/
+      tar -xvf spisea_cdbs.tar.gz
 
-SPISEA uses the low-resolution atmospheres (R = 250) in
-``spisea_cdbs.tar.gz`` by default, as
-it is then much faster for synthetic photometry and
-is sufficient in most applications. However, the user can change
-this default; see  :ref:`atmo_models` for
-more details. **Unless you change this default,**
-``spisea_cdbs_highres.tar.gz`` **is not required.**
+#. Optionally download `spisea_cdbs_highres.tar.gz
+   <https://w.astro.berkeley.edu/~jlu/spisea/spisea_cdbs_highres.tar.gz>`_
+   (50 GB; 80 GB unzipped). These are the higher-resolution
+   atmospheres. Most uses do not need them. SPISEA stays on the
+   R = 250 grids unless you change that default; see
+   :ref:`atmo_models`. If you download this file, unpack it in the
+   same directory::
 
-Once downloaded, ``spisea_cdbs.tar.gz`` (and
-``spisea_cdbs_highres.tar.gz``, if desired) should be
-expanded in  the ``cdbs`` directory. The output directories
-will automatically be placed in the correct locations. 
-The ``spisea_models.tar.gz`` file can be expanded
-anywhere, though we recommend expanding it in the same location as 
-your ``cdbs`` directory. 
+      cd <your_path>/models/
+      tar -xvf spisea_cdbs_highres.tar.gz
 
-For example, if your cdbs directory is ``/<your_path>/models/cdbs/``
-then you should put the .gz files in ``/<your_path>/models/``
-and then unzip them from there::
-
-   cd /<your_path>/models/
-   tar -xvf spisea_cdbs.tar.gz
-   tar -xvf spisea_models.tar.gz
-
-
-``spisea_cdbs.tar.gz`` will put the model atmospheres in
-``cdbs/grid``, and ``spisea_models.tar.gz`` will put the evolution
-models in a new directory called ``evolution/``
+``spisea_models.tar.gz`` puts the evolution models in ``evolution/``.
+``spisea_cdbs.tar.gz`` (and ``spisea_cdbs_highres.tar.gz``, if
+downloaded) puts the atmospheres in ``cdbs/grid``.
 
 .. _setup-paths:
 

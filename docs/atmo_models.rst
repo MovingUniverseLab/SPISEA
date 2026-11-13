@@ -26,10 +26,17 @@ and the output spectrum is a synphot ``SourceSpectrum`` built from the CDBS grid
 
 Below is a table of atmosphere model grids currently supported by
 SPISEA. Note that the resolution column reports the original
-resolution of the atmosphere model grid. These are available in the
-`spisea_cdbs_highres.tar.gz` file on the installation page. However, the default grid SPISEA
-uses has degraded the resolution of all atmosphere grids to R = 250
-(the `spisea_cdbs.tar.gz` file). 
+resolution of the atmosphere model grid. These are available in
+`spisea_cdbs_highres.tar.gz
+<https://w.astro.berkeley.edu/~jlu/spisea/spisea_cdbs_highres.tar.gz>`_.
+The default grid SPISEA uses has degraded the resolution of all
+atmosphere grids to R = 250
+(`spisea_cdbs.tar.gz
+<https://w.astro.berkeley.edu/~jlu/spisea/spisea_cdbs.tar.gz>`_).
+Both archives, and which SPISEA version they match, are listed on the
+`SPISEA Data Downloads
+<https://w.astro.berkeley.edu/~jlu/spisea/index.html>`_ page.
+See :ref:`models` for where to unpack them. 
 
 .. list-table:: Atmosphere Models
    :header-rows: 2
