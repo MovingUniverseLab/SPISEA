@@ -1,29 +1,42 @@
 name: CI
 
+# DISABLED: GitHub-hosted runners do not have the SPISEA model grids.
+# Importing SPISEA builds a default MISTv1() model and the fast tests
+# fail at collection with "Missing MISTv1/v1.2-synthpop/". To re-enable,
+# restore the pull_request and push triggers and the "fast" job below,
+# and run it where SPISEA_MODELS is available.
+
 on:
-  pull_request:
-  push:
-    branches: [dev, main]
+  workflow_dispatch:
+  # pull_request:
+  # push:
+  #   branches: [dev, main]
 
 permissions:
   contents: read
 
 jobs:
-  fast:
-    name: Fast tests
+  disabled:
+    name: CI disabled
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - run: echo "CI is disabled; see .github/workflows/ci.yml."
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
-
-      - name: Install SPISEA
-        run: pip install -e ".[dev]"
-
-      - name: Run fast tests
-        env:
-          MPLBACKEND: Agg
-        run: pytest spisea/tests -m "not slow" --tb=short
+  # fast:
+  #   name: Fast tests
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #
+  #     - uses: actions/setup-python@v5
+  #       with:
+  #         python-version: "3.11"
+  #         cache: pip
+  #
+  #     - name: Install SPISEA
+  #       run: pip install -e ".[dev]"
+  #
+  #     - name: Run fast tests
+  #       env:
+  #         MPLBACKEND: Agg
+  #       run: pytest spisea/tests -m "not slow" --tb=short
