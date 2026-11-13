@@ -47,6 +47,23 @@ def trim_spectrum(sp, wmin, wmax):
     )
 
 
+def tabulate(sp):
+    """
+    The same spectrum or bandpass as one ``Empirical1D`` table on its own waveset.
+
+    Interpolated grid spectra and stsynphot bandpasses are trees of models, each
+    node carrying metadata (FITS headers). synphot merges and deep-copies all of it
+    whenever the object enters an operation or an ``Observation``, which dominates
+    the cost of synthetic photometry. The table has the same values on the waveset
+    and the same top-level ``meta``; negative values are kept, not clipped.
+    """
+    w = sp.waveset
+    # A plain SpectralElement: stsynphot's ObservationSpectralElement needs an obsmode.
+    cls = SourceSpectrum if isinstance(sp, SourceSpectrum) else SpectralElement
+    return cls(Empirical1D, points=w, lookup_table=sp(w), keep_neg=True,
+               meta=dict(getattr(sp, 'meta', None) or {}))
+
+
 def tabulate_if_needed(sp):
     """pysynphot CompositeSourceSpectrum.tabulate → empirical SourceSpectrum."""
     if hasattr(sp, "model") and isinstance(sp.model, CompoundModel):

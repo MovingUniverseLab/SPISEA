@@ -16,10 +16,19 @@ from synphot.spectrum import SourceSpectrum
 from synphot.units import convert_flux
 from synphot import units as su
 
-from spisea.utils.synphot_bridge import rebin_spec
+from spisea.utils.synphot_bridge import rebin_spec, tabulate
 
 log = logging.getLogger('atmospheres')
 
+
+def grid_to_spec(gridname, temperature, metallicity, gravity):
+    """
+    ``stsynphot.grid_to_spec``, returned as a single table (see
+    ``spisea.utils.synphot_bridge.tabulate``): the interpolated spectrum is a
+    tree of the neighbouring grid spectra, which makes every later synphot
+    operation on it slow. Values are unchanged.
+    """
+    return tabulate(stsyn.grid_to_spec(gridname, temperature, metallicity, gravity))
 
 def get_atmosphere_bounds(model_dir, metallicity=0, temperature=20000, gravity=4):
     """
@@ -176,7 +185,7 @@ def get_kurucz_atmosphere(metallicity=0, temperature=20000, gravity=4, rebin=Fal
     """
         
     try:
-        sp = stsyn.grid_to_spec('k93models', temperature, metallicity, gravity)
+        sp = grid_to_spec('k93models', temperature, metallicity, gravity)
     except:
         # Check atmosphere catalog bounds
         (temperature, gravity, metallicity) = get_atmosphere_bounds('k93models',
@@ -184,7 +193,7 @@ def get_kurucz_atmosphere(metallicity=0, temperature=20000, gravity=4, rebin=Fal
                                                    temperature=temperature,
                                                    gravity=gravity)
 
-        sp = stsyn.grid_to_spec('k93models', temperature, metallicity, gravity)
+        sp = grid_to_spec('k93models', temperature, metallicity, gravity)
 
     # Do some error checking for 0 fluxes.
     idx = np.where(sp(sp.waveset) != 0)[0]
@@ -242,7 +251,7 @@ def get_castelli_atmosphere(metallicity=0, temperature=20000, gravity=4, rebin=F
 
     """
     try:
-        sp = stsyn.grid_to_spec('ck04models', temperature, metallicity, gravity)
+        sp = grid_to_spec('ck04models', temperature, metallicity, gravity)
     except:
         # Check atmosphere catalog bounds
         (temperature, gravity, metallicity) = get_atmosphere_bounds('ck04models',
@@ -250,7 +259,7 @@ def get_castelli_atmosphere(metallicity=0, temperature=20000, gravity=4, rebin=F
                                                    temperature=temperature,
                                                    gravity=gravity)
 
-        sp = stsyn.grid_to_spec('ck04models', temperature, metallicity, gravity)
+        sp = grid_to_spec('ck04models', temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
@@ -287,7 +296,7 @@ def get_nextgen_atmosphere(metallicity=0, temperature=5000, gravity=4, rebin=Fal
     gravity = log gravity (def = 4.0)
     """
     try:
-        sp = stsyn.grid_to_spec('nextgen', temperature, metallicity, gravity)
+        sp = grid_to_spec('nextgen', temperature, metallicity, gravity)
     except:
         # Check atmosphere catalog bounds
         (temperature, gravity, metallicity) = get_atmosphere_bounds('nextgen',
@@ -295,7 +304,7 @@ def get_nextgen_atmosphere(metallicity=0, temperature=5000, gravity=4, rebin=Fal
                                                    temperature=temperature,
                                                    gravity=gravity)
 
-        sp = stsyn.grid_to_spec('nextgen', temperature, metallicity, gravity)
+        sp = grid_to_spec('nextgen', temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
@@ -325,7 +334,7 @@ def get_amesdusty_atmosphere(metallicity=0, temperature=5000, gravity=4, rebin=F
     temperature = Kelvin (def = 5000)
     gravity = log gravity (def = 4.0)
     """
-    sp = stsyn.grid_to_spec('AMESdusty', temperature, metallicity, gravity)
+    sp = grid_to_spec('AMESdusty', temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
@@ -373,7 +382,7 @@ def get_phoenix_atmosphere(metallicity=0, temperature=5000, gravity=4,
     """
         
     try:
-        sp = stsyn.grid_to_spec('phoenix', temperature, metallicity, gravity)
+        sp = grid_to_spec('phoenix', temperature, metallicity, gravity)
     except:
         # Check atmosphere catalog bounds
         (temperature, gravity, metallicity) = get_atmosphere_bounds('phoenix',
@@ -381,7 +390,7 @@ def get_phoenix_atmosphere(metallicity=0, temperature=5000, gravity=4,
                                                    temperature=temperature,
                                                    gravity=gravity)
 
-        sp = stsyn.grid_to_spec('phoenix', temperature, metallicity, gravity)
+        sp = grid_to_spec('phoenix', temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
@@ -421,9 +430,9 @@ def get_cmfgenRot_atmosphere(metallicity=0, temperature=24000, gravity=4.3, rebi
         gravity = 4.3
 
     if rebin:
-        sp = stsyn.grid_to_spec('cmfgen_rot_rebin', temperature, metallicity, gravity)
+        sp = grid_to_spec('cmfgen_rot_rebin', temperature, metallicity, gravity)
     else:
-        sp = stsyn.grid_to_spec('cmfgen_rot', temperature, metallicity, gravity)
+        sp = grid_to_spec('cmfgen_rot', temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
@@ -541,9 +550,9 @@ def get_cmfgenNoRot_atmosphere(metallicity=0, temperature=22500, gravity=3.98, r
     """
         
     if rebin:
-        sp = stsyn.grid_to_spec('cmfgen_norot_rebin', temperature, metallicity, gravity)
+        sp = grid_to_spec('cmfgen_norot_rebin', temperature, metallicity, gravity)
     else:
-        sp = stsyn.grid_to_spec('cmfgen_norot', temperature, metallicity, gravity)
+        sp = grid_to_spec('cmfgen_norot', temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
@@ -578,7 +587,7 @@ def get_cmfgenNoRot_atmosphere(metallicity=0, temperature=30000, gravity=4.14):
     temperature = Kelvin (def = 30000)
     gravity = log gravity (def = 4.14)
     """
-    sp = stsyn.grid_to_spec('cmfgenF15_noRot', temperature, metallicity, gravity)
+    sp = grid_to_spec('cmfgenF15_noRot', temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
@@ -640,7 +649,7 @@ def get_phoenixv16_atmosphere(metallicity=0, temperature=4000, gravity=4, rebin=
 
     # Extract atmosphere. If that fails, then check bounds and try again
     try:
-        sp = stsyn.grid_to_spec(atm_model_name, temperature, metallicity, gravity)
+        sp = grid_to_spec(atm_model_name, temperature, metallicity, gravity)
     except stsyn_exceptions.ParameterOutOfBounds:
         # Check atmosphere catalog bounds
         (temperature, gravity, metallicity) = get_atmosphere_bounds(atm_model_name,
@@ -648,7 +657,7 @@ def get_phoenixv16_atmosphere(metallicity=0, temperature=4000, gravity=4, rebin=
                                                    temperature=temperature,
                                                    gravity=gravity)
 
-        sp = stsyn.grid_to_spec(atm_model_name, temperature, metallicity, gravity)
+        sp = grid_to_spec(atm_model_name, temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
@@ -700,12 +709,12 @@ def get_flameskimmer_atmosphere(metallicity=0, temperature=1000, gravity=4, rebi
     """
     atm_model_name = 'FlameSkimmer_rebin' if rebin else 'FlameSkimmer'
     try:
-        sp = stsyn.grid_to_spec(atm_model_name, temperature, metallicity, gravity)
+        sp = grid_to_spec(atm_model_name, temperature, metallicity, gravity)
     except stsyn_exceptions.ParameterOutOfBounds:
         temperature, gravity, metallicity = get_atmosphere_bounds(
             atm_model_name, metallicity=metallicity,
             temperature=temperature, gravity=gravity)
-        sp = stsyn.grid_to_spec(atm_model_name, temperature, metallicity, gravity)
+        sp = grid_to_spec(atm_model_name, temperature, metallicity, gravity)
     return sp
 
 
@@ -733,12 +742,12 @@ def get_flameskimmer_phoenix_atmosphere(metallicity=0, temperature=2350, gravity
     """
     atm_model_name = 'merged_flameskimmer_phoenix'
     try:
-        sp = stsyn.grid_to_spec(atm_model_name, temperature, metallicity, gravity)
+        sp = grid_to_spec(atm_model_name, temperature, metallicity, gravity)
     except stsyn_exceptions.ParameterOutOfBounds:
         temperature, gravity, metallicity = get_atmosphere_bounds(
             atm_model_name, metallicity=metallicity,
             temperature=temperature, gravity=gravity)
-        sp = stsyn.grid_to_spec(atm_model_name, temperature, metallicity, gravity)
+        sp = grid_to_spec(atm_model_name, temperature, metallicity, gravity)
     return sp
 
 
@@ -786,7 +795,7 @@ def get_BTSettl_2015_atmosphere(metallicity=0, temperature=2500, gravity=4, rebi
         atm_name = 'BTSettl_2015'
 
     try:
-        sp = stsyn.grid_to_spec(atm_name, temperature, metallicity, gravity)
+        sp = grid_to_spec(atm_name, temperature, metallicity, gravity)
     except:
         # Check atmosphere catalog bounds
         (temperature, gravity, metallicity) = get_atmosphere_bounds(atm_name,
@@ -794,7 +803,7 @@ def get_BTSettl_2015_atmosphere(metallicity=0, temperature=2500, gravity=4, rebi
                                                    temperature=temperature,
                                                    gravity=gravity)
 
-        sp = stsyn.grid_to_spec(atm_name, temperature, metallicity, gravity)
+        sp = grid_to_spec(atm_name, temperature, metallicity, gravity)
 
 
     # Do some error checking
@@ -920,7 +929,7 @@ def get_BTSettl_atmosphere(metallicity=0, temperature=2500, gravity=4.5, rebin=T
         atm_name = 'BTSettl'
 
     try:
-        sp = stsyn.grid_to_spec(atm_name, temperature, metallicity, gravity)
+        sp = grid_to_spec(atm_name, temperature, metallicity, gravity)
     except:
         # Check atmosphere catalog bounds
         (temperature, gravity, metallicity) = get_atmosphere_bounds(atm_name,
@@ -928,7 +937,7 @@ def get_BTSettl_atmosphere(metallicity=0, temperature=2500, gravity=4.5, rebin=T
                                                    temperature=temperature,
                                                    gravity=gravity)
 
-        sp = stsyn.grid_to_spec(atm_name, temperature, metallicity, gravity)
+        sp = grid_to_spec(atm_name, temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
@@ -962,7 +971,7 @@ def get_Meisner2023_atmosphere(metallicity=0, temperature=1000, gravity=4.5, reb
         atm_name = 'Meisner2023'
 
     try:
-        sp = stsyn.grid_to_spec(atm_name, temperature, metallicity, gravity)
+        sp = grid_to_spec(atm_name, temperature, metallicity, gravity)
     except:
         # Check atmosphere catalog bounds
         (temperature, gravity, metallicity) = get_atmosphere_bounds(atm_name,
@@ -970,7 +979,7 @@ def get_Meisner2023_atmosphere(metallicity=0, temperature=1000, gravity=4.5, reb
                                                    temperature=temperature,
                                                    gravity=gravity)
 
-        sp = stsyn.grid_to_spec(atm_name, temperature, metallicity, gravity)
+        sp = grid_to_spec(atm_name, temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
@@ -1015,7 +1024,7 @@ def get_Phillips2020_atmosphere(metallicity=0, temperature=1000, gravity=4.5, re
         atm_name = 'Phillips2020'
 
     try:
-        sp = stsyn.grid_to_spec(atm_name, temperature, metallicity, gravity)
+        sp = grid_to_spec(atm_name, temperature, metallicity, gravity)
     except:
         # Check atmosphere catalog bounds
         (temperature, gravity, metallicity) = get_atmosphere_bounds(atm_name,
@@ -1023,7 +1032,7 @@ def get_Phillips2020_atmosphere(metallicity=0, temperature=1000, gravity=4.5, re
                                                    temperature=temperature,
                                                    gravity=gravity)
 
-        sp = stsyn.grid_to_spec(atm_name, temperature, metallicity, gravity)
+        sp = grid_to_spec(atm_name, temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
@@ -1129,7 +1138,7 @@ def get_wdKoester_atmosphere(metallicity=0, temperature=20000, gravity=7):
         resolution as the Castelli+04 atmospheres. Default is False,
         which is often sufficient synthetic photometry in most cases.
     """
-    sp = stsyn.grid_to_spec('wdKoester', temperature, metallicity, gravity)
+    sp = grid_to_spec('wdKoester', temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
@@ -1160,7 +1169,7 @@ def get_atlas_phoenix_atmosphere(metallicity=0, temperature=5250, gravity=4):
     """
         
     try:
-        sp = stsyn.grid_to_spec('merged_atlas_phoenix', temperature, metallicity, gravity)
+        sp = grid_to_spec('merged_atlas_phoenix', temperature, metallicity, gravity)
     except:
         # Check atmosphere catalog bounds
         (temperature, gravity, metallicity) = get_atmosphere_bounds('merged_atlas_phoenix',
@@ -1168,7 +1177,7 @@ def get_atlas_phoenix_atmosphere(metallicity=0, temperature=5250, gravity=4):
                                                    temperature=temperature,
                                                    gravity=gravity)
 
-        sp = stsyn.grid_to_spec('merged_atlas_phoenix', temperature, metallicity, gravity)
+        sp = grid_to_spec('merged_atlas_phoenix', temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
@@ -1200,7 +1209,7 @@ def get_BTSettl_phoenix_atmosphere(metallicity=0, temperature=5250, gravity=4):
     Only valid for temps between 3200 - 3800K, gravity from 2.5 - 5.5
     """
     try:
-        sp = stsyn.grid_to_spec('merged_BTSettl_phoenix', temperature, metallicity, gravity)
+        sp = grid_to_spec('merged_BTSettl_phoenix', temperature, metallicity, gravity)
     except:
         # Check atmosphere catalog bounds
         (temperature, gravity, metallicity) = get_atmosphere_bounds('merged_BTSettl_phoenix',
@@ -1208,7 +1217,7 @@ def get_BTSettl_phoenix_atmosphere(metallicity=0, temperature=5250, gravity=4):
                                                    temperature=temperature,
                                                    gravity=gravity)
 
-        sp = stsyn.grid_to_spec('merged_BTSettl_phoenix', temperature, metallicity, gravity)
+        sp = grid_to_spec('merged_BTSettl_phoenix', temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
@@ -1243,7 +1252,7 @@ def get_BTSettl_meisner_atmosphere(metallicity=0, temperature=5250, gravity=4):
     Only valid for temps between 1000 - 1200K, gravity from 3.5 - 5.5
     """
     try:
-        sp = stsyn.grid_to_spec('merged_BTSettl_meisner', temperature, metallicity, gravity)
+        sp = grid_to_spec('merged_BTSettl_meisner', temperature, metallicity, gravity)
     except:
         # Check atmosphere catalog bounds
         (temperature, gravity, metallicity) = get_atmosphere_bounds('merged_BTSettl_meisner',
@@ -1251,7 +1260,7 @@ def get_BTSettl_meisner_atmosphere(metallicity=0, temperature=5250, gravity=4):
                                                    temperature=temperature,
                                                    gravity=gravity)
 
-        sp = stsyn.grid_to_spec('merged_BTSettl_meisner', temperature, metallicity, gravity)
+        sp = grid_to_spec('merged_BTSettl_meisner', temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
@@ -2510,9 +2519,9 @@ def rebin_cmfgen(cdbs_path=None, rot=True, verbose=True):
 
         # Fetch the spectrum
         if rot == True:
-            sp = stsyn.grid_to_spec('cmfgen_rot', temp, metal, grav)
+            sp = grid_to_spec('cmfgen_rot', temp, metal, grav)
         else:
-            sp = stsyn.grid_to_spec('cmfgen_norot', temp, metal, grav)
+            sp = grid_to_spec('cmfgen_norot', temp, metal, grav)
 
         # Rebin
         flux_rebin = rebin_spec(sp.waveset, sp, sp_atlas.waveset)
@@ -2838,7 +2847,7 @@ def rebin_phoenixV16(cdbs_path=None, verbose=True):
                 grav = logg_exist[gg] # gravity
 
                 # Fetch the spectrum
-                sp = stsyn.grid_to_spec('phoenix_v16', temp, metal, grav)
+                sp = grid_to_spec('phoenix_v16', temp, metal, grav)
                 flux_rebin = rebin_spec(sp.waveset, sp, sp_atlas.waveset)
 
                 # Store the spectrum
@@ -3010,7 +3019,7 @@ def rebin_BTSettl_2015(cdbs_path=None, verbose=True):
         logg = float(vals[2])
 
         # Fetch the BTSettl spectrum, rebin flux
-        sp = stsyn.grid_to_spec('BTSettl_2015', temp, metal, logg)
+        sp = grid_to_spec('BTSettl_2015', temp, metal, logg)
         flux_rebin = rebin_spec(sp.waveset, sp, sp_atlas.waveset)
 
         # Make new output
@@ -3276,7 +3285,7 @@ def rebin_BTSettl(cdbs_path=None, make_unique=False, verbose=True):
 
         # Fetch the BTSettl spectrum, rebin flux
         try:
-            sp = stsyn.grid_to_spec('BTSettl', temp, metal, logg)
+            sp = grid_to_spec('BTSettl', temp, metal, logg)
             flux_rebin = rebin_spec(sp.waveset, sp, sp_atlas.waveset)
 
             # Make new output
@@ -3471,7 +3480,7 @@ def rebin_Meisner2023(cdbs_path=None, make_unique=False, verbose=True):
 
         # Fetch the Meisner2023 spectrum and rebin its flux
         try:
-            sp = stsyn.grid_to_spec('Meisner2023', temp, metal, logg)
+            sp = grid_to_spec('Meisner2023', temp, metal, logg)
             flux_rebin = rebin_spec(sp.waveset, sp, sp_atlas.waveset)
 
             # Create the output FITS file
@@ -3635,7 +3644,7 @@ def rebin_WDKoester(cdbs_path=None, verbose=True):
         logg = float(vals[2])
 
         # Fetch the wdKoester spectrum, rebin flux
-        sp = stsyn.grid_to_spec('wdKoester', temp, metal, logg)
+        sp = grid_to_spec('wdKoester', temp, metal, logg)
         flux_rebin = rebin_spec(sp.waveset, sp, sp_atlas.waveset)
 
         # Make new output
