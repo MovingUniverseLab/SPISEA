@@ -370,3 +370,77 @@ def _assert_valid_atmosphere_spectrum(spectrum):
     assert np.all(np.isfinite(flux))
     assert np.all(flux >= 0)
     assert np.any(flux > 0)
+
+def _write_mist_v25_iso(path, ages, masses, phases, feh=0.0, vvcrit=0.4):
+    """
+    Write a small file in the MIST v2.5 web interpolator format
+    (theoretical output), with one isochrone per age.
+    """
+    lines = ['# MIST version number  = 2.5\n',
+             '# MESA revision number =    11701\n',
+             '# ' + '-' * 70 + '\n',
+             '#  Yinit        Zinit   [Fe/H]   [a/Fe]  v/vcrit\n',
+             f'#  0.2722  1.78798E-02 {feh:8.2f}     0.00 {vvcrit:8.2f}\n',
+             '# ' + '-' * 70 + '\n']
+    for age in ages:
+        lines += [f'# number of EEPs, cols = {len(masses)} 9\n',
+                  '# EEP log10_isochrone_age_yr initial_mass star_mass log_L log_Teff log_g log_R phase\n']
+        for i, (m, ph) in enumerate(zip(masses, phases)):
+            lines.append(f'{i + 1} {age:.2f} {m} {0.9 * m} {np.log10(m)} 3.6 4.5 0.0 {ph}\n')
+        lines.append('\n')
+    with open(path, 'w') as f:
+        f.writelines(lines)
+    return
+
+def test_MISTv2(tmp_path, monkeypatch):
+    """
+    Format a small MIST v2.5 file into a temporary model directory, then
+    read isochrones back with MISTv2.
+    """
+    import warnings
+    import pytest
+    monkeypatch.setattr(evolution, 'models_dir', str(tmp_path) + '/')
+
+    masses = [0.1, 1.0, 5.0, 8.0, 40.0]
+    phases = [-1, 0, 6, -9, 9]
+    iso_file = tmp_path / 'test.iso'
+    _write_mist_v25_iso(iso_file, [6.50, 6.55], masses, phases)
+    evolution.MISTv2.format_isochrones(str(iso_file))
+
+    # One file per age in the rotation / [Fe/H] / [alpha/Fe] directory
+    out_dir = tmp_path / 'MISTv2/v2.5/vvcrit0.4/iso/feh_p000_afe_p0'
+    assert sorted(f.name for f in out_dir.iterdir()) == ['iso_6.50.fits', 'iso_6.55.fits']
+
+    evo = evolution.MISTv2()
+    assert evo.feh_list == [0.0]
+    np.testing.assert_allclose(evo.age_list, [6.50, 6.55])
+    assert evo.model_version_name == 'MISTv2.5-vvcrit0.4'
+
+    # Nearest age in the grid
+    iso = evo.isochrone(age=10**6.54, metallicity=0.05)
+    np.testing.assert_allclose(iso['logAge'], 6.55)
+    for col in ['mass', 'mass_current', 'logL', 'logT', 'logg', 'phase', 'isWR']:
+        assert col in iso.colnames
+    # Phases 6 (post-AGB, WD cooling) and -9 (end of track) become WD (101)
+    np.testing.assert_array_equal(iso['phase'], [-1, 0, 101, 101, 9])
+    np.testing.assert_array_equal(iso['isWR'], [False, False, False, False, True])
+    assert iso.meta['metallicity_act'] == 0.0
+
+    # Out-of-grid requests
+    with pytest.raises(ValueError):
+        evo.isochrone(age=10**7.0, metallicity=0.0)
+    with pytest.raises(ValueError):
+        evo.isochrone(age=10**6.5, metallicity=0.5)
+    with pytest.raises(ValueError):
+        evolution.MISTv2(afe=0.2)
+
+    # Warning when an isochrone starts above 0.15 Msun
+    _write_mist_v25_iso(iso_file, [6.50], masses[1:], phases[1:])
+    evolution.MISTv2.format_isochrones(str(iso_file))
+    with pytest.warns(UserWarning, match='starts at'):
+        evo.isochrone(age=10**6.5, metallicity=0.0)
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+        evo.isochrone(age=10**6.55, metallicity=0.0)
+
+    return
