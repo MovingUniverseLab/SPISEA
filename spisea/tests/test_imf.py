@@ -319,3 +319,21 @@ def test_theta_closed():
 
     return
 
+
+
+def test_dice_star_cl_steep_segment_no_nan():
+    # A segment steeper than m**-1 followed by others: draws in the later
+    # segments used to come back as NaN.
+    massLimits = np.array([0.08, 0.5, 150])
+    powers = np.array([-2.3, -1.3])
+    my_imf = imf.IMF_broken_powerlaw(massLimits, powers)
+    my_imf.normalize(1e4)
+
+    r = np.random.default_rng(1).random(10000)
+    mass = my_imf.dice_star_cl(r)
+
+    assert not np.any(np.isnan(mass))
+    assert mass.min() >= massLimits[0]
+    assert mass.max() <= massLimits[-1]
+
+    return
