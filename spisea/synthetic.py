@@ -232,6 +232,12 @@ class ResolvedCluster(Cluster):
             warnings.warn(f"Isochrone {type(iso).__name__} uses external evolution. "
                 "Input IFMR will be ignored.")
 
+        # Raise error if you're running COSMIC or other evo models
+        # with binaries only but ask for triples or higher order multiples
+        if getattr(iso, 'no_higher_order_multiples', False) and ((self.imf._multi_props.CSF_max > 1) or (self.imf._multi_props.companion_max == False)):
+            raise Exception('Your evolution model does not support higher order multiples. Set CSF_max = 1 and companion_max = True')
+            
+
         #####
         # Make isochrone interpolators
         #####
@@ -1726,6 +1732,20 @@ class IsochronePhotExternalEvolution(IsochronePhot):
                     names=['Teff', 'logg', 'metallicity'])
 
 
+            # Append all the meta data to the summary table.
+            tab.meta['SPISEAVERSION'] = spisea_version_number
+            tab.meta['REDLAW'] = red_law.name
+            tab.meta['ATMFUNC'] = atm_func.__name__
+            tab.meta['EVOMODEL'] = type(evo_model).__name__
+            tab.meta['EVOMODELVERSION'] = evo_model.model_version_name
+            tab.meta['AKS'] = AKs
+            tab.meta['DISTANCE'] = distance
+            tab.meta['WAVEMIN'] = wave_range[0]
+            tab.meta['WAVEMAX'] = wave_range[1]
+            tab.meta['MAGSYS'] = 'Vega'
+
+            self.points = tab
+
             # Initialize output for stellar spectra
             self.spec_list = []
 
@@ -1755,20 +1775,6 @@ class IsochronePhotExternalEvolution(IsochronePhot):
 
                 # Save the final spectrum to our spec_list for later use.
                 self.spec_list.append(star)
-
-            # Append all the meta data to the summary table.
-            tab.meta['SPISEAVERSION'] = spisea_version_number
-            tab.meta['REDLAW'] = red_law.name
-            tab.meta['ATMFUNC'] = atm_func.__name__
-            tab.meta['EVOMODEL'] = type(evo_model).__name__
-            tab.meta['EVOMODELVERSION'] = evo_model.model_version_name
-            tab.meta['AKS'] = AKs
-            tab.meta['DISTANCE'] = distance
-            tab.meta['WAVEMIN'] = wave_range[0]
-            tab.meta['WAVEMAX'] = wave_range[1]
-            tab.meta['MAGSYS'] = 'Vega'
-
-            self.points = tab
 
             t2 = time.time()
             print( 'Atmosphere grid generation took {0:f} s.'.format(t2-t1))
