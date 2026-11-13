@@ -26,15 +26,19 @@ The basic SPISEA installation requires ~20 GB of memory, which is
 primarily for the suite of stellar evolution and atmosphere models.
 Other dependencies:
 
-* python (>=3.7, < 3.12)
-* astropy
+* python (>= 3.11)
+* astropy (>= 7)
+* pandas
 * synphot (>= 1.5)
-* stsynphot (>= 1.7.0)
-* scipy
-* numpy (>= 1.17, < 2.0)
+* stsynphot (>= 1.7.0; see :ref:`synphot-install`)
+* scipy (>= 1.14)
+* numpy (>= 2)
 * matplotlib
-* `pytest-astropy-header <https://github.com/astropy/pytest-astropy-header>`_
 * STScI CDBS data package (See :ref:`set-up-cdbs` below for instructions)
+
+``pytest`` (>= 9.0) and
+`pytest-astropy-header <https://github.com/astropy/pytest-astropy-header>`_
+are needed only to run the test suite (the ``dev`` extra).
 
 .. _synphot-install:
 
@@ -50,16 +54,18 @@ isochrone photometry does not re-read the same atmosphere files
 for every star. The pull request's changelog entry is already
 filed under 1.7.0.
 
-``stsynphot`` 1.7.0 is not on PyPI yet. Install both packages with
-pip from their GitHub repositories. ``synphot`` 1.8.0 is the current
-release and satisfies the 1.5 minimum::
+``synphot`` 1.5 and later is on PyPI::
 
-   pip install "synphot @ git+https://github.com/spacetelescope/synphot_refactor.git@1.8.0"
+   pip install "synphot>=1.5"
 
-Until pull request 244 is merged, that cache is on Lingfeng Wei's
-branch::
+``stsynphot`` 1.7.0 is not on PyPI yet. Until pull request 244 is
+merged, that cache is on Lingfeng Wei's branch. This is the URL in
+``pyproject.toml``::
 
    pip install "stsynphot @ git+https://github.com/wei-lingfeng/stsynphot_refactor.git@cache-grid-spectra"
+
+That branch's NumPy, SciPy, and Astropy floors match the SPISEA
+minimums listed above (NumPy >= 2, SciPy >= 1.14, Astropy >= 7).
 
 After the pull request is merged, install ``stsynphot`` from the
 STScI repository. Tag ``1.7.0`` is the minimum version::
@@ -68,7 +74,7 @@ STScI repository. Tag ``1.7.0`` is the minimum version::
 
 Once that release is on PyPI, the same minimum is::
 
-   pip install "synphot>=1.5" "stsynphot>=1.7"
+   pip install "stsynphot>=1.7"
 
 .. _Build:
 
@@ -220,11 +226,12 @@ run the test functions by going into the ``SPISEA/spisea`` directory and running
 
     pytest
 
-Note that this uses the python
-`pytest
-<https://docs.pytest.org/en/7.1.x/>`_
-package. This will trigger the test functions we have implemented. If all is
-well, you shouldn't get any errors. Warnings are (generally) fine.
+Note that this uses
+`pytest <https://docs.pytest.org/en/stable/>`_
+(>= 9.0) and ``pytest-astropy-header``, which are the ``dev`` extra
+in ``pyproject.toml``. This will trigger the test functions we have
+implemented. If all is well, you shouldn't get any errors. Warnings
+are (generally) fine.
 
 TroubleShooting
 -----------------------
@@ -245,7 +252,7 @@ either or both of the following warnings::
 Build and deploy from Docker
 ==========================
 
-Build your own SPISEA image for Docker Containers. This installation form contains SPISEA deployed in a container and includes the data sets, models and all the necessary paths and code.
+Build your own SPISEA image for Docker Containers. This installation form contains SPISEA deployed in a container and includes the data sets, models and all the necessary paths and code. The image is based on Python 3.14.
 
 Requirements
 -----------------------
