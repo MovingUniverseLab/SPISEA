@@ -8,14 +8,14 @@ The extinction law can be defined using the classes in ``spisea/reddening.py``. 
   from spisea import reddening
   red_law = reddening.<redlaw_name>()
 
-SPISEA uses the pysynphot framework to define the extinction law.
-The output is a `pysynphot.reddening.CustomRedLaw
-<https://pysynphot.readthedocs.io/en/latest/ref_api.html#module-pysynphot.extinction>`_
-oject.
+SPISEA uses tabulated :math:`A_\lambda/A_{Ks}` curves. Reddening law classes inherit from
+``reddening.RedLawBase``, which subclasses synphot's ``ExtinctionCurve`` at :math:`A_{Ks}=1` mag
+(see ``synphot.reddening.etau_madau``). For arbitrary :math:`A_{Ks}` and wavelength sampling,
+use ``red_law.extinction_at`` (or ``reddening.RedLawBase.ExtinctionAtAKs``).
 The reddening law is reported in terms of A_lambda / A_Ks, and thus is normalized to A_Ks = 1.
 
 The red_law object is passed into the :ref:`isochrone_objects` in order to
-define the extinction for the stars. See the `Quick Start <https://github.com/astropy/SPISEA/blob/main/docs/Quick_Start_Make_Cluster.ipynb>`_
+define the extinction for the stars. See the `Quick Start <https://github.com/MovingUniverseLab/spisea/blob/main/docs/Quick_Start_Make_Cluster.ipynb>`_
 for an example.
 
 Available extinction laws:

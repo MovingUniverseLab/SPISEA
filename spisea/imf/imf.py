@@ -249,62 +249,13 @@ class IMF(object):
     def calc_multi(self, newMasses, newIsMultiple, CSF, MF):
         """
         Helper function to calculate multiples more efficiently.
-        We will use array operations as much as possible.
-        Uses Fontanive+18 parameters for brown dwarf masses
-        (M <= 0.08 M_sun) while keeping default parameters for
-        all other stellar primaries.
+        Companion counts and companion-mass draws (including brown-dwarf
+        q distributions and binaries-only BD systems) are delegated to
+        the multiplicity object.
         """
-        # Copy over the primary masses. Eventually add the companions.
-        newSystemMasses = newMasses.copy()
-
-        # Identify multiple systems, calculate number of companions for each
-        multiple_idx = np.where(newIsMultiple)[0]
-        comp_nums = 1 + self.rng.poisson((CSF[multiple_idx] / MF[multiple_idx]) - 1)
-        if self._multi_props.companion_max:
-            too_many = np.where(comp_nums > self._multi_props.CSF_max)[0]
-            comp_nums[too_many] = self._multi_props.CSF_max
-        primary = newMasses[multiple_idx]
-
-        # limit BD primaries to 1 companion (Fontanive+18)
-        bd_mask = primary <= 0.08
-        comp_nums[bd_mask & (comp_nums > 1)] = 1
-
-        # We will deal with each number of multiple system independently. This is
-        # so we can put in uniform arrays in _multi_props.random_q.
-        comp_unique = np.unique(comp_nums)
-        comp_indices = [np.where(comp_nums == i)[0] for i in comp_unique]
-        if np.any(newIsMultiple):
-            compMasses = np.zeros((len(newMasses), max(comp_unique)))
-        else:
-            compMasses = np.zeros((len(newMasses), 1))
-
-        for comp_num, comp_index in zip(comp_unique, comp_indices):
-            prim_subset = primary[comp_index]
-            bd_sub_mask = prim_subset <= 0.08
-            star_sub_mask = ~bd_sub_mask
-
-            q_values = np.empty((len(comp_index), comp_num))
-
-            # Stellar primaries: use default Duchene & Kraus distribution
-            if np.any(star_sub_mask):
-                q_values[star_sub_mask] = self._multi_props.random_q(self.rng.random((star_sub_mask.sum(), comp_num)))
-
-            # BD primaries: use Fontanive+18 power-law distribution
-            if np.any(bd_sub_mask):
-                b = 1.0 + 6.1  # gamma from Fontanive+18
-                rand_vals = self.rng.random((bd_sub_mask.sum(), comp_num))
-                q_values[bd_sub_mask] = (rand_vals * (1.0 - self._multi_props.q_min ** b) +
-                                         self._multi_props.q_min ** b) ** (1.0 / b)
-
-            m_comp = np.multiply(q_values, np.transpose([prim_subset]))
-            compMasses[multiple_idx[comp_index], :comp_num] = m_comp
-
-        # Mask out companions below the minimum mass
-        compMasses = np.ma.MaskedArray(compMasses, mask=compMasses < self._mass_limits[0])
-        newSystemMasses[multiple_idx] += compMasses[multiple_idx].sum(axis=1)
-        newIsMultiple = np.any(~compMasses.mask, axis=1)
-
-        return compMasses, newSystemMasses, newIsMultiple
+        return self._multi_props.draw_companion_masses(
+            newMasses, newIsMultiple, CSF, MF,
+            rng=self.rng, mass_min=self._mass_limits[0])
 
 
 class IMF_broken_powerlaw(IMF):
@@ -371,7 +322,7 @@ class IMF_broken_powerlaw(IMF):
         Output:
         xi - probability of measuring that mass.
         """
-        returnFloat = type(m) == float
+        returnFloat = isinstance(m, (float, np.floating))
 
         m = np.atleast_1d(m)
 
@@ -412,7 +363,7 @@ class IMF_broken_powerlaw(IMF):
         """
         Mass-weighted probability m*xi
         """
-        returnFloat = type(m) == float
+        returnFloat = isinstance(m, (float, np.floating))
         m = np.atleast_1d(m)
         mxi = np.zeros(len(m), dtype=float)
 
@@ -478,7 +429,7 @@ class IMF_broken_powerlaw(IMF):
         """
         Helper function
         """
-        returnFloat = type(a) == float
+        returnFloat = isinstance(a, (float, np.floating))
 
         a = np.atleast_1d(a)
         val = np.zeros(len(a), dtype=float)
@@ -506,7 +457,7 @@ class IMF_broken_powerlaw(IMF):
         """
         Helper function
         """
-        returnFloat = type(a) == float
+        returnFloat = isinstance(a, (float, np.floating))
 
         a = np.atleast_1d(a)
         val = np.zeros(len(a), dtype=float)
@@ -542,7 +493,6 @@ class IMF_broken_powerlaw(IMF):
             Mmax = self._m_limits_high[-1]
 
         if Mmin == None:
-
             Mmin = self._m_limits_low[0]
 
         if Mmax > Mcl:
@@ -557,8 +507,12 @@ class IMF_broken_powerlaw(IMF):
         self.norm_Mmin = Mmin
         self.norm_Mmax = Mmax
 
-        self.k = Mcl / self.int_mxi(self.norm_Mmin, self.norm_Mmax)
+        int_mxi = self.int_mxi(self.norm_Mmin, self.norm_Mmax)
+
+        self.k = Mcl / int_mxi
         self.lamda = self.int_xi_cl(self._m_limits_low[0], self._mass_limits)
+
+        return
 
     def norm_cl_wk04(self, Mcl, Mmax=None, Mmin=None):
         """
@@ -640,7 +594,7 @@ class IMF_broken_powerlaw(IMF):
         Given a list of random numbers (r), return a list of masses
         selected from the IMF.
         """
-        returnFloat = type(r) == float
+        returnFloat = isinstance(r, (float, np.floating))
         r = np.atleast_1d(r)  # Make sure it is an array
 
         x = r * self.lamda[-1]
@@ -766,7 +720,7 @@ def prim_power(m, power):
     Takes floats or arrays, but returns arrays.
     returns: m**(power + 1) / (power + 1) and handles the case when power = -1
     """
-    returnFloat = (type(m) == float) and (type(power) == float)
+    returnFloat = isinstance(m, (float, np.floating)) and isinstance(power, (float, np.floating))
 
     m = np.atleast_1d(m)
     power = np.atleast_1d(power)
@@ -792,7 +746,7 @@ def inv_prim_power(x, power):
     returns ((1+power) * x)**(1.0 / (1 + power)) and handles the case
     when power == -1.
     """
-    returnFloat = (type(x) == float) and (type(power) == float)
+    returnFloat = isinstance(x, (float, np.floating)) and isinstance(power, (float, np.floating))
 
     x = np.atleast_1d(x)
     power = np.atleast_1d(power)
@@ -818,8 +772,7 @@ def inv_prim_power(x, power):
 
 
 def log_normal(m, mean_logm, sigma_logm):
-    returnFloat = (type(m) == float) and (type(mean_logm) == float) and \
-        (type(sigma_logm) == float)
+    returnFloat = isinstance(m, (float, np.floating)) and isinstance(mean_logm, (float, np.floating)) and isinstance(sigma_logm, (float, np.floating))
 
     m = np.atleast_1d(m)
     mean_logm = np.atleat_1d(mean_logm)
@@ -834,8 +787,7 @@ def log_normal(m, mean_logm, sigma_logm):
         return val
 
 def prim_log_normal(m, mean_logm, sigma_logm):
-    returnFloat = (type(m) == float) and (type(mean_logm) == float) and \
-        (type(sigma_logm) == float)
+    returnFloat = isinstance(m, (float, np.floating)) and isinstance(mean_logm, (float, np.floating)) and isinstance(sigma_logm, (float, np.floating))
 
     m = np.atleast_1d(m)
     mean_logm = np.atleat_1d(mean_logm)
@@ -849,15 +801,14 @@ def prim_log_normal(m, mean_logm, sigma_logm):
     else:
         return val
 
-def inv_prim_log_normal(x, mean_logm, sigma_logm):
-    returnFloat = (type(m) == float) and (type(mean_logm) == float) and \
-        (type(sigma_logm) == float)
+def inv_prim_log_normal(m, mean_logm, sigma_logm):
+    returnFloat = isinstance(m, (float, np.floating)) and isinstance(mean_logm, (float, np.floating)) and isinstance(sigma_logm, (float, np.floating))
 
     m = np.atleast_1d(m)
     mean_logm = np.atleat_1d(mean_logm)
     sigma_logm = np.atleat_1d(sigma_logm)
 
-    mu = inv_error(0.346516861952484 * x / sigma_logm)
+    mu = inv_error(0.346516861952484 * m / sigma_logm)
     val = 10.0**(1.4142135623731 * sigma_logm * mu + mean_logm)
 
     if returnFloat:
@@ -865,9 +816,8 @@ def inv_prim_log_normal(x, mean_logm, sigma_logm):
     else:
         return val
 
-def mlog_normal(x, mean_logm, sigma_logm):
-    returnFloat = (type(m) == float) and (type(mean_logm) == float) and \
-        (type(sigma_logm) == float)
+def mlog_normal(m, mean_logm, sigma_logm):
+    returnFloat = isinstance(m, (float, np.floating)) and isinstance(mean_logm, (float, np.floating)) and isinstance(sigma_logm, (float, np.floating))
 
     m = np.atleast_1d(m)
     mean_logm = np.atleat_1d(mean_logm)
@@ -881,9 +831,8 @@ def mlog_normal(x, mean_logm, sigma_logm):
     else:
         return val
 
-def prim_mlog_normal(x, mean_logm, sigma_logm):
-    returnFloat = (type(m) == float) and (type(mean_logm) == float) and \
-        (type(sigma_logm) == float)
+def prim_mlog_normal(m, mean_logm, sigma_logm):
+    returnFloat = isinstance(m, (float, np.floating)) and isinstance(mean_logm, (float, np.floating)) and isinstance(sigma_logm, (float, np.floating))
 
     m = np.atleast_1d(m)
     mean_logm = np.atleat_1d(mean_logm)

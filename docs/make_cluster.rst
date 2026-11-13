@@ -15,10 +15,10 @@ has already been created::
   from spisea.imf import imf, multiplicity
   import numpy as np
 
-  # Define stellar multiplicity properties. Here we 
-  # use the default multiplicity object.
+  # Define stellar multiplicity properties. Here we
+  # use the Offner et al. 2023 unresolved multiplicity object.
   # This is an input for the IMF object.
-  imf_multi = multiplicity.MultiplicityUnresolved()
+  imf_multi = multiplicity.MultiplicityUnresolvedOffner2023()
 
   # Define the IFMR. Here we use the IFMR object
   # IFMR_Raithel18. 
@@ -51,7 +51,7 @@ has already been created::
 
 
 See `Quick Start Example
-<https://github.com/astropy/SPISEA/blob/main/docs/Quick_Start_Make_Cluster.ipynb>`_
+<https://github.com/MovingUniverseLab/spisea/blob/main/docs/Quick_Start_Make_Cluster.ipynb>`_
 for a detailed example for how to make different
 cluster sub-classes and interact with the resulting output.
 Here is a table from Hosek et al. 2020 that describes

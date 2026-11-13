@@ -96,6 +96,7 @@ class StellarEvolution(object):
         self.age_list = age_list
         self.external_evol = False
         self.model_version_name = "None"
+        self.no_higher_order_multiples = False
 
         return
 
@@ -1327,13 +1328,14 @@ class MISTv1(StellarEvolution):
         was downloaded on 8/2018 (solar metallicity)
         and 4/2019 (other metallicities). Default is 1.2.
 
-    synthpop_extension: boolean (default False)
+    synthpop_extension: boolean (default True)
         If True, the isochrones are extended down to a minimum initial
-        mass of 0.1Msun using grids interpolated via SynthPop. If False,
-        the web-downloaded MIST isochrones are used with their varying
-        lower mass limits. True option is only valid for version=1.2.
+        mass of 0.1Msun using grids interpolated via `SynthPop
+        <https://ui.adsabs.harvard.edu/abs/2025AJ....169..317K/abstract>`_.
+        If False, the web-downloaded MIST isochrones are used with their
+        varying lower mass limits. True option is only valid for version=1.2.
     """
-    def __init__(self, version=1.2, synthpop_extension=False):
+    def __init__(self, version=1.2, synthpop_extension=True):
         # define metallicity parameters for MIST models
         self.z_list = [0.0000014,   # [Fe/H] = -4.00
                        0.0000045,   # [Fe/H] = -3.50
@@ -1357,11 +1359,12 @@ class MISTv1(StellarEvolution):
         # Set version directory
         self.version = version
         self.synthpop_extension = synthpop_extension
-        if (self.version == 1.0) and (not synthpop_extension):
+        if self.version == 1.0:
             self.model_version_name = 'MISTv1.0'
             version_dir = 'v1.0/'
-        elif (self.version == 1.0) and synthpop_extension:
-            raise ValueError('Synthpop isochrone extension not supported for MISTv1.0 isochrones')
+            if synthpop_extension:
+                warnings.warn('SynthPop isochrone extension not supported for MISTv1.0 isochrones')
+                self.synthpop_extension = False
         elif self.version == 1.2:
             self.model_version_name = 'MISTv1.2'
             version_dir = 'v1.2/'
@@ -1575,8 +1578,8 @@ class COSMIC(StellarEvolution):
                                 "pts1": 0.001, "pts2": 0.01, "pts3": 0.02, "zsun": 0.02, "windflag": 3,
                                 "eddlimflag": 0, "neta": 0.5, "bwind": 0.0, "hewind": 0.5, "beta": 0.125,
                                 "xi": 0.5, "acc2": 1.5, "LBV_flag": 1, "alpha1": [1.0, 1.0],
-                                "lambdaf": 0.0, "ceflag": 1, "cekickflag": 2, "cemergeflag": 1,
-                                "cehestarflag": 0, "qcflag": 5,
+                                "lambdaf": 0.0, "ce2stageflag": 0, "ceflag": 0, "cekickflag": 2,
+                                "cemergeflag": 1, "cehestarflag": 0, "qcflag": 5,
                                 "qcrit_array": [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
                                 "kickflag": 5, "sigma": 265.0, "bhflag": 1, "bhsigmafrac": 1.0,
                                 "sigmadiv": -20.0, "ecsn": 2.25, "ecsn_mlow": 1.6, "aic": 1, "ussn": 1,
@@ -1588,17 +1591,18 @@ class COSMIC(StellarEvolution):
                                 "maltsev_mode": 0, "maltsev_fallback": 0.5, "maltsev_pf_prob": 0.1,
                                 "pisn": -2, "ppi_co_shift": 0.0, "ppi_extra_ml": 0.0, "bhspinflag": 0,
                                 "bhspinmag": 0.0, "grflag": 1, "eddfac": 10, "gamma": -2, "don_lim": -1,
-                                "acc_lim": [-1, -1], "smt_periastron_check": 0, "tflag": 1, "ST_tide": 1,
+                                "acc_lim": [-1, -1], "smt_periastron_check": 0, "smt_q": -1, "tflag": 1,
+                                "ST_tide": 1,
                                 "fprimc_array": [2.0/21.0,2.0/21.0,2.0/21.0,2.0/21.0,2.0/21.0,2.0/21.0,2.0/21.0,2.0/21.0,2.0/21.0,2.0/21.0,2.0/21.0,2.0/21.0,2.0/21.0,2.0/21.0,2.0/21.0,2.0/21.0],
                                 "ifflag": 1, "wdflag": 1, "epsnov": 0.001, "bdecayfac": 1,
                                 "bconst": 3000, "ck": 1000, "rejuv_fac": 1.0, "rejuvflag": 0,
                                 "bhms_coll_flag": 0, "htpmb": 1, "ST_cr": 1, "rtmsflag": 0
                             }
-
         else:
             self.BSEDict = BSEDict
 
         self.external_evol = True
+        self.no_higher_order_multiples = True # Binaries only
         self.z_solar = 0.02 #0.014
         self.keep_disrupted_companions = keep_disrupted_companions
         self.keep_COSMIC_tables = keep_COSMIC_tables
@@ -1922,6 +1926,73 @@ class COSMIC(StellarEvolution):
 #==============================#
 # Merged model classes
 #==============================#
+class MergedFlameSkimmerRedDiamondbackMIST(StellarEvolution):
+    """
+    Combined Sonora brown-dwarf and MIST stellar evolution models.
+
+    FlameSkimmer supplies ages up to 9 Gyr. At older ages, Red Diamondback
+    supplies metallicities from -0.5 to +0.5, including interpolated values
+    at -0.25 and +0.25. At -1 and -0.75, older ages are estimated from
+    the last available FlameSkimmer ages.
+
+    Below [M/H] = -1, the brown-dwarf values are taken from the -1 Sonora
+    model and combined with MIST at the requested metallicity.
+
+    The files are stored in
+    ``SPISEA_MODELS/evolution/merged/flame_red_diamondback_mist/iso``.
+    Requires evolution model grid version 3.1 or later.
+    """
+
+    def __init__(self):
+        # Available metallicities and their subdirectories.
+        self.metallicity_list = np.array(
+            [-4.0, -3.5, -3.0, -2.5, -2.0, -1.75, -1.5, -1.25,
+             -1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5])
+        z_dirs = ['z0000014', 'z0000045', 'z000014', 'z000045', 'z00014',
+                  'z00025', 'z00045', 'z00080', 'z0014', 'z0025',
+                  'z0045', 'z0080', 'z014', 'z025', 'z045']
+        self.z_solar = 0.0142
+        z_list = self.z_solar * 10.0**self.metallicity_list
+        self.z_file_map = dict(zip(z_list, z_dirs))
+
+        # Log ages from 5.00 to 10.15, plus exactly 9 and 15 Gyr.
+        age_9gyr = np.log10(9.e9)
+        age_15gyr = np.log10(15.e9)
+        age_list = np.round(np.arange(5.0, 10.151, 0.05), 2)
+        age_list = np.sort(np.append(age_list, [age_9gyr, age_15gyr]))
+        # These two filenames use six decimal places.
+        self.age_file_map = {age_9gyr: 'iso_9.954243.fits',
+                             age_15gyr: 'iso_10.176091.fits'}
+        model_dir = os.path.join(models_dir, 'merged', 'flame_red_diamondback_mist')
+        super().__init__(model_dir, age_list, [], z_list)
+        self.model_version_name = 'MergedFlameSkimmerRedDiamondbackMIST'
+        self.evo_grid_min = 3.1
+
+    def isochrone(self, age=1.e8, metallicity=0.0):
+        """Return the isochrone closest to the requested age and metallicity.
+
+        Age is in years and metallicity is [M/H].
+        """
+        if not np.isfinite(age) or age <= 0:
+            raise ValueError('Age must be finite, positive and in years.')
+        if (not np.isfinite(metallicity) or metallicity < self.metallicity_list.min()
+                or metallicity > self.metallicity_list.max()):
+            raise ValueError('Requested metallicity is outside the installed grid.')
+        self.evo_grid_num = check_evo_grid_number(self.evo_grid_min, models_dir)
+        metal_idx = np.argmin(abs(self.metallicity_list - metallicity))
+        actual_metal = float(self.metallicity_list[metal_idx])
+        log_age = math.log10(age)
+        if log_age < self.age_list.min() - 1.e-12 or log_age > self.age_list.max() + 1.e-12:
+            raise ValueError('Requested age is outside the precomputed grid.')
+        actual_age = float(self.age_list[np.argmin(abs(self.age_list - log_age))])
+        iso_file = self.age_file_map.get(actual_age, f'iso_{actual_age:.2f}.fits')
+        z_dir = self.z_file_map[self.z_list[metal_idx]]
+        iso = Table.read(os.path.join(self.model_dir, 'iso', z_dir, iso_file), format='fits')
+        iso.meta.update(log_age=log_age, log_age_act=actual_age,
+                        metallicity_in=metallicity, metallicity_act=actual_metal)
+        return iso
+
+
 class MergedPhillipsBaraffePisaEkstromParsec(StellarEvolution):
     """
     This is a combination of several different evolution models:

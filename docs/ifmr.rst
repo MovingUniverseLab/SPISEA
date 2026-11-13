@@ -21,7 +21,7 @@ Compact objects are included in the output tables produced by
 * BH: phase = 103
 
 See `Quick Start Example
-<https://github.com/astropy/SPISEA/blob/main/docs/Quick_Start_Make_Cluster.ipynb>`_
+<https://github.com/MovingUniverseLab/spisea/blob/main/docs/Quick_Start_Make_Cluster.ipynb>`_
 for more examples of how to interact with the :ref:`cluster_objects`
 output.
 

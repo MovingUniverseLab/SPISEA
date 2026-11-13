@@ -1,7 +1,6 @@
 # Test functions for the different stellar evolution and atmosphere models
-from spisea import evolution, atmospheres, synthetic
+from spisea import evolution, atmospheres
 import numpy as np
-import pdb
 
 def test_evo_model_grid_num():
     """
@@ -18,31 +17,37 @@ def test_evo_model_grid_num():
 
 def test_evolution_models():
     """
-    Test to make sure the different evolution models work
+    Test to make sure the different evolution models work.
     """
     # Age ranges to test
     age_young_arr = [6.7, 7.9]
     age_all_arr = [6.7, 8.0, 9.7]
     age_all_MIST_arr = [5.2, 6.7, 9.7, 10.13]
     bd_test = [6.0, 6.5, 7.4, 8.4, 10.0]
+    flame_mist_test = [5.0, 7.0, 9.7, np.log10(9.0e9), 10.0, np.log10(15.0e9)]
 
     # Metallicity ranges to test (if applicable)
     metal_range = [-2.5, -1.5, 0, 0.25, 0.4]
     metal_solar = [0]
     metal_Marley = [-0.5, 0.0, 0.5]
+    metal_flameskimmer = [-4.0, -3.5, -3.0, -2.5, -2.0, -1.75, -1.5,
+                         -1.25, -1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5]
 
     # Array of evolution models to test
     evo_models = [evolution.MISTv1(version=1.2), evolution.MergedBaraffePisaEkstromParsec(), 
                       evolution.Parsec(), evolution.Baraffe15(), evolution.Ekstrom12(), evolution.Pisa(),
                       evolution.Phillips2020(), evolution.Marley2021(),
-                      evolution.MergedPhillipsBaraffePisaEkstromParsec()]
+                      evolution.MergedPhillipsBaraffePisaEkstromParsec(),
+        evolution.MergedFlameSkimmerRedDiamondbackMIST()]
 
 
     # Array of age_ranges for the specific evolution models to test
-    age_vals = [age_all_MIST_arr, age_all_arr, age_all_arr, age_young_arr, age_young_arr, age_young_arr, age_all_arr, age_all_arr, bd_test]
+    age_vals = [age_all_MIST_arr, age_all_arr, age_all_arr, age_young_arr, age_young_arr, age_young_arr, age_all_arr, age_all_arr, bd_test,
+        flame_mist_test]
 
     # Array of metallicities for the specific evolution models to test
-    metal_vals = [metal_range, metal_solar, metal_solar, metal_solar, metal_solar, metal_solar, metal_solar, metal_Marley, metal_solar]
+    metal_vals = [metal_range, metal_solar, metal_solar, metal_solar, metal_solar, metal_solar, metal_solar, metal_Marley, metal_solar,
+        metal_flameskimmer]
 
     assert len(evo_models) == len(age_vals) == len(metal_vals)
 
@@ -56,6 +61,10 @@ def test_evolution_models():
             for kk in age_vals[ii]:
                 try:
                     test = evo.isochrone(age=10**kk, metallicity=jj)
+                    assert len(test) > 0
+                    for column in ('mass', 'logL', 'logT', 'logg'):
+                        assert np.all(np.isfinite(test[column])), column
+                    assert np.all(test['mass'] > 0)
 
                     # Make sure the actual isochrone metallicity taken is
                     # indeed the closest to the desired metallicity (e.g., closest point
@@ -66,8 +75,8 @@ def test_evolution_models():
 
                     assert np.isclose(test.meta['metallicity_act'], expected_val, atol=0.01)
 
-                except:
-                    raise Exception('EVO TEST FAILED: {0}, age = {1}, metal = {2}'.format(evo, kk, jj))
+                except Exception as error:
+                    raise AssertionError('EVO TEST FAILED: {0}, age = {1}, metal = {2}'.format(evo, kk, jj)) from error
 
         print('Done {0}'.format(evo))
 
@@ -85,11 +94,12 @@ def test_synthpop_MIST_extension():
     evo1 = evo1_grid.isochrone(10**logAge, metallicity=0)
     evo2 = evo2_grid.isochrone(10**logAge, metallicity=0)
 
-    # I expect evo2 extends to low masses velow evo1
+    # I expect evo2 extends to low masses below evo1
     assert len(evo2) > len(evo1)
     assert np.min(evo2['mass']) < np.min(evo1['mass'])
 
     return
+
 
 def test_COSMIC_init():
     """
@@ -169,7 +179,7 @@ def test_COSMIC_get_kick_differential():
 
 def test_atmosphere_models():
     """
-    Test the rebinned atmosphere models used for synthetic photometry
+    Test the rebinned atmosphere models used for synthetic photometry.
     """
     # Array of atmospheres
     atm_arr = [
@@ -182,15 +192,22 @@ def test_atmosphere_models():
         atmospheres.get_phoenix_atmosphere,
         atmospheres.get_wdKoester_atmosphere,
         atmospheres.get_Phillips2020_atmosphere,
-        atmospheres.get_Meisner2023_atmosphere
+        atmospheres.get_Meisner2023_atmosphere,
+        atmospheres.get_flameskimmer_atmosphere,
+        atmospheres.get_merged_atmosphere_atlas_phoenix_sonora,
+        atmospheres.get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement
     ]
 
     # Array of metallicities
     metals_range = [-2.0, 0, 0.15]
     bd_metals_range = [-1.0, -0.5, 0, 0.3]
+    flameskimmer_metals_range = [-1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5]
     metals_solar = [0]
     metals_arr = [metals_solar, metals_range, metals_range, metals_solar, metals_range, metals_range, metals_range,
-                  metals_solar, metals_solar, bd_metals_range]
+                  metals_solar, metals_solar, bd_metals_range,
+        flameskimmer_metals_range,
+        flameskimmer_metals_range,
+        flameskimmer_metals_range]
 
     assert len(atm_arr) == len(metals_arr)
 
@@ -200,25 +217,46 @@ def test_atmosphere_models():
 
         # Loop through metallicities
         for jj in metals_arr[ii]:
+            call_kwargs = {'metallicity': jj}
+            if atm_func is atmospheres.get_flameskimmer_atmosphere:
+                # Use a temperature and gravity covered by FlameSkimmer.
+                call_kwargs.update(temperature=1000, gravity=4.5)
+
             try:
-                test = atm_func(metallicity=jj)
-            except:
-                raise Exception('ATM TEST FAILED: {0}, metal = {1}'.format(atm_func, jj))
+                test = atm_func(**call_kwargs)
+                _assert_valid_atmosphere_spectrum(test)
+            except Exception as error:
+                raise Exception(
+                    'ATM TEST FAILED: {0}, metal = {1}'.format(atm_func, jj)
+                ) from error
 
         print('Done {0}'.format(atm_func))
 
-    # Test get_merged_atmospheres at different temps
-    temp_range = [250, 1000, 2000, 3500, 4000, 5250, 6000, 12000]
-    atm_func = atmospheres.get_merged_atmosphere
-    for ii in bd_metals_range:
-        for jj in temp_range:
-            try:
-                test = atm_func(metallicity=ii, temperature=jj, verbose=True)
-            except:
-                raise Exception('ATM TEST FAILED: {0}, metal = {1}, temp = {2}'.format(atm_func, ii, jj))
+    # Test both merged atmosphere functions at different temperatures.
+    temp_range = [250, 1000, 2000, 2350, 2500, 3500, 4000, 5250, 6000, 12000]
+    for atm_func in (atmospheres.get_merged_atmosphere,
+                     atmospheres.get_merged_atmosphere_atlas_phoenix_sonora):
+        for metallicity in bd_metals_range:
+            for temperature in temp_range:
+                test = atm_func(metallicity=metallicity, temperature=temperature, verbose=True)
+                _assert_valid_atmosphere_spectrum(test)
+        print('Done {0}: all temperatures/metallicities'.format(atm_func))
 
-
-    print('get_merged_atmosphere: all temps/metallicities passed')
+    # Cool giants should use PHOENIX; cool dwarfs should use Sonora.
+    for metallicity in (0., -2.):
+        for temperature, gravity, loader in (
+                (2000, 1.5, atmospheres.get_phoenixv16_atmosphere),
+                (2350, 1.5, atmospheres.get_phoenixv16_atmosphere),
+                (1000, 4.5, atmospheres.get_flameskimmer_atmosphere),
+                (2350, 4.5, atmospheres.get_flameskimmer_phoenix_atmosphere)):
+            test = atmospheres.get_merged_atmosphere_atlas_phoenix_sonora(
+                metallicity=metallicity, temperature=temperature, gravity=gravity)
+            source_metal = max(metallicity, -1.) if gravity >= 2. else metallicity
+            expected = loader(metallicity=source_metal, temperature=temperature,
+                              gravity=gravity)
+            _assert_valid_atmosphere_spectrum(test)
+            np.testing.assert_allclose(test(test.waveset).value,
+                                       expected(test.waveset).value)
 
     # Test get_bb_atmosphere at different temps
     # This func only requests temp
@@ -227,8 +265,9 @@ def test_atmosphere_models():
     for jj in temp_range:
         try:
             test = atm_func(temperature=jj, verbose=True)
+            _assert_valid_atmosphere_spectrum(test)
         except:
-            raise Exception('ATM TEST FAILED: {0}, temp = {2}'.format(atm_func, jj))
+            raise Exception('ATM TEST FAILED: {0}, temp = {1}'.format(atm_func, jj))
 
     print('get_bb_atmosphere: all temps passed')
 
@@ -239,6 +278,7 @@ def test_atmosphere_models():
     for jj in temp_range:
         try:
             test = atm_func(temperature=jj, verbose=True)
+            _assert_valid_atmosphere_spectrum(test)
         except:
             raise Exception('ATM TEST FAILED: {0}, temp = {1}'.format(atm_func, jj))
 
@@ -250,6 +290,8 @@ def test_filters():
     """
     Test to make sure all of the filters work as expected
     """
+    from spisea import synthetic
+
     # Define vega spectrum
     vega = synthetic.Vega()
 
@@ -291,7 +333,7 @@ def test_filters():
                      'nsfcam,L', 'tess,tess',
                      'washington,C', 'washington,M', 'washington,T1', 'washington,T2',
                      'hipparcos,Hp', 'tycho,B', 'tycho,V',
-                     'kepler,Kp', 'ogle,Rw',
+                     'kepler,Kp', 'ogle,Rw', 'ogle,I', 'ogle,V',
                      'subaru,hsc,g','subaru,hsc,r','subaru,hsc,i','subaru,hsc,z','subaru,hsc,Y',
                      'subaru,hsc,nb387', 'subaru,hsc,nb468', 'subaru,hsc,nb515', 'subaru,hsc,nb527',
                      'subaru,hsc,nb656', 'subaru,hsc,nb718', 'subaru,hsc,nb816', 'subaru,hsc,nb921',
@@ -316,3 +358,15 @@ def test_filters():
     print('Filters done')
 
     return
+
+
+def _assert_valid_atmosphere_spectrum(spectrum):
+    """
+    Check that the spectrum has valid flux values and some light.
+    Individual wavelength bins may have zero flux.
+    """
+    flux = spectrum(spectrum.waveset).value
+    assert flux.size > 0
+    assert np.all(np.isfinite(flux))
+    assert np.all(flux >= 0)
+    assert np.any(flux > 0)

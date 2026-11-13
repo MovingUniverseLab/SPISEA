@@ -1,5 +1,9 @@
 # SPISEA-generated isochrones from test functions
+isochrones/
 spisea/tests/isochrones/
+
+# Local helper scripts (kept on disk, not in the repo)
+scripts/
 
 # Compiled files
 *.py[co]

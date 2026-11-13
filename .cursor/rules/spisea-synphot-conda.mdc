@@ -1,0 +1,12 @@
+---
+description: Use the spisea-synphot conda environment for all Python, pip, and tests
+alwaysApply: true
+---
+
+# Conda environment: `spisea-synphot`
+
+For this repository, use the **`spisea-synphot`** conda environment for every shell command that needs Python, `pip`, `pytest`, or project tooling.
+
+- Prefer: `conda run -n spisea-synphot <command>` (e.g. `conda run -n spisea-synphot python -m pytest ...`) so the correct interpreter is used even in non-interactive shells.
+- Alternatively: `source "$(conda info --base)/etc/profile.d/conda.sh" && conda activate spisea-synphot` then run commands as usual.
+- Do not assume `python` or `pip` on `PATH` without activating that environment; do not use other envs (e.g. a generic `astro` env) for SPISEA work unless the user says otherwise.

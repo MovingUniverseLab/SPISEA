@@ -10,9 +10,10 @@ total extinction, and metallicity, along with the :ref:`atmo_models`,
 
 If the IsochronePhot sub-class is used then synthetic photometry
 will be produced. The :ref:`filters` are defined as additional
-inputs. The output photometry is in terms of vega mags, but the user
-can also calculate the required conversion to AB mags or ST mags using
-the functions in :ref:`Photometry Conversion Functions <phot_conversions>`. 
+inputs. The output photometry is in Vega mags by default (and is always
+saved to the iso file in Vega mag), but the user
+can opt to return the IsochronePhot object in AB or ST mags. Either way,
+the magnitude system is indicated in the MAGSYS isochrone table metadata.
 
 An example of making an IsochronePhot object::
 
@@ -48,7 +49,7 @@ An example of making an IsochronePhot object::
 			    iso_dir=iso_dir)
 
 See `Quick Start Example
-<https://github.com/astropy/SPISEA/blob/main/docs/Quick_Start_Make_Cluster.ipynb>`_
+<https://github.com/MovingUniverseLab/spisea/blob/main/docs/Quick_Start_Make_Cluster.ipynb>`_
 for a detailed example showing how to interact with the isochrone
 object output. Here is a table from Hosek et al. 2020 that describes
 the values in the isochrone output table:
