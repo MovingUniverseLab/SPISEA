@@ -114,7 +114,7 @@ Change Log
 	* Improved precision of magnitude summations for clusters with multiplicity
 	* Faster synthetic photometry: atmosphere spectra and filter bandpasses are converted to single tabulated synphot models on their own wavelength grids. Magnitudes are unchanged.
 	* Warning before an existing isochrone file is overwritten because its parameters or SPISEA version do not match; files from versions before 3.0 are reported as mismatched.
-	* Bug fix: IMF_broken_powerlaw could return NaN masses when a steep segment (power < -1) was followed by another segment (e.g. 19% NaN for powers [-2.3, -1.3]). Kroupa-like IMFs were not affected.
+	* Bug fix: IMF_broken_powerlaw could return NaN masses when a segment was steeper than the next higher-mass segment (e.g. 19% NaN for powers [-2.3, -1.3]). IMFs that get steeper toward higher masses, such as Kroupa-like IMFs, were not affected.
 	* IMF helpers theta_closed, theta_open, and delta return a float, not a one-element array, for NumPy scalar input
 	* ResolvedCluster prints its low-mass star removal messages only when verbose=True
 
