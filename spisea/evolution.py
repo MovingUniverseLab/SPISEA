@@ -1545,7 +1545,184 @@ class MISTv1(StellarEvolution):
         # Return to starting directory
         os.chdir(start_dir)
         return
-        
+
+#===============================#
+# MIST v.2.5 (Dotter+26)
+#===============================#
+class MISTv2(StellarEvolution):
+    """
+    Define intrinsic properties for the MIST v2.5 stellar models
+    (`Dotter et al. 2026 <https://ui.adsabs.harvard.edu/abs/2026ApJS..283...64D/abstract>`_).
+
+    Isochrones are generated with the `MIST web interpolator
+    <https://mist.science/interp_isos.html>`_ (theoretical output) and
+    converted with :meth:`format_isochrones` into one FITS file per age in
+    ``MISTv2/v2.5/vvcrit<rotation>/iso/feh_<FEH>_afe_<AFE>/``. The
+    available metallicities and ages are those found there.
+
+    The isochrones cover initial masses of 0.1 - 300 Msun, including the
+    pre-main sequence and the white dwarf cooling sequence, but with gaps:
+    low-mass tracks start late on the pre-main sequence (at [Fe/H] = 0,
+    logAge = 6.4 for 0.1 Msun), [Fe/H] = +0.5 has no models below 0.5 Msun,
+    and the lowest metallicities miss intermediate masses. A warning is
+    issued when an isochrone starts above 0.15 Msun.
+
+    Phase 6 covers post-AGB and white dwarf cooling, and phase -9 marks the
+    end of a track; both are set to 101 (WD), as phase 6 in MISTv1.
+
+    Parameters
+    ----------
+    rotation: 0.4 or 0.0, optional
+        Initial v/v_crit. Default is 0.4, as in the MIST v1.2 models.
+
+    afe: -0.2, 0.0, 0.2, 0.4, or 0.6, optional
+        [alpha/Fe]. Default is 0.0.
+    """
+    afe_codes = {-0.2: 'm2', 0.0: 'p0', 0.2: 'p2', 0.4: 'p4', 0.6: 'p6'}
+
+    def __init__(self, rotation=0.4, afe=0.0):
+        if rotation not in (0.0, 0.4):
+            raise ValueError(f'rotation must be 0.0 or 0.4, not {rotation}')
+        if afe not in self.afe_codes:
+            raise ValueError(f'afe must be one of {list(self.afe_codes)}, not {afe}')
+        self.rotation = rotation
+        self.afe = afe
+
+        self.model_version_name = f'MISTv2.5-vvcrit{rotation:.1f}'
+        if afe != 0:
+            self.model_version_name += f'-afe{afe:+.1f}'
+        self.model_dir = models_dir + f'MISTv2/v2.5/vvcrit{rotation:.1f}/'
+
+        # Metallicities available on disk, as [Fe/H]
+        z_dirs = sorted(glob.glob(f'{self.model_dir}iso/feh_*_afe_{self.afe_codes[afe]}'))
+        if len(z_dirs) == 0:
+            raise ValueError(f'No MIST v2.5 isochrones with [alpha/Fe] = {afe} in {self.model_dir}iso/. '
+                             'Generate them with the MIST web interpolator and run format_isochrones.')
+        self.feh_list = [self._feh_from_code(os.path.basename(d).split('_')[1]) for d in z_dirs]
+        self.z_file_map = dict(zip(self.feh_list, [os.path.basename(d) + '/' for d in z_dirs]))
+
+        # Z = z_solar * 10**[Fe/H], with z_solar the initial Z of the
+        # [Fe/H] = [alpha/Fe] = 0 models (GS98 solar mixture)
+        self.z_solar = 0.0178798
+        self.z_list = [self.z_solar * 10**feh for feh in self.feh_list]
+
+        # Ages of the solar-metallicity isochrones (or the closest available)
+        feh_0 = self.feh_list[np.argmin(np.abs(self.feh_list))]
+        self.age_list = self._ages(feh_0)
+
+        # Not part of the SPISEA model grid download
+        self.evo_grid_min = 1.0
+
+    @staticmethod
+    def _feh_from_code(code):
+        # e.g. 'm025' -> -0.25, 'p000' -> 0.0
+        return (-1 if code[0] == 'm' else 1) * int(code[1:]) / 100
+
+    @staticmethod
+    def _feh_code(feh):
+        return '{0}{1:03d}'.format('m' if feh < 0 else 'p', int(round(abs(feh) * 100)))
+
+    def _ages(self, feh):
+        files = glob.glob(f'{self.model_dir}iso/{self.z_file_map[feh]}iso_*.fits')
+        return np.sort([float(os.path.basename(f)[4:-5]) for f in files])
+
+    def isochrone(self, age=1.e8, metallicity=0.0):
+        r"""
+        Extract an individual isochrone from the MISTv2
+        collection.
+        """
+        log_age = math.log10(age)
+
+        # find closest metallicity value, which must be within half a
+        # grid step (0.25 dex) of the request
+        feh_arr = np.array(self.feh_list)
+        z_idx = np.argmin(np.abs(feh_arr - metallicity))
+        if abs(feh_arr[z_idx] - metallicity) > 0.125 + 1e-6:
+            raise ValueError(f'Requested metallicity {metallicity} is not within 0.125 dex of the '
+                             f'available [Fe/H] {self.feh_list}.')
+        feh = self.feh_list[z_idx]
+
+        # check age is within bounds, then find nearest age in grid
+        age_list = self._ages(feh)
+        if (log_age < age_list[0] - 0.005) or (log_age > age_list[-1] + 0.005):
+            raise ValueError(f'Requested age {log_age} is out of bounds between {age_list[0]} and {age_list[-1]}.')
+        age_idx = np.argmin(np.abs(age_list - log_age))
+        iso_file = f'{self.model_dir}iso/{self.z_file_map[feh]}iso_{age_list[age_idx]:.2f}.fits'
+
+        iso = Table.read(iso_file, format='fits')
+        iso.rename_column('log10_isochrone_age_yr', 'logAge')
+        iso.rename_column('initial_mass', 'mass')
+        iso.rename_column('star_mass', 'mass_current')
+        iso.rename_column('log_L', 'logL')
+        iso.rename_column('log_Teff', 'logT')
+        iso.rename_column('log_g', 'logg')
+
+        # Post-AGB and WD cooling (phase 6) and track ends (phase -9) are WDs,
+        # following our IFMR convention (phase 101)
+        isWD = np.where((iso['phase'] == 6) | (iso['phase'] == -9))[0]
+        iso['phase'][isWD] = 101
+
+        # Define "isWR" column based on phase info
+        iso.add_column(Column(iso['phase'] == 9, name='isWR'))
+
+        # Some MIST v2.5 isochrones start well above 0.1 Msun (youngest ages,
+        # [Fe/H] = +0.5). Clusters drop stars below the lowest mass.
+        if iso['mass'].min() > 0.15:
+            warnings.warn(f'MIST v2.5 isochrone at logAge = {age_list[age_idx]:.2f}, [Fe/H] = {feh} starts at '
+                          f'{iso["mass"].min():.3f} Msun; lower masses are not covered.')
+
+        iso.meta['log_age'] = log_age
+        iso.meta['metallicity_in'] = metallicity
+        iso.meta['metallicity_act'] = feh
+
+        return iso
+
+    @classmethod
+    def format_isochrones(cls, input_files):
+        r"""
+        Split isochrone files from the MIST web interpolator
+        (theoretical output, any number of ages each) into one FITS file
+        per age, in the directory for their rotation, [Fe/H], and
+        [alpha/Fe]. Existing files for the same ages are overwritten.
+
+        Parameters
+        ----------
+        input_files: str or list of str
+            MIST v2.5 .iso files.
+        """
+        if isinstance(input_files, str):
+            input_files = [input_files]
+
+        for input_file in input_files:
+            with open(input_file) as f:
+                lines = f.readlines()
+
+            # Composition line follows the 'Yinit Zinit [Fe/H] [a/Fe] v/vcrit' header
+            idx = [i for i, line in enumerate(lines) if 'Yinit' in line][0]
+            yinit, zinit, feh, afe, vvcrit = [float(x) for x in lines[idx + 1][1:].split()]
+            if not lines[0].split('=')[1].strip().startswith('2.5'):
+                raise ValueError(f'{input_file} is not a MIST v2.5 isochrone file')
+
+            out_dir = (f'{models_dir}MISTv2/v2.5/vvcrit{vvcrit:.1f}/iso/'
+                       f'feh_{cls._feh_code(feh)}_afe_{cls.afe_codes[round(afe, 1)]}/')
+            os.makedirs(out_dir, exist_ok=True)
+
+            # Each isochrone starts with a '# EEP ...' column header line
+            starts = [i for i, line in enumerate(lines) if line.startswith('# EEP')]
+            for start, end in zip(starts, starts[1:] + [len(lines)]):
+                names = lines[start][1:].split()
+                rows = [line for line in lines[start + 1:end] if line.strip() and not line.startswith('#')]
+                iso = Table(np.loadtxt(rows, ndmin=2), names=names)
+                iso['EEP'] = iso['EEP'].astype(int)
+                iso['phase'] = iso['phase'].astype(int)
+                iso.meta['comments'] = [line[1:].rstrip() for line in lines[:idx + 2]]
+                iso.meta.update({'YINIT': yinit, 'ZINIT': zinit, 'FEH': feh, 'AFE': afe, 'VVCRIT': vvcrit})
+
+                age = iso['log10_isochrone_age_yr'][0]
+                iso.write(f'{out_dir}iso_{age:.2f}.fits', overwrite=True)
+
+        return
+
 #===========================================#
 # COSMIC Breivik+ 2020 - not normal evo model
 #===========================================#
