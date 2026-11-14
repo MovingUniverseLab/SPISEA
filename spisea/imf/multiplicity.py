@@ -1173,6 +1173,7 @@ class MultiplicityUnresolvedOffner2023(MultiplicityLogistic):
         gamma = _logistic_in_logm(
             mass, self.q_A, self.q_B, self.q_M0, self.q_k)
         
+
         return gamma
 
     def draw_q(self, mass, rng=None, n_comp=1):

@@ -233,6 +233,12 @@ class ResolvedCluster(Cluster):
             warnings.warn(f"Isochrone {type(iso).__name__} uses external evolution. "
                 "Input IFMR will be ignored.")
 
+        # Raise error if you're running COSMIC or other evo models
+        # with binaries only but ask for triples or higher order multiples
+        if getattr(iso.evo_model, 'no_higher_order_multiples', False) and ((self.imf._multi_props.CSF_max > 1) or (self.imf._multi_props.companion_max == False)):
+            raise Exception('Your evolution model does not support higher order multiples. Set CSF_max = 1 and companion_max = True in multiplicity object.')
+            
+
         #####
         # Make isochrone interpolators
         #####
@@ -591,21 +597,23 @@ class ResolvedCluster(Cluster):
         for filt in self.filt_names:
             filt_name = filt.split('_')
             filt_val = get_filter_info(get_obs_str(filt), rebin=False, vega=vega)
+            flux0 = filt_val.meta['flux0']
+            mag0 = filt_val.meta['mag0']
 
             # Rescale magnitudes to correct radius
             # Since original grid was done assuming 1 Rsun
             star_systems[filt] = self.iso_interps[filt](star_systems['Teff'], star_systems['logg'], iso.metallicity)
-            flux_val = filt_val.flux0*(10**(-(star_systems[filt] - filt_val.mag0)/2.5))
+            flux_val = flux0*(10**(-(star_systems[filt] - mag0)/2.5))
             R_vals = np.sqrt((star_systems['L']*(units.Lsun)/(4*np.pi*c.sigma_sb.cgs*(star_systems['Teff']*units.K)**4)).to('pc^2')).value
             flux_rescaled = flux_val*((R_vals / iso.distance)**2)/((float(1*units.Rsun.to('pc')) / iso.distance)**2)
-            m_rescaled = -2.5*np.log10(flux_rescaled/filt_val.flux0) + filt_val.mag0
+            m_rescaled = -2.5*np.log10(flux_rescaled/flux0) + mag0
             star_systems[filt] = m_rescaled
 
             companions[filt] = self.iso_interps[filt](companions['Teff'], companions['logg'], iso.metallicity)
-            flux_val = filt_val.flux0*(10**(-(companions[filt] - filt_val.mag0)/2.5))
+            flux_val = flux0*(10**(-(companions[filt] - mag0)/2.5))
             R_vals = np.sqrt((companions['L']*(units.Lsun)/(4*np.pi*c.sigma_sb.cgs*(companions['Teff']*units.K)**4)).to('pc^2')).value
             flux_rescaled = flux_val*((R_vals / iso.distance)**2)/((float(1*units.Rsun.to('pc')) / iso.distance)**2)
-            m_rescaled = -2.5*np.log10(flux_rescaled/filt_val.flux0) + filt_val.mag0
+            m_rescaled = -2.5*np.log10(flux_rescaled/flux0) + mag0
             companions[filt] = m_rescaled
 
             # Add companions masses to primaries
@@ -1060,6 +1068,7 @@ class Isochrone(object):
 
         # Get solar metallicity models for a population at a specific age.
         # Takes about 0.1 seconds.
+        self.evo_model = evo_model
         evol = evo_model.isochrone(age=10**logAge,
                                    metallicity=metallicity)
 
@@ -1297,6 +1306,7 @@ class IsochronePhot(Isochrone):
                           'ubv,R', 'ubv,I'],
                  mag_sys='Vega',
                  verbose=False):
+        self.evo_model = evo_model
         self.metallicity = metallicity
         self.verbose=verbose
 
@@ -1747,6 +1757,20 @@ class IsochronePhotExternalEvolution(IsochronePhot):
                     names=['Teff', 'logg', 'metallicity'])
 
 
+            # Append all the meta data to the summary table.
+            tab.meta['SPISEAVERSION'] = spisea_version_number
+            tab.meta['REDLAW'] = red_law.name
+            tab.meta['ATMFUNC'] = atm_func.__name__
+            tab.meta['EVOMODEL'] = type(evo_model).__name__
+            tab.meta['EVOMODELVERSION'] = evo_model.model_version_name
+            tab.meta['AKS'] = AKs
+            tab.meta['DISTANCE'] = distance
+            tab.meta['WAVEMIN'] = wave_range[0]
+            tab.meta['WAVEMAX'] = wave_range[1]
+            tab.meta['MAGSYS'] = 'Vega'
+
+            self.points = tab
+
             # Initialize output for stellar spectra
             self.spec_list = []
 
@@ -1776,20 +1800,6 @@ class IsochronePhotExternalEvolution(IsochronePhot):
 
                 # Save the final spectrum to our spec_list for later use.
                 self.spec_list.append(star)
-
-            # Append all the meta data to the summary table.
-            tab.meta['SPISEAVERSION'] = spisea_version_number
-            tab.meta['REDLAW'] = red_law.name
-            tab.meta['ATMFUNC'] = atm_func.__name__
-            tab.meta['EVOMODEL'] = type(evo_model).__name__
-            tab.meta['EVOMODELVERSION'] = evo_model.model_version_name
-            tab.meta['AKS'] = AKs
-            tab.meta['DISTANCE'] = distance
-            tab.meta['WAVEMIN'] = wave_range[0]
-            tab.meta['WAVEMAX'] = wave_range[1]
-            tab.meta['MAGSYS'] = 'Vega'
-
-            self.points = tab
 
             t2 = time.time()
             print( 'Atmosphere grid generation took {0:f} s.'.format(t2-t1))
