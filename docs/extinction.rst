@@ -15,7 +15,8 @@ use ``red_law.extinction_at`` (or ``reddening.RedLawBase.ExtinctionAtAKs``).
 The reddening law is reported in terms of A_lambda / A_Ks, and thus is normalized to A_Ks = 1.
 
 The red_law object is passed into the :ref:`isochrone_objects` in order to
-define the extinction for the stars. See the `Quick Start <https://github.com/MovingUniverseLab/spisea/blob/main/docs/Quick_Start_Make_Cluster.ipynb>`_
+define the extinction for the stars. See
+:doc:`Making a cluster <notebooks/01_make_cluster>`
 for an example.
 
 Available extinction laws:

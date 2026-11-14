@@ -63,7 +63,7 @@ def test_iso_wave():
 
     # Define evolution/atmosphere models and extinction law (optional)
     evo_model = evolution.MergedBaraffePisaEkstromParsec()
-    atm_func = atmospheres.get_merged_atmosphere
+    atm_func = atmospheres.get_merged_atmosphere_v1
     red_law = reddening.RedLawHosek18b()
 
     # Also specify filters for synthetic photometry (optional). Here we use
@@ -152,7 +152,7 @@ def test_IsochronePhot(plot=False):
     iso_dir = f'{spisea_path}/tests/isochrones'
 
     evo_model = evolution.MISTv1()
-    atm_func = atmospheres.get_merged_atmosphere
+    atm_func = atmospheres.get_merged_atmosphere_v1
     redlaw = reddening.RedLawNishiyama09()
 
     startTime = time.time()
@@ -315,7 +315,7 @@ def test_sonora_photometry_cluster(logAge):
     for evo_model in evo_models:
         iso = syn.IsochronePhot(
             logAge, 0.0, 10, evo_model=evo_model,
-            atm_func=atmospheres.get_merged_atmosphere_atlas_phoenix_sonora,
+            atm_func=atmospheres.get_merged_atmosphere_v3,
             red_law=reddening.RedLawNishiyama09(), filters=filt_list,
             min_mass=0.02, max_mass=0.5, mass_sampling=1,
             iso_dir=iso_dir, recomp=True, verbose=False
@@ -367,7 +367,7 @@ def test_ResolvedCluster():
     startTime = time.time()
 
     evo = evolution.MergedBaraffePisaEkstromParsec()
-    atm_func = atmospheres.get_merged_atmosphere
+    atm_func = atmospheres.get_merged_atmosphere_v1
 
     red_law = reddening.RedLawNishiyama09()
 
@@ -484,7 +484,7 @@ def test_ResolvedClusterDiffRedden():
     startTime = time.time()
 
     evo = evolution.MergedBaraffePisaEkstromParsec()
-    atm_func = atmospheres.get_merged_atmosphere
+    atm_func = atmospheres.get_merged_atmosphere_v1
 
     red_law = reddening.RedLawNishiyama09()
 
@@ -579,7 +579,7 @@ def test_UnresolvedCluster():
     multi = multiplicity.MultiplicityUnresolved()
     imf_in = imf.Salpeter_Kirkpatrick_2024(multiplicity=multi)
     evo = evolution.MergedBaraffePisaEkstromParsec()
-    atm_func = atmospheres.get_merged_atmosphere
+    atm_func = atmospheres.get_merged_atmosphere_v1
     iso = syn.Isochrone(log_age, AKs, distance, metallicity=metallicity,
                             evo_model=evo, atm_func=atm_func, mass_sampling=10)
     print('Made Isochrone: %d seconds' % (time.time() - startTime))
@@ -611,7 +611,7 @@ def test_ifmr_multiplicity():
     startTime = time.time()
     
     evo = evolution.MergedPhillipsBaraffePisaEkstromParsec()
-    atm_func = atmospheres.get_merged_atmosphere
+    atm_func = atmospheres.get_merged_atmosphere_v1
     ifmr_obj = ifmr.IFMR_Raithel18()
 
     red_law = reddening.RedLawNishiyama09()
@@ -833,7 +833,7 @@ def test_cluster_mass():
 
     # Define evolution/atmosphere models and extinction law
     evo = evolution.MISTv1()
-    atm_func = atmospheres.get_merged_atmosphere
+    atm_func = atmospheres.get_merged_atmosphere_v1
     red_law = reddening.RedLawHosek18b()
 
     iso = syn.IsochronePhot(
@@ -921,7 +921,7 @@ def test_keep_low_mass_stars():
 
     # Define evolution/atmosphere models and extinction law
     evo = evolution.MISTv1()
-    atm_func = atmospheres.get_merged_atmosphere
+    atm_func = atmospheres.get_merged_atmosphere_v1
     red_law = reddening.RedLawHosek18b()
 
     iso = syn.IsochronePhot(
@@ -987,7 +987,7 @@ def test_compact_object_companions():
     startTime = time.time()
 
     evo = evolution.MergedBaraffePisaEkstromParsec()
-    atm_func = atmospheres.get_merged_atmosphere
+    atm_func = atmospheres.get_merged_atmosphere_v1
 
     red_law = reddening.RedLawNishiyama09()
 
@@ -1030,6 +1030,43 @@ def _require_cosmic():
                '`astro_cosmic`) to exercise these tests.')
         warnings.warn(msg)
         pytest.skip(msg)
+
+    return
+
+def test_ResolvedCluster_binaries_only_guard():
+    """
+    An evolution model with no_higher_order_multiples (e.g. COSMIC) rejects
+    multiplicity that allows triples, but accepts binaries-only multiplicity
+    and no multiplicity at all. Uses a stand-in isochrone, so COSMIC is not
+    needed; the build is stopped right after the guard.
+    """
+    from types import SimpleNamespace
+    from astropy.table import Table
+
+    class PassedGuard(Exception):
+        pass
+
+    iso = SimpleNamespace(
+        evo_model=SimpleNamespace(no_higher_order_multiples=True),
+        external_evol=True, filters=[],
+        points=Table({'Teff': [5000.0], 'logg': [4.5], 'metallicity': [0.0]}))
+
+    def make_imf(multi):
+        return imf.IMF_broken_powerlaw(np.array([0.1, 0.5, 10]), np.array([-1.3, -2.3]),
+                                       multiplicity=multi, seed=1)
+
+    # Triples allowed: the guard raises.
+    triples = multiplicity.MultiplicityUnresolved(CSF_max=3, companion_max=False)
+    with pytest.raises(Exception, match='does not support higher order multiples'):
+        syn.ResolvedCluster(iso, make_imf(triples), 20.0, verbose=False)
+
+    # Binaries only, or no multiplicity: the guard passes.
+    binaries = multiplicity.MultiplicityUnresolved(CSF_max=1, companion_max=True)
+    with patch.object(syn.ResolvedCluster, '_make_star_systems_table_initial',
+                      side_effect=PassedGuard):
+        for multi in (binaries, None):
+            with pytest.raises(PassedGuard):
+                syn.ResolvedCluster(iso, make_imf(multi), 20.0, verbose=False)
 
     return
 
@@ -1119,7 +1156,7 @@ def test_COSMIC_ResolvedCluster():
 
     # External evolution model (keep tables so we can verify them)
     evo = evolution.COSMIC(keep_COSMIC_tables=True)
-    atm_func = atmospheres.get_merged_atmosphere_w_bb_supplement
+    atm_func = atmospheres.get_merged_atmosphere_v1bb
     red_law = reddening.RedLawCardelli(3.1)
 
     iso = syn.IsochronePhotExternalEvolution(
@@ -1189,7 +1226,7 @@ def time_test_cluster():
     startTime = time.time()
 
     evo = evolution.MergedBaraffePisaEkstromParsec()
-    atm_func = atmospheres.get_merged_atmosphere
+    atm_func = atmospheres.get_merged_atmosphere_v1
     red_law = reddening.RedLawNishiyama09()
     filt_list = ['nirc2,J', 'nirc2,Kp']
 
@@ -1225,7 +1262,7 @@ def model_young_cluster_object(resolved=False):
     multi = multiplicity.MultiplicityUnresolved()
     imf_in = imf.Kroupa_2001(multiplicity=multi)
     evo = evolution.MergedBaraffePisaEkstromParsec()
-    atm_func = atmospheres.get_merged_atmosphere
+    atm_func = atmospheres.get_merged_atmosphere_v1
     iso = syn.Isochrone(
         log_age,
         AKs,
@@ -1518,7 +1555,7 @@ def test_ResolvedCluster_random_state():
     iso_dir = f'{spisea_path}/tests/isochrones'
 
     evo = evolution.MergedBaraffePisaEkstromParsec()
-    atm_func = atmospheres.get_merged_atmosphere
+    atm_func = atmospheres.get_merged_atmosphere_v1
     red_law = reddening.RedLawNishiyama09()
     filt_list = ['nirc2,J', 'nirc2,Kp']
 
@@ -1586,7 +1623,7 @@ def test_ResolvedCluster_no_companions():
     # Test filters
     filt_list = ['nirc2,J', 'nirc2,Kp']
     evo = evolution.MergedBaraffePisaEkstromParsec()
-    atm_func = atmospheres.get_merged_atmosphere
+    atm_func = atmospheres.get_merged_atmosphere_v1
     red_law = reddening.RedLawNishiyama09()
 
     iso = syn.IsochronePhot(logAge, AKs, distance, metallicity=0,
@@ -1652,7 +1689,7 @@ def test_mag_in_filter():
     print(f'ii: {ii}')
     star = old_stars[ii]
 
-    atm_func = atmospheres.get_merged_atmosphere
+    atm_func = atmospheres.get_merged_atmosphere_v1
     red_law = reddening.RedLawNishiyama09()
     filt_list = ['nirc2,J', 'nirc2,Kp']
     wave_range = [3000, 52000]
@@ -1733,7 +1770,7 @@ def test_old_isochrone_white_dwarf_photometry(log_age, tmp_path):
         log_age, AKs, distance,
         metallicity=metallicity,
         evo_model=evo_model,
-        atm_func=atmospheres.get_merged_atmosphere,
+        atm_func=atmospheres.get_merged_atmosphere_v1,
         red_law=reddening.RedLawFritz11(),
         filters=filt_list,
         iso_dir=str(tmp_path),
@@ -1890,3 +1927,39 @@ def test_IsochronePhot_warns_before_overwriting(tmp_path, capsys):
         legacy.write(str(tmp_path / 'iso_6.70_0.70_04000_p00.fits'))
     overwrite, out = isochrone_phot(verbose=True)
     assert not overwrite and report in out
+
+def test_atm_func_name_maps_legacy_names():
+    """
+    The get_merged_atmosphere wrapper is recorded as, and finds the grid of,
+    get_merged_atmosphere_v1. Other functions keep their own names.
+    """
+    assert syn._atm_func_name(atmospheres.get_merged_atmosphere) == 'get_merged_atmosphere_v1'
+    assert syn._atm_func_name(atmospheres.get_merged_atmosphere_v3) == 'get_merged_atmosphere_v3'
+    assert syn._atm_func_name(_mock_atm_func) == '_mock_atm_func'
+
+    assert syn._atm_grid_func(atmospheres.get_merged_atmosphere) is \
+        atmospheres.get_merged_atmosphere_v1_grid
+    assert syn._atm_grid_func(atmospheres.get_merged_atmosphere_v3bb) is \
+        atmospheres.get_merged_atmosphere_v3bb_grid
+
+    return
+
+def test_save_file_mismatches_legacy_atm_names(tmp_path):
+    """
+    Isochrone files that record get_merged_atmosphere still match
+    get_merged_atmosphere_v1 (and the get_merged_atmosphere wrapper), so
+    they are not regenerated.
+    """
+    evo, red = _MockEvoModel(), _MockRedLaw('H18b')
+    iso_file = str(tmp_path / 'iso.fits')
+
+    _write_iso_file(iso_file, EVOMODEL='_MockEvoModel', ATMFUNC='get_merged_atmosphere',
+                    REDLAW='H18b')
+    assert syn.save_file_mismatches(iso_file, evo, atmospheres.get_merged_atmosphere_v1, red) == []
+    assert syn.save_file_mismatches(iso_file, evo, atmospheres.get_merged_atmosphere, red) == []
+
+    # A different atmosphere is still a mismatch, reported with the file's value.
+    assert syn.save_file_mismatches(iso_file, evo, atmospheres.get_merged_atmosphere_v3, red) == [
+        ('ATMFUNC', 'get_merged_atmosphere', 'get_merged_atmosphere_v3')]
+
+    return

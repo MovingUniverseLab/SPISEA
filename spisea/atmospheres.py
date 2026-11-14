@@ -1286,7 +1286,7 @@ def get_BTSettl_meisner_atmosphere_grid():
     return teff_arr, z_arr, logg_arr
 
 #---------------------------------------------------------------------#
-def get_merged_atmosphere(metallicity=0, temperature=20000, gravity=4.5, verbose=False,
+def get_merged_atmosphere_v1(metallicity=0, temperature=20000, gravity=4.5, verbose=False,
                               rebin=True):
     """
     Return a stellar atmosphere from a suite of different model grids,
@@ -1458,7 +1458,7 @@ def get_merged_atmosphere(metallicity=0, temperature=20000, gravity=4.5, verbose
         #                               gravity=gravity)
 
 
-def get_merged_atmosphere_grid(rebin=True):
+def get_merged_atmosphere_v1_grid(rebin=True):
 
     # temp array, metallicity array, logg array
     Meisner2023_atmosphere_arrs = np.array(get_Meisner2023_atmosphere_grid(rebin))
@@ -1515,7 +1515,64 @@ def get_merged_atmosphere_grid(rebin=True):
 
     return super_tarr, super_zarr, super_loggarr
 
-def get_merged_atmosphere_w_bb_supplement(metallicity=0, temperature=20000, gravity=4.5, verbose=False,
+def get_merged_atmosphere(metallicity=0, temperature=20000, gravity=4.5, verbose=False,
+                          rebin=True):
+    """
+    Backwards-compatible name for :func:`get_merged_atmosphere_v1`.
+
+    Parameters
+    ----------
+    metallicity: float
+        The stellar metallicity, in terms of [Z]
+
+    temperature: float
+        The stellar temperature, in units of K
+
+    gravity: float
+        The stellar gravity, in cgs units
+
+    verbose: boolean
+        True for verbose output
+
+    rebin: boolean
+        Passed to :func:`get_merged_atmosphere_v1`.
+
+    Returns
+    -------
+    spectrum : synphot.spectrum.SourceSpectrum
+        The :func:`get_merged_atmosphere_v1` spectrum.
+
+    Notes
+    -----
+    Isochrones made with this function are read, written, and matched
+    against cached files as ``get_merged_atmosphere_v1``.
+    """
+    spectrum = get_merged_atmosphere_v1(metallicity=metallicity,
+                                        temperature=temperature,
+                                        gravity=gravity, verbose=verbose,
+                                        rebin=rebin)
+
+    return spectrum
+
+def get_merged_atmosphere_grid(rebin=True):
+    """
+    Backwards-compatible name for :func:`get_merged_atmosphere_v1_grid`.
+
+    Parameters
+    ----------
+    rebin: boolean
+        Passed to :func:`get_merged_atmosphere_v1_grid`.
+
+    Returns
+    -------
+    super_tarr, super_zarr, super_loggarr : numpy arrays
+        Temperature, metallicity, and log gravity of the grid points.
+    """
+    super_tarr, super_zarr, super_loggarr = get_merged_atmosphere_v1_grid(rebin=rebin)
+
+    return super_tarr, super_zarr, super_loggarr
+
+def get_merged_atmosphere_v1bb(metallicity=0, temperature=20000, gravity=4.5, verbose=False,
                               rebin=True):
     """
     Return a stellar atmosphere from a suite of different model grids,
@@ -1622,21 +1679,21 @@ def get_merged_atmosphere_w_bb_supplement(metallicity=0, temperature=20000, grav
                                  gravity=gravity,
                                  verbose=verbose)
 
-    return get_merged_atmosphere(metallicity=metallicity,
+    return get_merged_atmosphere_v1(metallicity=metallicity,
                                  temperature=temperature,
                                  gravity=gravity,
                                  verbose=verbose,
                                  rebin=rebin)
 
-def get_merged_atmosphere_w_bb_supplement_grid(bb_supplement_tarr='default', bb_supplement_zarr='default', bb_supplement_loggarr='default', rebin=True):
+def get_merged_atmosphere_v1bb_grid(bb_supplement_tarr='default', bb_supplement_zarr='default', bb_supplement_loggarr='default', rebin=True):
     """
     Return the atmosphere parameter grid used by
-    get_merged_atmosphere_w_bb_supplement.
+    get_merged_atmosphere_v1bb.
 
     This is the standard merged atmosphere grid plus the white dwarf grid and
     blackbody supplement points for high-gravity regions.
     """
-    super_tarr, super_zarr, super_loggarr = get_merged_atmosphere_grid(rebin=rebin)
+    super_tarr, super_zarr, super_loggarr = get_merged_atmosphere_v1_grid(rebin=rebin)
 
     wd_tarr, wd_zarr, wd_loggarr = get_wdKoester_atmosphere_grid()
     super_tarr = np.concatenate((super_tarr, wd_tarr))
@@ -1663,7 +1720,7 @@ def get_merged_atmosphere_w_bb_supplement_grid(bb_supplement_tarr='default', bb_
     return super_tarr, super_zarr, super_loggarr
 
 
-def get_merged_atmosphere_atlas_phoenix_sonora(metallicity=0, temperature=20000,
+def get_merged_atmosphere_v3(metallicity=0, temperature=20000,
                                               gravity=4.5, verbose=False, rebin=True):
     """
     Return an atmosphere from FlameSkimmer, PHOENIX or ATLAS.
@@ -1718,10 +1775,10 @@ def get_merged_atmosphere_atlas_phoenix_sonora(metallicity=0, temperature=20000,
         kwargs['rebin'] = rebin
     return loader(**kwargs)
 
-def get_merged_atmosphere_atlas_phoenix_sonora_grid(rebin=True):
+def get_merged_atmosphere_v3_grid(rebin=True):
     """
     Return the temperature, metallicity and gravity arrays used by
-    get_merged_atmosphere_atlas_phoenix_sonora.
+    get_merged_atmosphere_v3.
     """
 
     def select(grid, condition):
@@ -1766,12 +1823,12 @@ def get_merged_atmosphere_atlas_phoenix_sonora_grid(rebin=True):
 
     return super_tarr, super_zarr, super_loggarr
 
-def get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement(metallicity=0, temperature=20000, gravity=4.5, verbose=False,
+def get_merged_atmosphere_v3bb(metallicity=0, temperature=20000, gravity=4.5, verbose=False,
                               rebin=True):
     """
     Return a Sonora/PHOENIX/ATLAS atmosphere, with white-dwarf support.
 
-    Uses get_merged_atmosphere_atlas_phoenix_sonora for ordinary stars.
+    Uses get_merged_atmosphere_v3 for ordinary stars.
     At higher gravities, use a white-dwarf atmosphere or a blackbody.
 
     Parameters
@@ -1832,18 +1889,18 @@ def get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement(metallicity=0, te
                                  gravity=gravity,
                                  verbose=verbose)
 
-    return get_merged_atmosphere_atlas_phoenix_sonora(metallicity=metallicity,
+    return get_merged_atmosphere_v3(metallicity=metallicity,
                                  temperature=temperature,
                                  gravity=gravity,
                                  verbose=verbose,
                                  rebin=rebin)
 
-def get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement_grid(bb_supplement_tarr='default', bb_supplement_zarr='default', bb_supplement_loggarr='default', rebin=True):
+def get_merged_atmosphere_v3bb_grid(bb_supplement_tarr='default', bb_supplement_zarr='default', bb_supplement_loggarr='default', rebin=True):
     """
     Return the atmosphere grid with the white-dwarf and blackbody
-    points used by get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement.
+    points used by get_merged_atmosphere_v3bb.
     """
-    super_tarr, super_zarr, super_loggarr = get_merged_atmosphere_atlas_phoenix_sonora_grid(rebin=rebin)
+    super_tarr, super_zarr, super_loggarr = get_merged_atmosphere_v3_grid(rebin=rebin)
 
     wd_tarr, wd_zarr, wd_loggarr = get_wdKoester_atmosphere_grid()
     super_tarr = np.concatenate((super_tarr, wd_tarr))

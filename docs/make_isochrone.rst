@@ -26,8 +26,8 @@ An example of making an IsochronePhot object::
   dist = 4000 # distance in parsec
   AKs = 0.8 # extinction in Ks-band mags
   metallicity = 0 # Metallicity in [M/H]
-  evo_model = evolution.MISTv1() 
-  atm_func = atmospheres.get_merged_atmosphere
+  evo_model = evolution.MergedFlameSkimmerRedDiamondbackMIST()
+  atm_func = atmospheres.get_merged_atmosphere_v3
   red_law = reddening.RedLawHosek18b()
 
   # Specify filters for synthetic photometry. Here we 
@@ -48,8 +48,7 @@ An example of making an IsochronePhot object::
                             filters=filt_list,
 			    iso_dir=iso_dir)
 
-See `Quick Start Example
-<https://github.com/MovingUniverseLab/spisea/blob/main/docs/Quick_Start_Make_Cluster.ipynb>`_
+See :doc:`Making a cluster <notebooks/01_make_cluster>`
 for a detailed example showing how to interact with the isochrone
 object output. Here is a table from Hosek et al. 2020 that describes
 the values in the isochrone output table:

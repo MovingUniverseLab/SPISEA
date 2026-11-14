@@ -15,6 +15,9 @@ build:
   tools:
     # stsynphot (docs/requirements.txt) requires Python >= 3.11.
     python: "3.11"
+  # nbsphinx parses stored notebooks with pandoc. It does not execute them.
+  apt_packages:
+    - pandoc
 
 
 # Build documentation in the docs/ directory with Sphinx

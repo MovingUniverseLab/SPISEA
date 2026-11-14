@@ -184,6 +184,11 @@ Filters: U, B, V, R, I
 
 Example: ``'ubv,B'``
 
+Tutorials use the Bessell set above. The ``IsochronePhot`` constructor
+still defaults to this Johnson-Cousins set for backwards compatibility;
+``ubv,I`` warns because that profile is cut off at 1.1 microns. New work
+should pass ``bessell,U`` through ``bessell,I`` instead.
+
 
 **Johnson-Glass**
 

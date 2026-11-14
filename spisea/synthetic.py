@@ -43,9 +43,52 @@ import sys
 
 default_evo_model = evolution.MISTv1()
 default_red_law = reddening.RedLawNishiyama09()
-default_atm_func = atm.get_merged_atmosphere
+default_atm_func = atm.get_merged_atmosphere_v1
 default_wd_atm_func = atm.get_wd_atmosphere
 default_multiplicity = multiplicity.MultiplicityResolvedDK(CSF_max = 1, companion_max = True)
+
+def _atm_func_name(atm_func):
+    """
+    Name used for an atmosphere function in isochrone meta-data and for
+    finding its ``_grid`` partner.
+
+    Parameters
+    ----------
+    atm_func : callable
+        Atmosphere function, e.g. ``atmospheres.get_merged_atmosphere_v1``.
+
+    Returns
+    -------
+    name : str
+        ``atm_func.__name__``, except that ``get_merged_atmosphere`` is
+        recorded as ``get_merged_atmosphere_v1``.
+    """
+    name = atm_func.__name__
+
+    # get_merged_atmosphere is the earlier name of get_merged_atmosphere_v1.
+    if atm_func is atm.get_merged_atmosphere:
+        name = 'get_merged_atmosphere_v1'
+
+    return name
+
+def _atm_grid_func(atm_func):
+    """
+    Grid function paired with an atmosphere function.
+
+    Parameters
+    ----------
+    atm_func : callable
+        Atmosphere function from any module.
+
+    Returns
+    -------
+    grid_func : callable
+        ``<atm_func name>_grid`` from the same module.
+    """
+    module = sys.modules[atm_func.__module__]
+    grid_func = getattr(module, _atm_func_name(atm_func) + "_grid")
+
+    return grid_func
 
 # Dummy telescope area for arbitrary photometry rescaling.
 tel_area_dummy = 1.0 * u.m**2
@@ -234,8 +277,12 @@ class ResolvedCluster(Cluster):
                 "Input IFMR will be ignored.")
 
         # Raise error if you're running COSMIC or other evo models
-        # with binaries only but ask for triples or higher order multiples
-        if getattr(iso.evo_model, 'no_higher_order_multiples', False) and ((self.imf._multi_props.CSF_max > 1) or (self.imf._multi_props.companion_max == False)):
+        # with binaries only but ask for triples or higher order multiples.
+        # No multiplicity object means all singles, which is allowed.
+        multi_props = self.imf._multi_props
+        binaries_only = getattr(getattr(iso, 'evo_model', None), 'no_higher_order_multiples', False)
+        if binaries_only and (multi_props is not None) and \
+                ((multi_props.CSF_max > 1) or (multi_props.companion_max == False)):
             raise Exception('Your evolution model does not support higher order multiples. Set CSF_max = 1 and companion_max = True in multiplicity object.')
             
 
@@ -1016,7 +1063,7 @@ class Isochrone(object):
 
     atm_func: model atmosphere function, optional
         Set the stellar atmosphere models for the stars.
-        Default is get_merged_atmosphere.
+        Default is get_merged_atmosphere_v1.
 
     wd_atm_func: white dwarf model atmosphere function, optional
         Set the stellar atmosphere models for the white dwarfs.
@@ -1141,7 +1188,7 @@ class Isochrone(object):
         # Append all the meta data to the summary table.
         tab.meta['SPISEAVERSION'] = spisea_version_number
         tab.meta['REDLAW'] = red_law.name
-        tab.meta['ATMFUNC'] = atm_func.__name__
+        tab.meta['ATMFUNC'] = _atm_func_name(atm_func)
         tab.meta['EVOMODEL'] = type(evo_model).__name__
         tab.meta['EVOMODELVERSION'] = evo_model.model_version_name
         tab.meta['LOGAGE'] = logAge
@@ -1238,7 +1285,7 @@ class IsochronePhot(Isochrone):
 
     atm_func: model atmosphere function, optional
         Set the stellar atmosphere models for the stars.
-        Default is atmospheres.get_merged_atmosphere.
+        Default is atmospheres.get_merged_atmosphere_v1.
 
     wd_atm_func: white dwarf model atmosphere function, optional
         Set the stellar atmosphere models for the white dwarfs.
@@ -1289,7 +1336,12 @@ class IsochronePhot(Isochrone):
     filters : array of strings, optional
         Define what filters the synthetic photometry
         will be calculated for, via the filter string
-        identifier.
+        identifier. The default is the Johnson-Cousins set
+        ``ubv,U`` through ``ubv,I``, kept for backwards
+        compatibility. New work should use the Bessell (1990)
+        set ``bessell,U`` through ``bessell,I``. Requesting
+        ``ubv,I`` emits a warning because that profile is cut
+        off at 1.1 microns.
 
     mag_sys : string, optional
         Define magnitude system for synthetic photometry. Default
@@ -1603,7 +1655,7 @@ class IsochronePhotExternalEvolution(IsochronePhot):
 
     atm_func: model atmosphere function, optional
         Set the stellar atmosphere models for the stars.
-        Default is atmospheres.get_merged_atmosphere.
+        Default is atmospheres.get_merged_atmosphere_v1.
 
     wd_atm_func: white dwarf model atmosphere function, optional
         Set the stellar atmosphere models for the white dwafs.
@@ -1650,7 +1702,12 @@ class IsochronePhotExternalEvolution(IsochronePhot):
     filters : array of strings, optional
         Define what filters the synthetic photometry
         will be calculated for, via the filter string
-        identifier.
+        identifier. The default is the Johnson-Cousins set
+        ``ubv,U`` through ``ubv,I``, kept for backwards
+        compatibility. New work should use the Bessell (1990)
+        set ``bessell,U`` through ``bessell,I``. Requesting
+        ``ubv,I`` emits a warning because that profile is cut
+        off at 1.1 microns.
 
     mag_sys : string, optional
         Define magnitude system for synthetic photometry. Default
@@ -1748,8 +1805,7 @@ class IsochronePhotExternalEvolution(IsochronePhot):
             # of the ATMOSPHERE MODEL ONLY
             # Takes the atm_func and adds the word "_grid" after it to
             # call the grid version of it
-            module = sys.modules[atm_func.__module__]
-            grid_func = getattr(module, atm_func.__name__ + "_grid")
+            grid_func = _atm_grid_func(atm_func)
             teff_arr, z_arr, logg_arr = grid_func(rebin=rebin)
 
 
@@ -1760,7 +1816,7 @@ class IsochronePhotExternalEvolution(IsochronePhot):
             # Append all the meta data to the summary table.
             tab.meta['SPISEAVERSION'] = spisea_version_number
             tab.meta['REDLAW'] = red_law.name
-            tab.meta['ATMFUNC'] = atm_func.__name__
+            tab.meta['ATMFUNC'] = _atm_func_name(atm_func)
             tab.meta['EVOMODEL'] = type(evo_model).__name__
             tab.meta['EVOMODELVERSION'] = evo_model.model_version_name
             tab.meta['AKS'] = AKs
@@ -1832,8 +1888,7 @@ class IsochronePhotExternalEvolution(IsochronePhot):
             # of the ATMOSPHERE MODEL ONLY
             # Takes the atm_func and adds the word "_grid" after it to
             # call the grid version of it
-            module = sys.modules[atm_func.__module__]
-            grid_func = getattr(module, atm_func.__name__ + "_grid")
+            grid_func = _atm_grid_func(atm_func)
             teff_arr, z_arr, logg_arr = grid_func(rebin=rebin)
 
             print('Loading stellar spectra')
@@ -1972,14 +2027,19 @@ def save_file_mismatches(save_file_path, evo_model, atm_func, red_law):
         mismatches.append(('SPISEAVERSION', file_version, spisea_version_number))
 
     expected = [('EVOMODEL', type(evo_model).__name__),
-                ('ATMFUNC', atm_func.__name__),
+                ('ATMFUNC', _atm_func_name(atm_func)),
                 ('REDLAW', red_law.name)]
     # Model version is only checked if it was logged
     if 'EVOMODELVERSION' in tmp.meta:
         expected.append(('EVOMODELVERSION', evo_model.model_version_name))
 
+    # Files written before the v1 rename store get_merged_atmosphere.
+    file_meta = dict(tmp.meta)
+    if file_meta.get('ATMFUNC') == 'get_merged_atmosphere':
+        file_meta['ATMFUNC'] = 'get_merged_atmosphere_v1'
+
     mismatches += [(key, tmp.meta.get(key), value) for key, value in expected
-                   if tmp.meta.get(key) != value]
+                   if file_meta.get(key) != value]
     return mismatches
 
 def _spisea_major_version(version):

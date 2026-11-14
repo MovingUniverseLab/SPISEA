@@ -20,8 +20,7 @@ Compact objects are included in the output tables produced by
 * NS: phase = 102
 * BH: phase = 103
 
-See `Quick Start Example
-<https://github.com/MovingUniverseLab/spisea/blob/main/docs/Quick_Start_Make_Cluster.ipynb>`_
+See :doc:`Making a cluster <notebooks/01_make_cluster>`
 for more examples of how to interact with the :ref:`cluster_objects`
 output.
 

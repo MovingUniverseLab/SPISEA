@@ -41,8 +41,14 @@ optional-dependencies.dev = [
     "wheel",
     "numpydoc",
     "pydata-sphinx-theme",
+    "nbsphinx>=0.9",
     "pytest",
     "pytest-astropy-header",
+]
+
+# Mass functions from initial_mass_function, for imf.IMF_package.
+optional-dependencies.imf = [
+    "initial_mass_function",
 ]
 
 classifiers = [

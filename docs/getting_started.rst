@@ -218,10 +218,9 @@ such as::
     
 However, these can be safely ignored since SPISEA doesn't use those functionalities.
 
-To further test your SPISEA install, try running the `Quick Start
-notebook
-<https://github.com/MovingUniverseLab/spisea/blob/main/docs/Quick_Start_Make_Cluster.ipynb>`_.
-It is also located in ``SPISEA/docs``.
+To further test your SPISEA install, try running
+:doc:`Making a cluster <notebooks/01_make_cluster>`.
+The notebooks are in ``docs/notebooks``.
 
 To test the full range of
 evolution models, atmosphere models, and photometric filters,

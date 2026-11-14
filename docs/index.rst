@@ -42,6 +42,41 @@ Getting Started
    quick_start.rst
    more_examples.rst
 
+Tutorials
+---------
+.. toctree::
+   :maxdepth: 1
+   :caption: Tutorials
+
+   notebooks/01_make_cluster
+   notebooks/02_brown_dwarfs
+   notebooks/03_resolved_multiples
+   notebooks/04_cluster_with_cosmic
+
+Paper examples
+--------------
+.. toctree::
+   :maxdepth: 1
+   :caption: Paper examples
+
+   notebooks/papers/hosek2020/fig02_hrd_extinction
+   notebooks/papers/hosek2020/fig03_cmds_metallicity
+   notebooks/papers/hosek2020/fig04_multiplicity_extinction
+   notebooks/papers/hosek2020/fig05_imfs
+   notebooks/papers/hosek2020/fig06_wolf_rayet
+   notebooks/papers/hosek2020/fig07_unresolved_spectra
+   notebooks/papers/begbie2026/fig02_bd_imfs
+   notebooks/papers/begbie2026/fig03_atmosphere_interpolation
+   notebooks/papers/begbie2026/fig04_evolution_interpolation
+   notebooks/papers/begbie2026/fig05_hrd_ages
+   notebooks/papers/begbie2026/fig06_pleiades_gaia
+   notebooks/papers/begbie2026/fig07_pleiades_ukidss
+   notebooks/papers/begbie2026/fig08_upper_sco
+   notebooks/papers/begbie2026/fig09_m44
+   notebooks/papers/begbie2026/fig10_mass_fraction
+   notebooks/papers/begbie2026/fig11_companion_counts
+   notebooks/papers/begbie2026/fig12_bd_separations
+
 
 Documentation
 -------------------------
@@ -102,7 +137,7 @@ Change Log
 	* New brown dwarf models including non-solar metallicities
 		* New evolution grid: MergedFlameSkimmerRedDiamondbackMIST
 		* New atmosphere grid: FlameSkimmer
-		* New merged atmosphere set get_merged_atmosphere_atlas_phoenix_sonora
+		* New merged atmosphere set get_merged_atmosphere_v3 (ATLAS/PHOENIX/Sonora)
 		* Updated evolution and atmosphere grid data sets w/ grid_version=3.1
 * *Minor Changes*
 	* Added opt-in Offner et al. 2023 (Protostars and Planets VII; arXiv:2203.10066) multiplicity model :class:`~imf.multiplicity.MultiplicityUnresolvedOffner2023` / :class:`~imf.multiplicity.MultiplicityResolvedOffner2023`, including brown dwarfs. MF/CSF is a logistic in log-mass; :math:`\gamma(M)` is an error-weighted logistic; :math:`\mu(a)` is a smooth broken power law (:math:`s=0.1` dex); :math:`\sigma(\log_{10} a)` is a 2-parameter logistic. Comparison figures vs the default :class:`~imf.multiplicity.MultiplicityUnresolved` / :class:`~imf.multiplicity.MultiplicityResolvedDK` are in :ref:`multi_obj`.
@@ -117,6 +152,7 @@ Change Log
 	* Bug fix: IMF_broken_powerlaw could return NaN masses when a segment was steeper than the next higher-mass segment (e.g. 19% NaN for powers [-2.3, -1.3]). IMFs that get steeper toward higher masses, such as Kroupa-like IMFs, were not affected.
 	* IMF helpers theta_closed, theta_open, and delta return a float, not a one-element array, for NumPy scalar input
 	* ResolvedCluster prints its low-mass star removal messages only when verbose=True
+	* Renamed ``get_merged_atmosphere`` (and its ``_grid`` function) to ``get_merged_atmosphere_v1``. ``get_merged_atmosphere`` and ``get_merged_atmosphere_grid`` remain and return the v1 versions. Isochrone files saved with ``get_merged_atmosphere`` are still used.
 
 2.5 (2026-07-17)
 
@@ -130,7 +166,7 @@ Change Log
 		* When COSMIC is used when creating synthetic clusters, SPISEA creates binary systems normally (using the Multiplicity obj) which are then evolved using COSMIC. 
 		* New COSMIC evolution class, which is used with new IsochronePhotExternalEvolution obj ('external evolution' referring to fact that stellar evolution is done outside of standard SPISEA isochrone-grid framework)
 		* New merged atmosphere model class get_merged_atmosphere_w_bb_supplement, which reverts to blackbody atmospheres for stars with parameters outside of existing grid support.
-		* New tutorial for creating SPISEA clusters using COSMIC: docs/Cluster_w_COSMIC.ipynb
+		* New tutorial for creating SPISEA clusters using COSMIC: :doc:`notebooks/04_cluster_with_cosmic`
 
 * *Minor Changes*
 	* The MISTv1.2-synthpop model extension was modified to include denser sampling in the gap between the base MISTv1.2 grids and 0.1Msun.
