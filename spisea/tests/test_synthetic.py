@@ -1033,6 +1033,43 @@ def _require_cosmic():
 
     return
 
+def test_ResolvedCluster_binaries_only_guard():
+    """
+    An evolution model with no_higher_order_multiples (e.g. COSMIC) rejects
+    multiplicity that allows triples, but accepts binaries-only multiplicity
+    and no multiplicity at all. Uses a stand-in isochrone, so COSMIC is not
+    needed; the build is stopped right after the guard.
+    """
+    from types import SimpleNamespace
+    from astropy.table import Table
+
+    class PassedGuard(Exception):
+        pass
+
+    iso = SimpleNamespace(
+        evo_model=SimpleNamespace(no_higher_order_multiples=True),
+        external_evol=True, filters=[],
+        points=Table({'Teff': [5000.0], 'logg': [4.5], 'metallicity': [0.0]}))
+
+    def make_imf(multi):
+        return imf.IMF_broken_powerlaw(np.array([0.1, 0.5, 10]), np.array([-1.3, -2.3]),
+                                       multiplicity=multi, seed=1)
+
+    # Triples allowed: the guard raises.
+    triples = multiplicity.MultiplicityUnresolved(CSF_max=3, companion_max=False)
+    with pytest.raises(Exception, match='does not support higher order multiples'):
+        syn.ResolvedCluster(iso, make_imf(triples), 20.0, verbose=False)
+
+    # Binaries only, or no multiplicity: the guard passes.
+    binaries = multiplicity.MultiplicityUnresolved(CSF_max=1, companion_max=True)
+    with patch.object(syn.ResolvedCluster, '_make_star_systems_table_initial',
+                      side_effect=PassedGuard):
+        for multi in (binaries, None):
+            with pytest.raises(PassedGuard):
+                syn.ResolvedCluster(iso, make_imf(multi), 20.0, verbose=False)
+
+    return
+
 @pytest.mark.slow
 def test_COSMIC_evolve():
     """

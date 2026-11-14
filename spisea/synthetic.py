@@ -277,8 +277,12 @@ class ResolvedCluster(Cluster):
                 "Input IFMR will be ignored.")
 
         # Raise error if you're running COSMIC or other evo models
-        # with binaries only but ask for triples or higher order multiples
-        if getattr(iso.evo_model, 'no_higher_order_multiples', False) and ((self.imf._multi_props.CSF_max > 1) or (self.imf._multi_props.companion_max == False)):
+        # with binaries only but ask for triples or higher order multiples.
+        # No multiplicity object means all singles, which is allowed.
+        multi_props = self.imf._multi_props
+        binaries_only = getattr(getattr(iso, 'evo_model', None), 'no_higher_order_multiples', False)
+        if binaries_only and (multi_props is not None) and \
+                ((multi_props.CSF_max > 1) or (multi_props.companion_max == False)):
             raise Exception('Your evolution model does not support higher order multiples. Set CSF_max = 1 and companion_max = True in multiplicity object.')
             
 
