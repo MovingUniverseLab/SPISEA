@@ -160,7 +160,7 @@ def test_resolvedmult():
     AKs = 1.0 # Ks filter extinction in mags
     dist = 4000 # distance in parsecs
     metallicity = 0 # metallicity in [M/H]
-    atm_func = atmospheres.get_merged_atmosphere
+    atm_func = atmospheres.get_merged_atmosphere_v1
     evo_merged = evolution.MergedPhillipsBaraffePisaEkstromParsec()
     redlaw = reddening.RedLawCardelli(3.1) # Rv = 3.1
     filt_list = ['nirc2,J', 'nirc2,Kp']

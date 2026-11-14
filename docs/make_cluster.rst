@@ -50,8 +50,7 @@ has already been created::
   ifmr=my_ifmr)
 
 
-See `Quick Start Example
-<https://github.com/MovingUniverseLab/spisea/blob/main/docs/Quick_Start_Make_Cluster.ipynb>`_
+See :doc:`Making a cluster <notebooks/01_make_cluster>`
 for a detailed example for how to make different
 cluster sub-classes and interact with the resulting output.
 Here is a table from Hosek et al. 2020 that describes

@@ -209,7 +209,7 @@ def test_red_law_IsochronePhot():
 
     # Define evolution/atmosphere models and extinction law
     evo_model = evolution.MISTv1()
-    atm_func = atmospheres.get_merged_atmosphere
+    atm_func = atmospheres.get_merged_atmosphere_v1
 
     # Also specify filters for synthetic photometry.
     filt_list = ['wfc3,ir,f127m', 'wfc3,ir,f153m', 'nirc2,H', 'nirc2,Kp']

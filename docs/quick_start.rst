@@ -4,10 +4,16 @@
 Quick Start Guide
 ===================
 
-We provide a `jupyter notebook
-<https://github.com/MovingUniverseLab/spisea/blob/main/docs/Quick_Start_Make_Cluster.ipynb>`_
-as a Quick-Start Guide to demonstrate the steps required to simulate a cluster and interact
-with the resulting output. This guide shows you how to:
+The tutorials are meant to be read in order:
+
+* :doc:`Making a cluster <notebooks/01_make_cluster>`
+* :doc:`Brown dwarfs <notebooks/02_brown_dwarfs>`
+* :doc:`Resolved multiple systems <notebooks/03_resolved_multiples>`
+* :doc:`A cluster evolved with COSMIC <notebooks/04_cluster_with_cosmic>`
+
+:doc:`Making a cluster <notebooks/01_make_cluster>` demonstrates the steps
+required to simulate a cluster and interact with the resulting output.
+This guide shows you how to:
 
 Make a Cluster Isochrone
 ----------------------------------

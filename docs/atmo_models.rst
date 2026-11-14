@@ -49,7 +49,7 @@ See :ref:`models` for where to unpack them.
      - λ Range (μm)
      - Resolution\ :sup:`a` λ/Δλ
      - Ref
-   * - ``get_merged_atmosphere``
+   * - ``get_merged_atmosphere_v1``
      - 250 – 50000
      - \ :sup:`b`
      - \ :sup:`b`
@@ -132,7 +132,7 @@ See :ref:`models` for where to unpack them.
 :sup:`a` Resolution column reports the original resolution of the atmosphere model grid.
 The default SPISEA grid degrades all atmosphere grids to R = 250 (``spisea_cdbs.tar.gz``).
  
-:sup:`b` See Appendix B; values depend on the underlying model selected by ``get_merged_atmosphere``.
+:sup:`b` See Appendix B; values depend on the underlying model selected by ``get_merged_atmosphere_v1``.
  
 :sup:`c` Kurucz (1993); see CDBS documentation.
  
@@ -201,7 +201,7 @@ Regenerate the figures from the repository root with::
 
 Sonora, PHOENIX and ATLAS suite
 -----------------------------------------
-``get_merged_atmosphere_atlas_phoenix_sonora`` adds the C/O = 1 equilibrium
+``get_merged_atmosphere_v3`` adds the C/O = 1 equilibrium
 FlameSkimmer models to the stellar atmosphere models. Below 2500 K, stars
 with log(g) >= 2 use FlameSkimmer through 2200 K and a FlameSkimmer/PHOENIX
 blend from 2200 to 2500 K. Lower-gravity stars use PHOENIX. The log(g) limit
@@ -210,7 +210,7 @@ comes from the lowest gravity in FlameSkimmer.
 Cool dwarfs below [M/H] = -1 use the -1 FlameSkimmer atmosphere and produce
 a warning. At 2500-5000 K the function uses PHOENIX, at 5000-5500 K it uses
 the ATLAS/PHOENIX blend, and above 5500 K it uses ATLAS. The separate
-``get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement`` function adds
+``get_merged_atmosphere_v3bb`` function adds
 white-dwarf atmospheres and blackbodies for high-gravity objects.
 
 Requests outside an atmosphere grid use ``get_atmosphere_bounds``, which
@@ -224,15 +224,24 @@ The use of the -1 atmosphere at lower metallicities is also an approximation.
 
 Model Atmosphere Classes
 -------------------------
+In SPISEA 3.1, ``get_merged_atmosphere`` was renamed
+``get_merged_atmosphere_v1``. ``get_merged_atmosphere`` and
+``get_merged_atmosphere_grid`` are kept and return
+``get_merged_atmosphere_v1`` and ``get_merged_atmosphere_v1_grid``.
+Isochrone files saved with ``get_merged_atmosphere`` are still read
+without being regenerated.
+
+.. autofunction:: atmospheres.get_merged_atmosphere_v1
+
 .. autofunction:: atmospheres.get_merged_atmosphere
 
 .. autofunction:: atmospheres.get_flameskimmer_atmosphere
 
 .. autofunction:: atmospheres.get_flameskimmer_phoenix_atmosphere
 
-.. autofunction:: atmospheres.get_merged_atmosphere_atlas_phoenix_sonora
+.. autofunction:: atmospheres.get_merged_atmosphere_v3
 
-.. autofunction:: atmospheres.get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement
+.. autofunction:: atmospheres.get_merged_atmosphere_v3bb
 
 .. autofunction:: atmospheres.get_wd_atmosphere
 

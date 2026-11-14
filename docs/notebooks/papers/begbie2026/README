@@ -1,1 +1,3 @@
 This directory contains jupyter notebooks to re-create the figures included in Begbie et al. (2026). The notebooks are labeled by figure number.
+
+These notebooks use the get_merged_atmosphere_v1 atmospheres on purpose, because the paper's figures were made with them. Figure 5 relies on the default atmosphere, which is also v1. For new work, use get_merged_atmosphere_v3 (or get_merged_atmosphere_v3bb for compact objects), as in the tutorial notebooks.

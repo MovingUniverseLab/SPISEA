@@ -44,7 +44,8 @@ For most selected evolution models, the companions are evolved as single stars.
 To evolve binaries with mass exchange (does not support triples and higher order multiples), 
 you should use one of the ``MultiplicityResolved`` classes
 and the ``COSMIC`` evolution model. 
-See the example jupyter notebook `Cluster_w_COSMIC.ipynb <https://github.com/MovingUniverseLab/spisea/blob/main/docs/Cluster_w_COSMIC.ipynb>`_ for an example.
+See :doc:`A cluster evolved with COSMIC <notebooks/04_cluster_with_cosmic>`
+and :doc:`Resolved multiple systems <notebooks/03_resolved_multiples>`.
 Note that currently COSMIC, due to being external evolution is significantly slower (2-10x) than the other evolution options.
 
 Examples use

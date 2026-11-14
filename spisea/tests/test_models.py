@@ -183,7 +183,7 @@ def test_atmosphere_models():
     """
     # Array of atmospheres
     atm_arr = [
-        atmospheres.get_merged_atmosphere,
+        atmospheres.get_merged_atmosphere_v1,
         atmospheres.get_castelli_atmosphere,
         atmospheres.get_phoenixv16_atmosphere,
         atmospheres.get_BTSettl_2015_atmosphere,
@@ -194,8 +194,8 @@ def test_atmosphere_models():
         atmospheres.get_Phillips2020_atmosphere,
         atmospheres.get_Meisner2023_atmosphere,
         atmospheres.get_flameskimmer_atmosphere,
-        atmospheres.get_merged_atmosphere_atlas_phoenix_sonora,
-        atmospheres.get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement
+        atmospheres.get_merged_atmosphere_v3,
+        atmospheres.get_merged_atmosphere_v3bb
     ]
 
     # Array of metallicities
@@ -234,8 +234,8 @@ def test_atmosphere_models():
 
     # Test both merged atmosphere functions at different temperatures.
     temp_range = [250, 1000, 2000, 2350, 2500, 3500, 4000, 5250, 6000, 12000]
-    for atm_func in (atmospheres.get_merged_atmosphere,
-                     atmospheres.get_merged_atmosphere_atlas_phoenix_sonora):
+    for atm_func in (atmospheres.get_merged_atmosphere_v1,
+                     atmospheres.get_merged_atmosphere_v3):
         for metallicity in bd_metals_range:
             for temperature in temp_range:
                 test = atm_func(metallicity=metallicity, temperature=temperature, verbose=True)
@@ -249,7 +249,7 @@ def test_atmosphere_models():
                 (2350, 1.5, atmospheres.get_phoenixv16_atmosphere),
                 (1000, 4.5, atmospheres.get_flameskimmer_atmosphere),
                 (2350, 4.5, atmospheres.get_flameskimmer_phoenix_atmosphere)):
-            test = atmospheres.get_merged_atmosphere_atlas_phoenix_sonora(
+            test = atmospheres.get_merged_atmosphere_v3(
                 metallicity=metallicity, temperature=temperature, gravity=gravity)
             source_metal = max(metallicity, -1.) if gravity >= 2. else metallicity
             expected = loader(metallicity=source_metal, temperature=temperature,
@@ -359,6 +359,26 @@ def test_filters():
 
     return
 
+
+def test_get_merged_atmosphere_wraps_v1():
+    """
+    get_merged_atmosphere returns the get_merged_atmosphere_v1 spectrum.
+    """
+    for temperature, gravity, metallicity in ((20000, 4.5, 0), (3000, 5.0, 0),
+                                              (900, 5.0, 0), (4500, 4.0, -1.0)):
+        old = atmospheres.get_merged_atmosphere(temperature=temperature, gravity=gravity,
+                                                metallicity=metallicity)
+        new = atmospheres.get_merged_atmosphere_v1(temperature=temperature, gravity=gravity,
+                                                   metallicity=metallicity)
+        np.testing.assert_array_equal(old.waveset.value, new.waveset.value)
+        np.testing.assert_array_equal(old(old.waveset).value, new(new.waveset).value)
+
+    # The grid wrapper returns the v1 grid points.
+    for old_arr, new_arr in zip(atmospheres.get_merged_atmosphere_grid(),
+                                atmospheres.get_merged_atmosphere_v1_grid()):
+        np.testing.assert_array_equal(old_arr, new_arr)
+
+    return
 
 def _assert_valid_atmosphere_spectrum(spectrum):
     """
