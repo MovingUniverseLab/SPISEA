@@ -2,7 +2,7 @@
 
 Work top to bottom. Check boxes as you go.
 
-**Current tip (when this was written):** `dev` @ `6ec9cf7` (clean, synced with `origin/dev`).
+**Current tip (when this was written):** `dev` @ `07a3ec5` (synced with `origin/dev`; release PR `dev`→`main` still to open — `gh` token invalid locally).
 
 ---
 
@@ -109,7 +109,7 @@ EOF
 )"
 ```
 
-- [ ] PR opened
+- [ ] PR opened — blocked: `gh` keyring token for `jluastro` is invalid (`gh auth login` needed). Compare URL: https://github.com/MovingUniverseLab/SPISEA/compare/main...dev?expand=1
 - [ ] Review / fix anything that comes up
 - [ ] Merge with **merge commit** (repo convention)
 
