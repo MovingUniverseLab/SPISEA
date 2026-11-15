@@ -45,7 +45,7 @@ Pick **A** or **B** before tagging:
 - [x] **Decision: A (safer).** Code defaults stay `MISTv1` / `get_merged_atmosphere_v1` / `Nishiyama09`. Preferred for new work remains Flame+v3+Hosek18b in the docs. Recorded in the release PR / notes.
 - [x] Confirmed in `spisea/synthetic.py`: `default_evo_model = evolution.MISTv1()`, `default_atm_func = atm.get_merged_atmosphere_v1`, `default_red_law = reddening.RedLawNishiyama09()`.
 
-**Note:** SPISEA has never shipped a conda package (`conda install spisea`). Install remains git + `PYTHONPATH` (and Docker). Do not block the release on conda-forge.
+**Note:** SPISEA has never shipped a conda package (`conda install spisea`). Install is `pip` from GitHub (or editable clone / `PYTHONPATH`) plus model tarballs, and optionally Docker. Do not block the release on conda-forge.
 
 ---
 

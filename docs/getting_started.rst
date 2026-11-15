@@ -8,15 +8,19 @@ Install From Git
 ==========================
 If you are downloading the code from scratch, please follow the
 instructions below. If you had already downloaded version 1 of the
-code and are switching to version 2, please see :ref:`version`. 
+code and are switching to version 2, please see :ref:`version`.
 
-SPISEA is hosted on `GitHub <https://github.com/MovingUniverseLab/spisea>`_.
-To begin, clone the git repository in your desired code directory::
+SPISEA is hosted on `GitHub <https://github.com/MovingUniverseLab/spisea>`_
+and is installed with ``pip`` (it is not on PyPI yet). You can either
+install directly from GitHub or clone the repository and install
+locally. The ``main`` branch contains the current release; ``dev`` is
+for code development.
+
+To clone the repository (needed for an editable install, Docker builds,
+or contributing)::
 
    git clone https://github.com/MovingUniverseLab/spisea.git
 
-The ``main`` branch contains the current release,
-while the ``dev`` branch is for code development.
 
 .. _Dependencies:
 
@@ -78,16 +82,45 @@ Once that release is on PyPI, the same minimum is::
 
 .. _Build:
 
-Build
-------
-Once the repository is cloned, you need to add SPISEA to your
-``PYTHONPATH`` environment variable. For example, if you are using
-BASH, then you need to add the following line to your ``bash_profile``::
-  
+Install the SPISEA package
+--------------------------
+Install SPISEA itself with ``pip``. This pulls in the Python
+dependencies listed in ``pyproject.toml`` (including the current
+``stsynphot`` git URL until 1.7 is on PyPI). Model atmosphere and
+evolution grids are **not** bundled with the package; continue with
+:ref:`set-up-cdbs` and :ref:`models` after the package install.
+
+**From GitHub (no local clone required).** Current release branch::
+
+   pip install "SPISEA @ git+https://github.com/MovingUniverseLab/spisea.git"
+
+Development branch::
+
+   pip install "SPISEA @ git+https://github.com/MovingUniverseLab/spisea.git@dev"
+
+**From a local clone (editable).** Preferred when developing or running
+the test suite from the repository tree::
+
+   cd spisea
+   pip install -e .
+
+Optional extras (can be combined)::
+
+   pip install "SPISEA[imf] @ git+https://github.com/MovingUniverseLab/spisea.git"
+   pip install -e ".[imf,dev]"
+
+* ``imf`` — `initial_mass_function` for :class:`~imf.imf.IMF_package`
+* ``dev`` — pytest and documentation build tools
+
+**PYTHONPATH alternative.** If you prefer not to use ``pip`` for SPISEA,
+clone the repository and add the top-level directory to ``PYTHONPATH``
+(BASH example for ``~/.bash_profile``)::
+
    export PYTHONPATH=$PYTHONPATH:<path_to_SPISEA>
 
 where ``<path_to_SPISEA>`` is the location of the top-level SPISEA
-directory. 
+directory. You still need to install the Python dependencies listed
+under :ref:`Dependencies` (and :ref:`synphot-install`) yourself.
 
 .. _set-up-cdbs:
 
@@ -248,9 +281,10 @@ are (generally) fine.
 
 TroubleShooting
 -----------------------
-If SPISEA is not properly in your ``PYTHONPATH``, then when you try
-to import the SPISEA functions you will get an error message
-reporting ``No module named spisea``.
+If SPISEA is not installed (via ``pip`` / ``pip install -e .``) and is
+not on your ``PYTHONPATH``, then when you try to import the SPISEA
+functions you will get an error message reporting
+``No module named spisea``.
 
 If the ``SPISEA_MODELS`` or ``PYSYN_CDBS`` paths are broken, then
 SPISEA won't know where to get the stellar models.

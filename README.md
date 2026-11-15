@@ -20,6 +20,16 @@ Here is a brief list of things that SPISEA can do:
 * make a star cluster at any age with an unusual IMF and unresolved multiplicity
 * make a spectrum of a star cluster in integrated light
 
+Install with pip from GitHub (SPISEA is not on PyPI yet)::
+
+```bash
+pip install "SPISEA @ git+https://github.com/MovingUniverseLab/spisea.git"
+```
+
+You still need the CDBS and evolution/atmosphere model archives; see
+[Installation](https://spisea.readthedocs.io/en/latest/getting_started.html)
+for the full setup. For an editable clone, use `pip install -e .`.
+
 See [documentation](https://github.com/MovingUniverseLab/spisea/tree/main/docs) for
 details on installing and running SPISEA. The tutorials, in order, are
 [making a cluster](https://github.com/MovingUniverseLab/spisea/blob/main/docs/notebooks/01_make_cluster.ipynb),

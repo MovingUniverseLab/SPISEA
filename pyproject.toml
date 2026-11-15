@@ -76,8 +76,9 @@ requires = [
 ]
 build-backend = 'setuptools.build_meta'
 
-[tool.setuptools]
-packages = ["spisea"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["spisea*"]
 
 [tool.setuptools.package-data]
 spisea = ["data/*"]
