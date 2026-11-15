@@ -29,8 +29,11 @@ Here is a brief list of things that SPISEA can do:
   
 * make a spectrum of a star cluster in integrated light
 
-SPISEA can be downloaded from `Github <https://github.com/MovingUniverseLab/spisea>`_. Please cite `Hosek et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020arXiv200606691H/abstract>`_  if you use SPISEA in
-your research.
+SPISEA can be downloaded from `Github <https://github.com/MovingUniverseLab/spisea>`_.
+Please cite `Hosek et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020AJ....160..143H>`_
+if you use SPISEA in your research. If you use the brown-dwarf /
+substellar capabilities (SPISEA 2.5+), also cite
+`Begbie et al. (2026) <https://arxiv.org/abs/2607.14292>`_.
 
 The header links below are the top-level sections. The left sidebar
 lists pages within the section you are viewing (Section Navigation).

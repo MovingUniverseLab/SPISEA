@@ -29,7 +29,10 @@ and [COSMIC evolution](https://github.com/MovingUniverseLab/spisea/blob/main/doc
 Paper figures are in
 [docs/notebooks/papers](https://github.com/MovingUniverseLab/spisea/tree/main/docs/notebooks/papers).
 
-If you use SPISEA in your research, please cite [Hosek et al. (2020)](https://ui.adsabs.harvard.edu/abs/2020arXiv200606691H/abstract).
+If you use SPISEA in your research, please cite
+[Hosek et al. (2020)](https://ui.adsabs.harvard.edu/abs/2020AJ....160..143H).
+If you use the brown-dwarf / substellar capabilities (SPISEA 2.5+),
+also cite [Begbie et al. (2026)](https://arxiv.org/abs/2607.14292).
 
 ## Change Log
 SPISEA is actively supported and is growing in functionality, and
