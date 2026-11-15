@@ -22,16 +22,16 @@ These were requested but may still be open on `dev`:
 
 ### 0.2 README: Begbie citation
 
-- [ ] Update `README.md` cite line to Hosek+2020 **and** Begbie+2026 (BD / substellar use)
-- [ ] Mirror the same wording on `docs/index.rst` if desired
-- [ ] Commit + push to `dev`
+- [x] Update `README.md` cite line to Hosek+2020 **and** Begbie+2026 (BD / substellar use)
+- [x] Mirror the same wording on `docs/index.rst` if desired
+- [x] Commit + push to `dev`
 
 ### 0.3 JOSS paper (short)
 
-- [ ] Finish `docs/joss_paper/paper.md` (Summary, Statement of need, brief design, impact, AI disclosure)
-- [ ] Keep it JOSS-short: ~750–1000 words of prose; cite Hosek2020, Begbie2026, synphot/stsynphot, COSMIC as needed
-- [ ] Fill `docs/joss_paper/references.bib` for any new cites
-- [ ] Commit + push to `dev` (submission can wait until after the tag)
+- [x] Finish `docs/joss_paper/paper.md` (Summary, Statement of need, brief design, impact, AI disclosure)
+- [x] Keep it JOSS-short: ~750–1000 words of prose; cite Hosek2020, Begbie2026, synphot/stsynphot, COSMIC as needed
+- [x] Fill `docs/joss_paper/references.bib` for any new cites
+- [x] Commit + push to `dev` (submission can wait until after the tag)
 
 ### 0.4 Decide defaults (one-time decision)
 
