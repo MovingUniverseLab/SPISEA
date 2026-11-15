@@ -37,18 +37,64 @@ spectrum of each star in the isochrone model.
 SPISEA uses the stsynphot/synphot stack to extract the model atmosphere,
 and the output spectrum is a synphot ``SourceSpectrum`` built from the CDBS grid via ``stsynphot.grid_to_spec``.
 
+Which archive provides each atmosphere grid
+-------------------------------------------
+SPISEA atmospheres live under ``$PYSYN_CDBS/grid/`` as CDBS-style
+catalogs. Different archives supply different catalogs. For a standard
+SPISEA 3.1 install you need **both** STScI Reference Atlases pieces
+**and** ``spisea_cdbs.tar.gz`` (see :ref:`set-up-cdbs` and
+:ref:`models`). Details and sizes are on the `SPISEA Data Downloads
+<https://w.astro.berkeley.edu/~jlu/spisea/index.html>`_ page.
+
+.. list-table:: Atmosphere grids by download archive
+   :header-rows: 1
+   :widths: 28 36 36
+
+   * - Archive
+     - Provides (``cdbs/grid/`` catalogs)
+     - Used by
+   * - STScI ``synphot1_throughput-master.tar``
+     - Filter throughputs only (``comp/``, ``mtab/``); **no** atmosphere grids
+     - All synthetic photometry
+   * - STScI ``synphot5_pheonix-models.tar``
+     - ``phoenix`` (and related STScI Phoenix products)
+     - ``get_phoenix_atmosphere``; components of some merges
+   * - SPISEA ``spisea_cdbs.tar.gz`` (R = 250; **required**)
+     - ``ck04models``, ``k93models``, ``phoenix_v16_rebin``,
+       ``BTSettl_rebin``, ``BTSettl_2015_rebin``,
+       ``FlameSkimmer_rebin``, ``Meisner2023_rebin``,
+       ``Phillips2020_rebin``, ``wdKoester`` / ``wdKoester_rebin``,
+       ``merged_atlas_phoenix``, ``merged_BTSettl_phoenix``,
+       ``merged_BTSettl_meisner``, ``merged_flameskimmer_phoenix``
+     - Preferred merges
+       (``get_merged_atmosphere_v3`` / ``v3bb`` / ``v1`` / ``v1bb``),
+       Castelli/Kurucz, PHOENIXv16, BT-Settl, FlameSkimmer,
+       Meisner2023, Phillips2020, Koester WD, and the tabulated merges
+   * - SPISEA ``spisea_cdbs_highres.tar.gz`` (**optional**)
+     - Higher-resolution versions of the SPISEA atmosphere catalogs
+     - Same functions as ``spisea_cdbs.tar.gz`` when ``rebin=False``
+       / high-res paths are selected; not needed for default R = 250
+       photometry
+   * - None (computed)
+     - —
+     - ``get_bb_atmosphere`` (blackbody; no catalog file)
+
+**Not included** in the STScI + SPISEA archives above (and not part of
+a standard install): ``nextgen``, ``AMESdusty``, and the CMFGEN grids
+(``cmfgen_rot``, ``cmfgen_norot``, ``cmfgenF15_noRot``, …). Calling
+``get_nextgen_atmosphere``, ``get_amesdusty_atmosphere``, or the
+``get_cmfgen*_atmosphere`` helpers will fail with a missing
+``catalog.fits`` unless you add those catalogs yourself under
+``$PYSYN_CDBS/grid/``. See GitHub issue #170.
+
 Below is a table of atmosphere model grids currently supported by
 SPISEA. Note that the resolution column reports the original
-resolution of the atmosphere model grid. These are available in
-`spisea_cdbs_highres.tar.gz
+resolution of the atmosphere model grid. High-resolution copies of the
+SPISEA-packaged grids are in `spisea_cdbs_highres.tar.gz
 <https://w.astro.berkeley.edu/~jlu/spisea/spisea_cdbs_highres.tar.gz>`_.
-The default grid SPISEA uses has degraded the resolution of all
-atmosphere grids to R = 250
-(`spisea_cdbs.tar.gz
+The default grid SPISEA uses has degraded those SPISEA atmospheres to
+R = 250 (`spisea_cdbs.tar.gz
 <https://w.astro.berkeley.edu/~jlu/spisea/spisea_cdbs.tar.gz>`_).
-Both archives, and which SPISEA version they match, are listed on the
-`SPISEA Data Downloads
-<https://w.astro.berkeley.edu/~jlu/spisea/index.html>`_ page.
 See :ref:`models` for where to unpack them. 
 
 .. list-table:: Atmosphere Models

@@ -113,9 +113,10 @@ proceed to the next section. Otherwise, follow the steps below.
 
    * ``synphot1_throughput-master.tar`` — HST filter throughputs
      (``comp/`` and ``mtab/``). Use a version dated 2024-03-22 or
-     later so the Roman filters work.
-   * ``synphot5_pheonix-models.tar`` — Phoenix atmosphere models
-     (``grid/``).
+     later so the Roman filters work. This archive does **not**
+     include SPISEA atmosphere grids.
+   * ``synphot5_pheonix-models.tar`` — STScI Phoenix atmosphere
+     models under ``grid/`` (used by ``get_phoenix_atmosphere``).
 
 #. Untar each of the files. Once completed, a new directory named ``grp`` will appear.
 
@@ -129,8 +130,13 @@ proceed to the next section. Otherwise, follow the steps below.
 You should end up with a cdbs directory
 ``<your_path>/cdbs`` with sub-directories
 called ``comp``, ``mtab``, and ``grid``.
-You will add additional atmosphere models to ``cdbs/grid`` in
-the :ref:`models` section below.
+You will add the SPISEA atmosphere catalogs (Castelli/Kurucz,
+PHOENIXv16, FlameSkimmer, BT-Settl, Meisner, Phillips, Koester WD,
+and the ``merged_*`` grids used by
+``get_merged_atmosphere_v3`` / ``v1``) by unpacking
+``spisea_cdbs.tar.gz`` in the :ref:`models` section below.
+A table of which archive provides each atmosphere function is on
+the :ref:`atmo_models` page.
 
 
 .. _models:
@@ -161,9 +167,12 @@ that parent directory before unpacking it.
 #. Download `spisea_cdbs.tar.gz
    <https://w.astro.berkeley.edu/~jlu/spisea/spisea_cdbs.tar.gz>`_
    (126 MB; 354 MB unzipped). This file is required. It is the
-   low-resolution atmosphere grids (R = 250, grid_version 3.1).
-   SPISEA uses these by default. Unpack it in the same directory so
-   the atmospheres land in ``cdbs/grid``::
+   low-resolution atmosphere grids (R = 250, grid_version 3.1)
+   that SPISEA packages itself (FlameSkimmer, PHOENIXv16, BT-Settl,
+   Meisner, Phillips, Koester WD, Castelli/Kurucz, and the
+   ``merged_*`` catalogs). Default synthetic photometry uses these.
+   Unpack it in the same directory so the atmospheres land in
+   ``cdbs/grid``::
 
       cd <your_path>/models/
       tar -xvf spisea_cdbs.tar.gz
@@ -181,7 +190,9 @@ that parent directory before unpacking it.
 
 ``spisea_models.tar.gz`` puts the evolution models in ``evolution/``.
 ``spisea_cdbs.tar.gz`` (and ``spisea_cdbs_highres.tar.gz``, if
-downloaded) puts the atmospheres in ``cdbs/grid``.
+downloaded) puts SPISEA's atmosphere catalogs in ``cdbs/grid``.
+See :ref:`atmo_models` for which functions need which archive
+(including grids that are *not* in these tarballs).
 
 .. _setup-paths:
 

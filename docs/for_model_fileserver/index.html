@@ -307,6 +307,19 @@
         into your top-level <code>cdbs/</code> directory, then point the <code>PYSYN_CDBS</code>
         environment variable there.
       </p>
+      <p style="margin-top:.6rem">
+        <strong>Which atmospheres come from where:</strong>
+        <code>synphot1</code> is filters only.
+        <code>synphot5</code> supplies STScI Phoenix under <code>grid/</code>.
+        <code>spisea_cdbs.tar.gz</code> (required) adds the SPISEA R=250 catalogs used by
+        <code>get_merged_atmosphere_v3</code> / <code>v1</code> (FlameSkimmer, PHOENIXv16,
+        BT-Settl, Meisner, Phillips, Koester WD, Castelli/Kurucz, and <code>merged_*</code>).
+        <code>spisea_cdbs_highres.tar.gz</code> is optional.
+        CMFGEN, NextGen, and AMES-Dusty catalogs are <em>not</em> in these archives.
+        See the
+        <a href="https://spisea.readthedocs.io/en/dev/atmo_models.html">atmosphere models page</a>
+        for the full mapping.
+      </p>
     </div>
   </section>
 
