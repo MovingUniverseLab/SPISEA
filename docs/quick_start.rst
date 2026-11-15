@@ -67,25 +67,36 @@ sidebar under Quick Start Guide.
    notebooks/04_cluster_with_cosmic
    more_examples
 
-.. toctree::
-   :maxdepth: 1
-   :titlesonly:
-   :caption: Paper examples
+Paper examples
+--------------
+Published SPISEA figures are reproduced in the notebooks below.
+Each paper has its own subsection in the left sidebar.
 
-   notebooks/papers/hosek2020/fig02_hrd_extinction
-   notebooks/papers/hosek2020/fig03_cmds_metallicity
-   notebooks/papers/hosek2020/fig04_multiplicity_extinction
-   notebooks/papers/hosek2020/fig05_imfs
-   notebooks/papers/hosek2020/fig06_wolf_rayet
-   notebooks/papers/hosek2020/fig07_unresolved_spectra
-   notebooks/papers/begbie2026/fig02_bd_imfs
-   notebooks/papers/begbie2026/fig03_atmosphere_interpolation
-   notebooks/papers/begbie2026/fig04_evolution_interpolation
-   notebooks/papers/begbie2026/fig05_hrd_ages
-   notebooks/papers/begbie2026/fig06_pleiades_gaia
-   notebooks/papers/begbie2026/fig07_pleiades_ukidss
-   notebooks/papers/begbie2026/fig08_upper_sco
-   notebooks/papers/begbie2026/fig09_m44
-   notebooks/papers/begbie2026/fig10_mass_fraction
-   notebooks/papers/begbie2026/fig11_companion_counts
-   notebooks/papers/begbie2026/fig12_bd_separations
+Hosek et al. (2020)
+~~~~~~~~~~~~~~~~~~~
+Figures from the original SPISEA paper
+(`Hosek et al. 2020
+<https://ui.adsabs.harvard.edu/abs/2020ApJ...905...25H/abstract>`_).
+See :ref:`paper_examples_hosek2020` for the full list and notes on
+atmosphere versions used for reproducibility.
+
+.. toctree::
+   :maxdepth: 2
+   :titlesonly:
+   :caption: Hosek et al. (2020)
+
+   paper_examples_hosek2020
+
+Begbie et al. (2026)
+~~~~~~~~~~~~~~~~~~~
+Figures from the brown-dwarf SPISEA paper
+(`Begbie et al. 2026 <https://arxiv.org/abs/2607.14292>`_).
+See :ref:`paper_examples_begbie2026` for the full list and notes on
+atmosphere versions used for reproducibility.
+
+.. toctree::
+   :maxdepth: 2
+   :titlesonly:
+   :caption: Begbie et al. (2026)
+
+   paper_examples_begbie2026
