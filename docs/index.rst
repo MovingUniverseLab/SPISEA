@@ -140,6 +140,7 @@ Change Log
 		* New merged atmosphere set get_merged_atmosphere_v3 (ATLAS/PHOENIX/Sonora)
 		* Updated evolution and atmosphere grid data sets w/ grid_version=3.1
 * *Minor Changes*
+	* Added :class:`~imf.imf.IMF_package` to draw primary masses from the optional `initial_mass_function <https://github.com/keflavich/imf>`_ package (Salpeter, Kroupa, Chabrier, or a custom ``MassFunction``), while keeping SPISEA multiplicity. Install with ``pip install "SPISEA[imf]"`` or ``pip install initial_mass_function``. See :ref:`imf_package`.
 	* Added opt-in Offner et al. 2023 (Protostars and Planets VII; arXiv:2203.10066) multiplicity model :class:`~imf.multiplicity.MultiplicityUnresolvedOffner2023` / :class:`~imf.multiplicity.MultiplicityResolvedOffner2023`, including brown dwarfs. MF/CSF is a logistic in log-mass; :math:`\gamma(M)` is an error-weighted logistic; :math:`\mu(a)` is a smooth broken power law (:math:`s=0.1` dex); :math:`\sigma(\log_{10} a)` is a 2-parameter logistic. Comparison figures vs the default :class:`~imf.multiplicity.MultiplicityUnresolved` / :class:`~imf.multiplicity.MultiplicityResolvedDK` are in :ref:`multi_obj`.
 	* Companion mass and separation draws (including brown-dwarf q and binaries-only BD systems) now live on the multiplicity object rather than being special-cased in ``imf.py``.
 	* Filter profile updates: 
@@ -153,6 +154,7 @@ Change Log
 	* IMF helpers theta_closed, theta_open, and delta return a float, not a one-element array, for NumPy scalar input
 	* ResolvedCluster prints its low-mass star removal messages only when verbose=True
 	* Renamed ``get_merged_atmosphere`` (and its ``_grid`` function) to ``get_merged_atmosphere_v1``. ``get_merged_atmosphere`` and ``get_merged_atmosphere_grid`` remain and return the v1 versions. Isochrone files saved with ``get_merged_atmosphere`` are still used.
+	* Tutorials and paper-example Jupyter notebooks are rendered in the HTML docs with nbsphinx (see Tutorials and Paper examples on the home page).
 
 2.5 (2026-07-17)
 
