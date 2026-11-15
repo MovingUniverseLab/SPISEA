@@ -3,11 +3,24 @@
 ========================================
 Atmosphere Model Object
 ========================================
+
+**Preferred for new work:**
+``get_merged_atmosphere_v3``
+(ATLAS / PHOENIX / Sonora FlameSkimmer).
+Use ``get_merged_atmosphere_v3bb`` when you need white-dwarf or
+blackbody coverage for high-gravity objects (including filters
+beyond 3 μm). Pair with
+``evolution.MergedFlameSkimmerRedDiamondbackMIST``.
+
+``IsochronePhot`` still defaults to ``get_merged_atmosphere_v1``
+(legacy Hosek et al. 2020 merge) if you do not pass ``atm_func``.
+``get_merged_atmosphere`` remains as an alias of v1.
+
 Stellar atmosphere models are defined as functions in
 ``spisea/atmospheres.py``. These can be called by::
 
  from spisea import atmospheres
- atmo = atmospheres.<function_name>
+ atmo = atmospheres.get_merged_atmosphere_v3
 
 To call an atmosphere for a particular star, user must define the
 metallicity ([Z]), temperature (in K), and gravity (in cgs)::
@@ -49,6 +62,20 @@ See :ref:`models` for where to unpack them.
      - λ Range (μm)
      - Resolution\ :sup:`a` λ/Δλ
      - Ref
+   * - ``get_merged_atmosphere_v3``\ :sup:`g`
+     - 250 – 50000
+     - \ :sup:`b`
+     - \ :sup:`b`
+     - \ :sup:`b`
+     - \ :sup:`b`
+     - ATLAS/PHOENIX/FlameSkimmer; Begbie et al. (2026)
+   * - ``get_merged_atmosphere_v3bb``
+     - 250 – 50000
+     - \ :sup:`b`
+     - \ :sup:`b`
+     - \ :sup:`b`
+     - \ :sup:`b`
+     - v3 + WD/BB for high log *g*
    * - ``get_merged_atmosphere_v1``
      - 250 – 50000
      - \ :sup:`b`
@@ -56,6 +83,20 @@ See :ref:`models` for where to unpack them.
      - \ :sup:`b`
      - \ :sup:`b`
      - Appendix B; Hosek et al. (2020)
+   * - ``get_merged_atmosphere_v1bb``
+     - 250 – 50000
+     - \ :sup:`b`
+     - \ :sup:`b`
+     - \ :sup:`b`
+     - \ :sup:`b`
+     - v1 + WD/BB for high log *g*
+   * - ``get_flameskimmer_atmosphere``
+     - ~200 – 2400
+     - ≥ 2
+     - -1.0 – +0.5
+     - \ :sup:`b`
+     - \ :sup:`b`
+     - Sonora FlameSkimmer (C/O = 1)
    * - ``get_castelli_atmosphere``
      - 3500 – 50000
      - 0 – 5.0
@@ -144,6 +185,10 @@ The default SPISEA grid degrades all atmosphere grids to R = 250 (``spisea_cdbs.
 ``get_wd_atmosphere`` blends the model with a blackbody from 2.8 to
 3.0 μm and continues that blackbody to 10 μm.
 See :ref:`wd_spectra`.
+
+:sup:`g` Preferred atmosphere function for SPISEA 3.1.
+``get_merged_atmosphere`` is kept as an alias of
+``get_merged_atmosphere_v1``.
 
 .. _wd_spectra:
 
@@ -234,6 +279,8 @@ without being regenerated.
 .. autofunction:: atmospheres.get_merged_atmosphere_v1
 
 .. autofunction:: atmospheres.get_merged_atmosphere
+
+.. autofunction:: atmospheres.get_merged_atmosphere_v1bb
 
 .. autofunction:: atmospheres.get_flameskimmer_atmosphere
 

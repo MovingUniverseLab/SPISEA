@@ -3,6 +3,17 @@
 ===========================
 Stellar Multiplicity Object
 ===========================
+
+**Preferred for new work:**
+:class:`~imf.multiplicity.MultiplicityUnresolvedOffner2023`
+(Offner et al. 2023), including brown dwarfs.
+Use :class:`~imf.multiplicity.MultiplicityResolvedOffner2023`
+when orbital elements are needed (or with ``COSMIC`` binary
+evolution). The SPISEA v2.5
+:class:`~imf.multiplicity.MultiplicityUnresolved` /
+:class:`~imf.multiplicity.MultiplicityResolvedDK` classes remain
+available for reproducing older results.
+
 The properties of multiple systems in the stellar population is
 defined by the stellar multiplicity object. The multiplicity classes
 are defined in ``spisea/imf/multiplicity.py``.

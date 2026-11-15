@@ -3,6 +3,20 @@
 ===============
 Cluster Object
 ===============
+
+**Preferred inputs for new work (SPISEA 3.1):**
+
+* Isochrone built with
+  ``MergedFlameSkimmerRedDiamondbackMIST`` and
+  ``get_merged_atmosphere_v3`` (see :ref:`isochrone_objects`)
+* IMF: :class:`~imf.imf.IMF_broken_powerlaw` with Kroupa slopes
+  (or :class:`~imf.imf.Kroupa_2001`)
+* Multiplicity:
+  :class:`~imf.multiplicity.MultiplicityUnresolvedOffner2023`
+  (or :class:`~imf.multiplicity.MultiplicityResolvedOffner2023`
+  for orbits / COSMIC)
+* IFMR (optional): :class:`~ifmr.IFMR_Raithel18`
+
 The cluster classes are defined in ``spisea/synthetic.py``. The primary
 inputs to a cluster object are the cluster mass,
 :ref:`isochrone_objects`, and :ref:`imf_objects`.  In addition, an

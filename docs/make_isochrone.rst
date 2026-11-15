@@ -3,11 +3,23 @@
 ================
 Isochrone Object
 ================
+
+**Preferred inputs for new work (SPISEA 3.1):**
+
+* Evolution: ``evolution.MergedFlameSkimmerRedDiamondbackMIST``
+* Atmosphere: ``atmospheres.get_merged_atmosphere_v3``
+  (or ``get_merged_atmosphere_v3bb`` for high-gravity / mid-IR WD work)
+* Extinction: ``reddening.RedLawHosek18b``
+
+``IsochronePhot`` still defaults to ``MISTv1``,
+``get_merged_atmosphere_v1``, and ``RedLawNishiyama09`` if those
+arguments are omitted. Set the preferred models explicitly.
+
 The isochrone classes are defined in ``spisea/synthetic.py``. The primary
 inputs to a isochrone object are the stellar population age, distance,
 total extinction, and metallicity, along with the :ref:`atmo_models`, 
 :ref:`evo_models`, and :ref:`ext_law`. 
-
+    
 If the IsochronePhot sub-class is used then synthetic photometry
 will be produced. The :ref:`filters` are defined as additional
 inputs. The output photometry is in Vega mags by default (and is always

@@ -3,10 +3,16 @@
 ===============================
 Extinction Law Object
 ===============================
+
+**Preferred for new work:**
+``RedLawHosek18b`` (used in the SPISEA 3.1 tutorials).
+``IsochronePhot`` still defaults to ``RedLawNishiyama09`` if
+``red_law`` is omitted.
+
 The extinction law can be defined using the classes in ``spisea/reddening.py``. These can be called by::
 
   from spisea import reddening
-  red_law = reddening.<redlaw_name>()
+  red_law = reddening.RedLawHosek18b()
 
 SPISEA uses tabulated :math:`A_\lambda/A_{Ks}` curves. Reddening law classes inherit from
 ``reddening.RedLawBase``, which subclasses synphot's ``ExtinctionCurve`` at :math:`A_{Ks}=1` mag
@@ -28,13 +34,13 @@ Available extinction laws:
 * RedLawIndebetouw05
 * RedLawRomanZuniga07
 * RedLawFitzpatrick09
-* RedLawNishiyama09 (default)
+* RedLawNishiyama09 (``IsochronePhot`` default)
 * RedLawSchoedel10
 * RedLawFritz11
 * RedLawDamineli16
 * RedLawDeMarchi16
 * RedLawSchlafly16
-* RedLawHosek18b
+* RedLawHosek18b (preferred for new work)
 * RedLawNoguerasLara18
 * RedLawNoguerasLara20
 * RedLawSODC

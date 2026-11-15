@@ -3,11 +3,28 @@
 ==========
 IMF Object
 ==========
+
+**Preferred for new work:**
+:class:`~imf.imf.IMF_broken_powerlaw` with Kroupa (2001) slopes
+(or the convenience class :class:`~imf.imf.Kroupa_2001`),
+and pass
+:class:`~imf.multiplicity.MultiplicityUnresolvedOffner2023`
+(or :class:`~imf.multiplicity.MultiplicityResolvedOffner2023`
+when orbits are needed). For Chabrier or other analytic forms from
+the optional `initial_mass_function
+<https://github.com/keflavich/imf>`_ package, use
+:class:`~imf.imf.IMF_package` (see :ref:`imf_package`).
+
 Initial Mass Functions (IMFs) are defined as classes in
 ``spisea/imf/imf.py``. These can be defined by::
 
-  from spisea.imf import imf
-  imf_obj = imf.<class_name>
+  from spisea.imf import imf, multiplicity
+  import numpy as np
+
+  multi = multiplicity.MultiplicityUnresolvedOffner2023()
+  mass_limits = np.array([0.08, 0.5, 1.0, 120.0])
+  powers = np.array([-1.3, -2.3, -2.3])
+  imf_obj = imf.IMF_broken_powerlaw(mass_limits, powers, multiplicity=multi)
 
 SPISEA's own IMFs are power laws:
 dn / dm ~ m^-alpha. The Broken Power-Law IMF object
@@ -19,15 +36,9 @@ Chabrier (2003), are available through
 
 The IMF object is an input for the :ref:`cluster_objects`, and will
 be used to draw the inital stellar mass distribution for the cluster.
-A :ref:`multi_obj` may be passed to the IMF object to
-form multiple star systems. Use
-:class:`~imf.multiplicity.MultiplicityUnresolvedOffner2023`
-for unresolved systems, or
-:class:`~imf.multiplicity.MultiplicityResolvedOffner2023`
-when orbits are needed (see :ref:`multi_obj`). Omitting the
-multiplicity argument leaves all stars single. The SPISEA v2.5
-:class:`~imf.multiplicity.MultiplicityUnresolved` class is
-still available.
+Omitting the multiplicity argument leaves all stars single. The
+SPISEA v2.5 :class:`~imf.multiplicity.MultiplicityUnresolved` class
+is still available.
 
 Base IMF Class
 --------------

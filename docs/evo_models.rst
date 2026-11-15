@@ -4,11 +4,22 @@
 Evolution Model Object
 ========================================
 
+**Preferred for new work:**
+``MergedFlameSkimmerRedDiamondbackMIST``
+(Sonora brown dwarfs joined to MIST stars, grid_version ≥ 3.1).
+Pair it with ``atmospheres.get_merged_atmosphere_v3``
+(or ``get_merged_atmosphere_v3bb`` when compact objects / mid-IR
+WD photometry are needed). See the tutorials under
+:doc:`Quick Start Guide <quick_start>`.
+
+``IsochronePhot`` still defaults to ``MISTv1`` if you do not pass
+``evo_model``; set the preferred model explicitly for new isochrones.
+
 Stellar evolution models are defined as classes in
 ``spisea/evolution.py``. These can be called by::
 
   from spisea import evolution
-  evo = evolution.<model_name>()
+  evo = evolution.MergedFlameSkimmerRedDiamondbackMIST()
 
 The evolution object is an input for the :ref:`isochrone_objects`. 
   
@@ -28,6 +39,11 @@ Below is a table of the evolution model grids currently supported by SPISEA.
      - Years
      - [Fe/H]
      -
+   * - ``MergedFlameSkimmerRedDiamondbackMIST``\ :sup:`c`
+     - 0.011 – ~300\ :sup:`d`
+     - 5.00 – 10.18
+     - -4.0, -3.5, -3.0, -2.5, -2.0, -1.75, -1.5, -1.25, -1.0, -0.75, -0.5, -0.25, 0, 0.25, 0.5
+     - Begbie et al. (2026); Choi et al. (2016)
    * - ``MISTv1``
      - 0.10 – 300
      - 5.01 – 10.30
@@ -84,6 +100,10 @@ Below is a table of the evolution model grids currently supported by SPISEA.
 :sup:`a` Actual maximum value given by the Sonora models (Marley et al., 2021) relies on the age of the cluster. For example, for log(Age)=6.0, the mass range is limited to 0.0005 - 0.011 M\ :sub:`⊙`.
 
 :sup:`b` COSMIC evolves the stars externally and does not use SPISEA's standard isochrone-grid architecture. Instead, it uses a custom atmosphere grid that is created on the fly. See Breivik et al. (2020) for more details on COSMIC. When COSMIC is used, the IFMR is ignored.
+
+:sup:`c` Preferred evolution model for SPISEA 3.1. Requires evolution model grid_version ≥ 3.1.
+
+:sup:`d` Upper mass limit depends on age (high-mass stars leave the isochrone at older ages). At log(Age) ≈ 6 the upper mass is ~300 M\ :sub:`⊙`.
 
 Please note the stellar mass range, age range, and metallicity values of the evolution
 model grid you choose:
@@ -186,6 +206,9 @@ Specific Evolution Model Classes
                :show-inheritance:
    
 .. autoclass:: evolution.Phillips2020
+	       :show-inheritance:
+
+.. autoclass:: evolution.Marley2021
 	       :show-inheritance:
 
 .. autoclass:: evolution.COSMIC
