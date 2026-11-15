@@ -81,6 +81,16 @@ exclude_patterns = [
     'notebooks/_output',
 ]
 
+# Read the Docs builds each format with a separate ``sphinx -b <builder>``
+# invocation. Notebook outputs are large enough that LaTeX exceeds TeX
+# memory on RTD (``TeX capacity exceeded``), which fails the whole build
+# when ``formats: all`` is set. Keep notebooks in HTML/ePub; drop them
+# from the PDF only.
+if '-b' in sys.argv:
+    _builder_idx = sys.argv.index('-b') + 1
+    if _builder_idx < len(sys.argv) and sys.argv[_builder_idx] == 'latex':
+        exclude_patterns.append('notebooks/**')
+
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
