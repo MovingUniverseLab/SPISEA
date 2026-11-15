@@ -30,100 +30,20 @@ Here is a brief list of things that SPISEA can do:
 * make a spectrum of a star cluster in integrated light
 
 SPISEA can be downloaded from `Github <https://github.com/MovingUniverseLab/spisea>`_. Please cite `Hosek et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020arXiv200606691H/abstract>`_  if you use SPISEA in
-your research. 
+your research.
 
-Getting Started
-----------------
+The header links below are the top-level sections. The left sidebar
+lists pages within the section you are viewing (Section Navigation).
+The right sidebar lists headings on the current page (On this page).
+
 .. toctree::
-   :maxdepth: 1
-   :caption: Getting Started
+   :maxdepth: 2
+   :titlesonly:
 
-   getting_started.rst
-   quick_start.rst
-   more_examples.rst
-
-Tutorials
----------
-.. toctree::
-   :maxdepth: 1
-   :caption: Tutorials
-
-   notebooks/01_make_cluster
-   notebooks/02_brown_dwarfs
-   notebooks/03_resolved_multiples
-   notebooks/04_cluster_with_cosmic
-
-Paper examples
---------------
-.. toctree::
-   :maxdepth: 1
-   :caption: Paper examples
-
-   notebooks/papers/hosek2020/fig02_hrd_extinction
-   notebooks/papers/hosek2020/fig03_cmds_metallicity
-   notebooks/papers/hosek2020/fig04_multiplicity_extinction
-   notebooks/papers/hosek2020/fig05_imfs
-   notebooks/papers/hosek2020/fig06_wolf_rayet
-   notebooks/papers/hosek2020/fig07_unresolved_spectra
-   notebooks/papers/begbie2026/fig02_bd_imfs
-   notebooks/papers/begbie2026/fig03_atmosphere_interpolation
-   notebooks/papers/begbie2026/fig04_evolution_interpolation
-   notebooks/papers/begbie2026/fig05_hrd_ages
-   notebooks/papers/begbie2026/fig06_pleiades_gaia
-   notebooks/papers/begbie2026/fig07_pleiades_ukidss
-   notebooks/papers/begbie2026/fig08_upper_sco
-   notebooks/papers/begbie2026/fig09_m44
-   notebooks/papers/begbie2026/fig10_mass_fraction
-   notebooks/papers/begbie2026/fig11_companion_counts
-   notebooks/papers/begbie2026/fig12_bd_separations
-
-
-Documentation
--------------------------
-.. toctree::
-   :maxdepth: 1
-   :caption: Documentation
-
-   make_isochrone.rst
-   make_cluster.rst
-   evo_models.rst
-   atmo_models.rst
-   imf.rst
-   multiplicity.rst
-   ifmr.rst
-   extinction.rst
-   filters.rst
-
-Advanced Documentation
------------------------------
-.. toctree::
-   :maxdepth: 1
-   :caption: Advanced Documentation
-
-   add_evo_models.rst
-   add_atmo_models.rst
-   add_filters.rst
-
-API Reference
--------------
-.. toctree::
-   :maxdepth: 1
-   :caption: API Reference
-
+   getting_started
+   quick_start
    api
-
-Contributions
----------------
-Have an idea? We'd love to have you join our team!
-We welcome and encourage contributions to SPISEA.
-
-For feature additions, we ask that users make their
-own fork of the repository, make their changes, and then submit a pull
-request to the "dev" branch.
-
-All contributions will be acknowledged on the :ref:`contributors` page
-(with permission). Contributors with features used in code
-releases will be co-authors in future SPISEA software papers.
+   development
 
 
 Change Log

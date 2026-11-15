@@ -49,3 +49,43 @@ changing the IMF of these clusters changes these distributions.
 
 .. figure:: images/compact_remnants_example.png
 	    :align: center
+
+
+Tutorials and further examples
+------------------------------
+The pages below expand on this quick start. They appear in the left
+sidebar under Quick Start Guide.
+
+.. toctree::
+   :maxdepth: 1
+   :titlesonly:
+   :caption: Tutorials
+
+   notebooks/01_make_cluster
+   notebooks/02_brown_dwarfs
+   notebooks/03_resolved_multiples
+   notebooks/04_cluster_with_cosmic
+   more_examples
+
+.. toctree::
+   :maxdepth: 1
+   :titlesonly:
+   :caption: Paper examples
+
+   notebooks/papers/hosek2020/fig02_hrd_extinction
+   notebooks/papers/hosek2020/fig03_cmds_metallicity
+   notebooks/papers/hosek2020/fig04_multiplicity_extinction
+   notebooks/papers/hosek2020/fig05_imfs
+   notebooks/papers/hosek2020/fig06_wolf_rayet
+   notebooks/papers/hosek2020/fig07_unresolved_spectra
+   notebooks/papers/begbie2026/fig02_bd_imfs
+   notebooks/papers/begbie2026/fig03_atmosphere_interpolation
+   notebooks/papers/begbie2026/fig04_evolution_interpolation
+   notebooks/papers/begbie2026/fig05_hrd_ages
+   notebooks/papers/begbie2026/fig06_pleiades_gaia
+   notebooks/papers/begbie2026/fig07_pleiades_ukidss
+   notebooks/papers/begbie2026/fig08_upper_sco
+   notebooks/papers/begbie2026/fig09_m44
+   notebooks/papers/begbie2026/fig10_mass_fraction
+   notebooks/papers/begbie2026/fig11_companion_counts
+   notebooks/papers/begbie2026/fig12_bd_separations

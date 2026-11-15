@@ -1,11 +1,26 @@
 .. _api:
 
-==============
-API Reference
-==============
+========
+API Docs
+========
 
-Class and function docstrings are rendered on the topic pages.
-This page links to those references.
+Class and function docstrings are rendered on the topic pages below.
+This page also links to those references.
+
+.. toctree::
+   :maxdepth: 1
+   :titlesonly:
+
+   make_isochrone
+   make_cluster
+   evo_models
+   atmo_models
+   imf
+   multiplicity
+   ifmr
+   extinction
+   filters
+
 
 Isochrones and clusters
 -----------------------

@@ -25,9 +25,9 @@ copyright = '2020, Matthew Hosek Jr, Jessica R. Lu, Casey Y. Lam.'
 author = 'Matthew Hosek Jr, Jessica R. Lu, Casey Y. Lam'
 
 # The short X.Y version
-version = '2.5'
+version = '3.1'
 # The full version, including alpha/beta/rc tags
-release = '2.5'
+release = '3.1'
 
 
 
@@ -97,11 +97,22 @@ pygments_style = 'sphinx'
 
 # -- Options for HTML output -------------------------------------------------
 
-# PyData supplies the left site navigation and the right-hand page outline.
+# PyData supplies:
+# - Header: top-level toctree entries (Installation, Quick Start, ...)
+# - Left sidebar: Section Navigation (sibling/child pages of the
+#   current header section — across pages)
+# - Right sidebar: On this page (heading outline — within a page)
 # Do not set html_sidebars; that overrides those templates.
 html_theme = 'pydata_sphinx_theme'
 
 html_theme_options = {
+    'logo': {
+        'text': 'SPISEA',
+    },
+    # Logo + v3.1 badge on the left; header nav in the center.
+    'navbar_start': ['navbar-logo', 'version-badge'],
+    'navbar_center': ['navbar-nav'],
+    'navbar_end': ['theme-switcher', 'navbar-icon-links'],
     'icon_links': [
         {
             'name': 'GitHub',
@@ -109,16 +120,21 @@ html_theme_options = {
             'icon': 'fa-brands fa-github',
         },
     ],
-    # toctree captions plus one level of pages in the left nav.
-    'navigation_depth': 2,
-    # Heading outline depth in the right-hand sidebar.
+    # Show all four header items before the "More" dropdown.
+    'header_links_before_dropdown': 4,
+    # Left sidebar: pages under the active header section.
+    'navigation_depth': 3,
+    'show_nav_level': 2,
+    # Right sidebar: in-page section outline.
     'show_toc_level': 2,
+    'secondary_sidebar_items': ['page-toc', 'sourcelink'],
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+html_css_files = ['custom.css']
 
 
 # -- Options for HTMLHelp output ---------------------------------------------
