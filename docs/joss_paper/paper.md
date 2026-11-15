@@ -30,7 +30,7 @@ bibliography: references.bib
 
 # Summary
 
-SPISEA (Stellar Population Interface for Stellar Evolution and Atmospheres) builds single-age, single-metallicity stellar populations with user control of the initial mass function (IMF), multiplicity, extinction, filters, and stellar evolution and atmosphere grids [@Hosek2020]. Version 3.1 modernizes the synthetic-photometry stack, expands substellar and binary modeling, and documents preferred model combinations for new work.
+SPISEA (Stellar Population Interface for Stellar Evolution and Atmospheres) builds single-age, single-metallicity stellar populations with user control of the initial mass function (IMF), multiplicity, extinction, filters, and stellar evolution and atmosphere grids. The software was introduced by [@Hosek2020] and extended into the substellar regime by [@Begbie2026] (submitted). Version 3.1 modernizes the synthetic-photometry stack, expands brown-dwarf and binary modeling, and documents preferred model combinations for new work.
 
 Astronomers use SPISEA to generate isochrones and resolved or unresolved clusters for Galactic and extragalactic star-cluster studies, including crowded fields where multiplicity and differential extinction matter. The software returns stellar parameters and multi-band photometry (and optionally compact remnants) in a reproducible table-based workflow.
 
@@ -42,9 +42,9 @@ SPISEA 3.1 addresses these gaps for researchers who simulate star clusters, cali
 
 # State of the field
 
-Galaxy-scale SPS packages (for example FSPS, BPASS-oriented tools, and related frameworks) emphasize integrated light and large grids. SPISEA instead emphasizes *resolved* populations, arbitrary filters via STScI throughputs, and plug-in evolution/atmosphere objects. Relative to earlier SPISEA releases, version 3.1 does not replace those galaxy codes; it restores a maintainable photometry backend (`synphot` / `stsynphot`; [@STScIDevelopmentTeam2018; @STScIDevelopmentTeam2020]) and adds science capabilities that those tools do not package together for cluster work (metallicity-dependent brown dwarfs, Offner-style multiplicity, optional `initial_mass_function` draws, and COSMIC binary evolution [@Breivik2020]).
+Galaxy-scale SPS packages (for example FSPS, BPASS-oriented tools, and related frameworks) emphasize integrated light and large grids. SPISEA instead emphasizes *resolved* populations, arbitrary filters via STScI throughputs, and plug-in evolution/atmosphere objects [@Hosek2020; @Begbie2026]. Relative to those earlier SPISEA papers, version 3.1 does not replace galaxy-scale SPS codes; it restores a maintainable photometry backend (`synphot` / `stsynphot`; [@STScIDevelopmentTeam2018; @STScIDevelopmentTeam2020]) and adds science capabilities that those tools do not package together for cluster work (metallicity-dependent brown dwarfs, Offner-style multiplicity, optional `initial_mass_function` draws, and COSMIC binary evolution [@Breivik2020]).
 
-We build on SPISEA rather than contributing only patches to `pysynphot` because the research need is an end-to-end, versioned cluster simulator with documented model grids—not a throughput library alone.
+We build on [@Hosek2020] and [@Begbie2026] rather than contributing only patches to `pysynphot` because the research need is an end-to-end, versioned cluster simulator with documented model grids—not a throughput library alone.
 
 # Software design
 
@@ -60,7 +60,7 @@ Trade-offs for 3.1:
 
 # Research impact statement
 
-SPISEA underpins peer-reviewed cluster and Galactic-center studies building on [@Hosek2020], with brown-dwarf extensions described in [@Begbie2026]. Version 3.1 ships rendered tutorials and paper-reproduction notebooks, a public model-file server with `grid_version` 3.1 archives, and Read the Docs builds for the `dev`/`stable` lines. Near-term significance is a supportable dependency stack (post-`pysynphot`) plus documented preferred models so new analyses and survey forward-models can adopt 3.1 grids without reverse-engineering notebook paths.
+SPISEA underpins peer-reviewed cluster and Galactic-center studies building on the original release [@Hosek2020] and the submitted brown-dwarf extension [@Begbie2026]. Version 3.1 ships rendered tutorials and paper-reproduction notebooks, a public model-file server with `grid_version` 3.1 archives, and Read the Docs builds for the `dev`/`stable` lines. Near-term significance is a supportable dependency stack (post-`pysynphot`) plus documented preferred models so new analyses and survey forward-models can adopt 3.1 grids without reverse-engineering notebook paths.
 
 # AI usage disclosure
 

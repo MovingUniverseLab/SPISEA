@@ -51,11 +51,11 @@ The right sidebar lists headings on the current page (On this page).
 
 Change Log
 ----------
-3.1 (2026-11-10)
+3.1 (2026-11-14)
 
 * Note: we skipped version 3.0 to re-align the data set and code versions, since the data set released with version 2.5 was released as 3.0.
 * *Major Changes*
-	* Upgrade from pysynphot to synphot/systynphot (significant changes to dependencies)
+	* Upgrade from pysynphot to synphot/stsynphot (significant changes to dependencies)
 	* Bug fix to perform photon count integration instead of energy integration for all filters (see Filters page for details)
 	* New brown dwarf models including non-solar metallicities
 		* New evolution grid: MergedFlameSkimmerRedDiamondbackMIST

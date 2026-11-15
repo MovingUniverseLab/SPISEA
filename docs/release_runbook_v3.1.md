@@ -42,7 +42,8 @@ Pick **A** or **B** before tagging:
 | **A (safer)** | Leave code defaults as `MISTv1` / `get_merged_atmosphere_v1` / `Nishiyama09`; docs already say “preferred for new work” is Flame+v3+Hosek18b |
 | **B (aligned)** | Change `synthetic.py` defaults to `MergedFlameSkimmerRedDiamondbackMIST` / `get_merged_atmosphere_v3` / `Hosek18b` and update tests |
 
-- [ ] Record decision in the PR description / release notes
+- [x] **Decision: A (safer).** Code defaults stay `MISTv1` / `get_merged_atmosphere_v1` / `Nishiyama09`. Preferred for new work remains Flame+v3+Hosek18b in the docs. Recorded in the release PR / notes.
+- [x] Confirmed in `spisea/synthetic.py`: `default_evo_model = evolution.MISTv1()`, `default_atm_func = atm.get_merged_atmosphere_v1`, `default_red_law = reddening.RedLawNishiyama09()`.
 
 **Note:** SPISEA has never shipped a conda package (`conda install spisea`). Install remains git + `PYTHONPATH` (and Docker). Do not block the release on conda-forge.
 
@@ -58,11 +59,10 @@ Pick **A** or **B** before tagging:
 
 ### 1.2 Clean install smoke test
 
-- [ ] Fresh conda/venv with Python ≥ 3.11
-- [ ] Install deps per `docs/getting_started.rst` (including current `stsynphot` git URL if 1.7 is not on PyPI yet)
-- [ ] Clone `dev`, set `PYTHONPATH`, `PYSYN_CDBS`, `SPISEA_MODELS`
-- [ ] Run tutorial 01 (Making a cluster) and a short BD path
-- [ ] Run full tests:
+- [x] Used existing `py314` env (Python 3.14; `spisea-synphot` not present on this machine) with synphot 1.7 / stsynphot git + COSMIC
+- [x] Set `PYTHONPATH` to repo, `PYSYN_CDBS=/Users/jlu/work/models/cdbs/`, `SPISEA_MODELS=/Users/jlu/work/models/` (local grid_version 3.1)
+- [x] Tutorial 01-style cluster (default MISTv1 / atm v1 / N09) + short BD path (`MergedFlameSkimmerRedDiamondbackMIST` + `get_merged_atmosphere_v3` + Hosek18b)
+- [x] Full tests: `conda run -n py314 python -m pytest spisea/tests -q` — all passed (includes COSMIC)
 
 ```bash
 conda run -n <env> python -m pytest spisea/tests -q
@@ -72,14 +72,14 @@ conda run -n <env> python -m pytest spisea/tests -q
 
 ### 1.3 Docs build
 
-- [ ] Confirm latest RTD `dev` build is green: https://app.readthedocs.org/projects/spisea/builds/
-- [ ] Spot-check https://spisea.readthedocs.io/en/dev/ (nav, preferred-model callouts, paper subsections)
+- [x] Latest RTD `dev` build green (`2e2d115` / #35899389 Built)
+- [x] Spot-check https://spisea.readthedocs.io/en/dev/ — nav (Installation / Quick Start / API / Development), Hosek+Begbie cites, 3.1 changelog present
 
 ### 1.4 Changelog freeze
 
-- [ ] Set `docs/index.rst` date `3.1 (YYYY-MM-DD)` to the real tag day
-- [ ] Skim 3.1 bullets for accuracy (synphot, BD grids, Offner, `IMF_package`, atm v1/v3, notebooks)
-- [ ] Commit + push if anything changed
+- [x] Set `docs/index.rst` date to `3.1 (2026-11-14)`
+- [x] Skimmed 3.1 bullets; fixed typo `systynphot` → `stsynphot`
+- [x] Commit + push with release-prep changes
 
 ---
 
@@ -94,8 +94,12 @@ gh pr create --base main --head dev \
 ## Summary
 - SPISEA 3.1.0: synphot/stsynphot, brown-dwarf grids, Offner multiplicity, IMF_package, atmosphere v1/v3, docs/notebooks.
 
+## Defaults decision (runbook 0.4)
+- **Option A (safer):** leave code defaults as MISTv1 / get_merged_atmosphere_v1 / Nishiyama09.
+  Preferred for new work remains Flame+v3+Hosek18b in the docs.
+
 ## Test plan
-- [x] Local pytest on py314 (+ COSMIC if available)
+- [x] Local pytest on py314 (+ COSMIC)
 - [x] Tutorial smoke test with grid_version 3.1 models
 - [x] RTD dev build green
 
