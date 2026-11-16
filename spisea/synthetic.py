@@ -41,7 +41,26 @@ from astropy.table import Table, Column
 import astropy.modeling
 import sys
 
-default_evo_model = evolution.MISTv1()
+# The default evolution model is created on first use rather than at import
+# time, since MISTv1() requires the SPISEA_MODELS grids to be installed. This
+# lets the module be imported without the model grids (e.g., for the
+# documentation build). synthetic.default_evo_model still works; see
+# __getattr__ below.
+_default_evo_model = None
+
+def _get_default_evo_model():
+    """Return the default evolution model (MISTv1), creating it on first use."""
+    global _default_evo_model
+    if _default_evo_model is None:
+        _default_evo_model = evolution.MISTv1()
+    return _default_evo_model
+
+def __getattr__(name):
+    # Lazily provide the module attribute default_evo_model (PEP 562).
+    if name == 'default_evo_model':
+        return _get_default_evo_model()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 default_red_law = reddening.RedLawNishiyama09()
 default_atm_func = atm.get_merged_atmosphere_v1
 default_wd_atm_func = atm.get_wd_atmosphere
@@ -1059,7 +1078,7 @@ class Isochrone(object):
 
     evo_model: model evolution class, optional
         Set the stellar evolution model class.
-        Default is evolution.MISTv1().
+        Default (None) uses evolution.MISTv1().
 
     atm_func: model atmosphere function, optional
         Set the stellar atmosphere models for the stars.
@@ -1092,7 +1111,7 @@ class Isochrone(object):
         which is often sufficient synthetic photometry in most cases.
     """
     def __init__(self, logAge, AKs, distance, metallicity=0.0,
-                 evo_model=default_evo_model, atm_func=default_atm_func,
+                 evo_model=None, atm_func=default_atm_func,
                  wd_atm_func = default_wd_atm_func,
                  red_law=default_red_law, mass_sampling=1,
                  wave_range=[3000, 52000], min_mass=None, max_mass=None,
@@ -1115,6 +1134,8 @@ class Isochrone(object):
 
         # Get solar metallicity models for a population at a specific age.
         # Takes about 0.1 seconds.
+        if evo_model is None:
+            evo_model = _get_default_evo_model()
         self.evo_model = evo_model
         evol = evo_model.isochrone(age=10**logAge,
                                    metallicity=metallicity)
@@ -1281,7 +1302,7 @@ class IsochronePhot(Isochrone):
 
     evo_model: model evolution class, optional
         Set the stellar evolution model class.
-        Default is evolution.MISTv1().
+        Default (None) uses evolution.MISTv1().
 
     atm_func: model atmosphere function, optional
         Set the stellar atmosphere models for the stars.
@@ -1349,7 +1370,7 @@ class IsochronePhot(Isochrone):
     """
     def __init__(self, logAge, AKs, distance,
                  metallicity=0.0,
-                 evo_model=default_evo_model, atm_func=default_atm_func,
+                 evo_model=None, atm_func=default_atm_func,
                  wd_atm_func = default_wd_atm_func, #bd_atm_func = default_bd_atm_func,
                  wave_range=[3000, 52000],
                  red_law=default_red_law, mass_sampling=1, iso_dir='./',
@@ -1358,6 +1379,8 @@ class IsochronePhot(Isochrone):
                           'ubv,R', 'ubv,I'],
                  mag_sys='Vega',
                  verbose=False):
+        if evo_model is None:
+            evo_model = _get_default_evo_model()
         self.evo_model = evo_model
         self.metallicity = metallicity
         self.verbose=verbose
@@ -2280,7 +2303,7 @@ def get_obs_str(col):
     return obs_str
 
 
-def make_isochrone_grid(age_arr, AKs_arr, dist_arr, evo_model=default_evo_model,
+def make_isochrone_grid(age_arr, AKs_arr, dist_arr, evo_model=None,
                         atm_func=default_atm_func, redlaw = default_red_law,
                         iso_dir = './', mass_sampling=1,
                         filters=['wfc3,ir,f127m',
@@ -2319,6 +2342,9 @@ def make_isochrone_grid(age_arr, AKs_arr, dist_arr, evo_model=default_evo_model,
     filters: dictionary
         Which filters to do the synthetic photometry on
     """
+    if evo_model is None:
+        evo_model = _get_default_evo_model()
+
     print( '**************************************')
     print( 'Start generating isochrones')
     print( 'Evolutionary Models adopted: {0}'.format(evo_model))
