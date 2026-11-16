@@ -110,7 +110,7 @@ def Vega():
 
     return vega
 
-#vega = Vega()
+vega = Vega()
 
 class Interpolator(object):
     def __init__(self, xp, yp):
