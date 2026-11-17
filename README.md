@@ -23,7 +23,7 @@ Here is a brief list of things that SPISEA can do:
 Install with pip:
 
 ```bash
-pip install SPISEA
+pip install spisea
 ```
 
 You still need the CDBS and evolution/atmosphere model archives; see

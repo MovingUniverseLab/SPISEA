@@ -82,7 +82,7 @@ optional. Install it with::
   pip install initial_mass_function
 
 or install SPISEA with the ``imf`` extra
-(``pip install "SPISEA[imf]"``).
+(``pip install "spisea[imf]"``).
 
 Pass a mass-function name (``'salpeter'``, ``'kroupa'``,
 ``'chabrier'``, ``'chabrierpowerlaw'``, or ``'chabrierlognormal'``),

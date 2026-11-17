@@ -67,7 +67,7 @@ evolution grids are **not** bundled with the package; continue with
 
 **From PyPI.** Current release::
 
-   pip install SPISEA
+   pip install spisea
 
 **From GitHub (no local clone required).** Current release branch::
 
@@ -85,7 +85,7 @@ the test suite from the repository tree::
 
 Optional extras (can be combined)::
 
-   pip install "SPISEA[imf]"
+   pip install "spisea[imf]"
    pip install -e ".[imf,dev]"
 
 * ``imf`` — `initial_mass_function` for :class:`~imf.imf.IMF_package`

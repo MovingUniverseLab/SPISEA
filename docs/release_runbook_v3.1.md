@@ -169,7 +169,7 @@ SPISEA has not been on PyPI before. `.github/workflows/publish.yml` builds the s
 - [ ] Before publishing the GitHub release: on https://pypi.org/manage/account/publishing/, add a pending trusted publisher with project `SPISEA`, owner `MovingUniverseLab`, repository `SPISEA`, workflow `publish.yml`, environment `pypi`
 - [ ] Optional: in the repository settings, create the `pypi` environment and require a reviewer
 - [ ] After the release: the "Publish to PyPI" workflow succeeded, and https://pypi.org/project/SPISEA/ shows 3.1.0
-- [ ] In a new environment: `pip install SPISEA`, then run tutorial 01 with the model archives
+- [ ] In a new environment: `pip install spisea`, then run tutorial 01 with the model archives
 
 ---
 
