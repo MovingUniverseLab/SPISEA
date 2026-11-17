@@ -33,8 +33,8 @@ Other dependencies:
 * python (>= 3.11)
 * astropy (>= 7)
 * pandas
-* synphot (>= 1.5)
-* stsynphot (>= 1.7.0; see :ref:`synphot-install`)
+* synphot (>= 1.9)
+* stsynphot (>= 1.7)
 * scipy (>= 1.14)
 * numpy (>= 2)
 * matplotlib
@@ -48,45 +48,20 @@ are needed only to run the test suite (the ``dev`` extra).
 
 Installing synphot and stsynphot
 --------------------------------
-SPISEA reads model atmospheres with ``stsynphot.grid_to_spec``.
-The minimum versions are ``synphot`` 1.5 and ``stsynphot`` 1.7.0.
-``stsynphot`` 1.7.0 is the release that will contain the merged
-grid-spectrum cache from `stsynphot pull request 244
-<https://github.com/spacetelescope/stsynphot_refactor/pull/244>`_.
-That cache keeps each grid spectrum after the first read, so
-isochrone photometry does not re-read the same atmosphere files
-for every star. The pull request's changelog entry is already
-filed under 1.7.0.
+SPISEA computes synthetic photometry with ``synphot`` and reads
+model atmospheres with ``stsynphot.grid_to_spec``. The minimum
+versions are ``synphot`` 1.9 and ``stsynphot`` 1.7, which read
+and interpolate atmosphere grid spectra faster than earlier
+versions. Both are on PyPI and are installed with SPISEA::
 
-``synphot`` 1.5 and later is on PyPI::
-
-   pip install "synphot>=1.5"
-
-``stsynphot`` 1.7.0 is not on PyPI yet. Until pull request 244 is
-merged, that cache is on Lingfeng Wei's branch. This is the URL in
-``pyproject.toml``::
-
-   pip install "stsynphot @ git+https://github.com/wei-lingfeng/stsynphot_refactor.git@cache-grid-spectra"
-
-That branch's NumPy, SciPy, and Astropy floors match the SPISEA
-minimums listed above (NumPy >= 2, SciPy >= 1.14, Astropy >= 7).
-
-After the pull request is merged, install ``stsynphot`` from the
-STScI repository. Tag ``1.7.0`` is the minimum version::
-
-   pip install "stsynphot @ git+https://github.com/spacetelescope/stsynphot_refactor.git@1.7.0"
-
-Once that release is on PyPI, the same minimum is::
-
-   pip install "stsynphot>=1.7"
+   pip install "synphot>=1.9" "stsynphot>=1.7"
 
 .. _Build:
 
 Install the SPISEA package
 --------------------------
 Install SPISEA itself with ``pip``. This pulls in the Python
-dependencies listed in ``pyproject.toml`` (including the current
-``stsynphot`` git URL until 1.7 is on PyPI). Model atmosphere and
+dependencies listed in ``pyproject.toml``. Model atmosphere and
 evolution grids are **not** bundled with the package; continue with
 :ref:`set-up-cdbs` and :ref:`models` after the package install.
 
@@ -120,7 +95,7 @@ clone the repository and add the top-level directory to ``PYTHONPATH``
 
 where ``<path_to_SPISEA>`` is the location of the top-level SPISEA
 directory. You still need to install the Python dependencies listed
-under :ref:`Dependencies` (and :ref:`synphot-install`) yourself.
+under :ref:`Dependencies` yourself.
 
 .. _set-up-cdbs:
 

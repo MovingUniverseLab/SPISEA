@@ -7,14 +7,10 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Version floors match pyproject.toml. stsynphot 1.7.0 is not on PyPI
-# yet; this URL is pull request 244. After the 1.7.0 tag, use
-# "stsynphot>=1.7". See docs/getting_started.rst.
-# NumPy, SciPy, and Astropy floors match that branch.
+# Version floors match pyproject.toml.
 RUN pip install --no-cache-dir \
     "numpy>=2" "scipy>=1.14" matplotlib pandas "astropy>=7" \
-    "synphot>=1.5" \
-    "stsynphot @ git+https://github.com/wei-lingfeng/stsynphot_refactor.git@cache-grid-spectra"
+    "synphot>=1.9" "stsynphot>=1.7"
 
 RUN git clone https://github.com/MovingUniverseLab/spisea.git /SPISEA
 
