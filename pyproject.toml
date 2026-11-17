@@ -57,18 +57,14 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://github.com/MovingUniverseLab/spisea"
-Documentation = "https://github.com/MovingUniverseLab/spisea/tree/main/docs"
+Documentation = "https://spisea.readthedocs.io"
 Repository = "https://github.com/MovingUniverseLab/spisea"
 Issues = "https://github.com/MovingUniverseLab/spisea/issues"
 
 [build-system]
 requires = [
-    "setuptools>=61.0",
+    "setuptools>=77.0",
     "setuptools-scm",
-    "wheel",
-    "numpydoc",
-    "pydata-sphinx-theme",
-    "pytest"
 ]
 build-backend = 'setuptools.build_meta'
 
@@ -76,8 +72,10 @@ build-backend = 'setuptools.build_meta'
 where = ["."]
 include = ["spisea*"]
 
+# Files read at run time. Listed so that wheels built outside a git checkout
+# (where setuptools-scm cannot list the tracked files) still include them.
 [tool.setuptools.package-data]
-spisea = ["data/*"]
+spisea = ["data/*", "el_files/*", "filt_func/**/*", "tests/test_data/*"]
 
 [tool.pytest.ini_options]
 minversion = "9.0"

@@ -162,6 +162,15 @@ EOF
 - [ ] Release published
 - [ ] Zenodo (if you archive from GitHub tags) — confirm new DOI or concept DOI update
 
+### 3.3 PyPI
+
+SPISEA has not been on PyPI before. `.github/workflows/publish.yml` builds the sdist and wheel and uploads them when a GitHub release is published, using PyPI trusted publishing (no API token).
+
+- [ ] Before publishing the GitHub release: on https://pypi.org/manage/account/publishing/, add a pending trusted publisher with project `SPISEA`, owner `MovingUniverseLab`, repository `SPISEA`, workflow `publish.yml`, environment `pypi`
+- [ ] Optional: in the repository settings, create the `pypi` environment and require a reviewer
+- [ ] After the release: the "Publish to PyPI" workflow succeeded, and https://pypi.org/project/SPISEA/ shows 3.1.0
+- [ ] In a new environment: `pip install SPISEA`, then run tutorial 01 with the model archives
+
 ---
 
 ## Phase 4 — Read the Docs + Docker
