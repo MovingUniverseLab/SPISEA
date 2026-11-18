@@ -1,11 +1,26 @@
 .. _api:
 
-==============
-API Reference
-==============
+========
+API Docs
+========
 
-Class and function docstrings are rendered on the topic pages.
-This page links to those references.
+Class and function docstrings are rendered on the topic pages below.
+This page also links to those references.
+
+.. toctree::
+   :maxdepth: 1
+   :titlesonly:
+
+   make_isochrone
+   make_cluster
+   evo_models
+   atmo_models
+   imf
+   multiplicity
+   ifmr
+   extinction
+   filters
+
 
 Isochrones and clusters
 -----------------------
@@ -27,6 +42,7 @@ Evolution models
 * :class:`evolution.MISTv1`
 * :class:`evolution.MergedBaraffePisaEkstromParsec`
 * :class:`evolution.MergedPhillipsBaraffePisaEkstromParsec`
+* :class:`evolution.MergedFlameSkimmerRedDiamondbackMIST`
 * :class:`evolution.Baraffe15`
 * :class:`evolution.Ekstrom12`
 * :class:`evolution.Parsec`
@@ -37,7 +53,11 @@ Evolution models
 Atmosphere models
 -----------------
 
-* :func:`atmospheres.get_merged_atmosphere`
+* :func:`atmospheres.get_merged_atmosphere_v1`
+* :func:`atmospheres.get_merged_atmosphere` (earlier name of ``get_merged_atmosphere_v1``)
+* :func:`atmospheres.get_merged_atmosphere_v3`
+* :func:`atmospheres.get_merged_atmosphere_v3bb`
+* :func:`atmospheres.get_flameskimmer_atmosphere`
 * :func:`atmospheres.get_wd_atmosphere`
 * :func:`atmospheres.extend_spectrum_blackbody`
 * :func:`atmospheres.get_bb_atmosphere`
@@ -62,6 +82,7 @@ Initial mass function
 * :class:`imf.imf.Kroupa_2001`
 * :class:`imf.imf.Weidner_Kroupa_2004`
 * :class:`imf.imf.Salpeter_Kirkpatrick_2024`
+* :class:`imf.imf.IMF_package`
 
 Multiplicity
 ------------

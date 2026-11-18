@@ -2,6 +2,17 @@
 isochrones/
 spisea/tests/isochrones/
 
+# Isochrone and atmosphere tables written by the documentation notebooks
+docs/notebooks/_output/
+iso_mist/
+iso_mist_r1/
+iso_mist_r2/
+iso_mist_r3/
+iso_merged/
+iso_merged_r1/
+iso_parsec_r1/
+atm_cosmic/
+
 # Local helper scripts (kept on disk, not in the repo)
 scripts/
 
@@ -27,7 +38,8 @@ MANIFEST
 # Sphinx
 docs/api
 docs/_build
-docs/_static
+docs/_static/*
+!docs/_static/custom.css
 docs/_template
 
 # Eclipse editor project files

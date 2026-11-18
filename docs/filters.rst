@@ -21,7 +21,7 @@ These strings follow the format ``<telescope/filter_set>,<filter>``.
 Note that there is no space after the comma, and case matters.
 
 Filter transmissions are stored in specific sub-directories
-in ``SPISEA/filt_func``. The functions in ``spisea/filters.py`` tell
+in ``spisea/filt_func``. The functions in ``spisea/filters.py`` tell
 the :ref:`isochrone_objects` how to interpret the filter strings
 and pull the corresponding transmission functions from the filt_func
 directories.
@@ -183,6 +183,11 @@ instruments.
 Filters: U, B, V, R, I
 
 Example: ``'ubv,B'``
+
+Tutorials use the Bessell set above. The ``IsochronePhot`` constructor
+still defaults to this Johnson-Cousins set for backwards compatibility;
+``ubv,I`` warns because that profile is cut off at 1.1 microns. New work
+should pass ``bessell,U`` through ``bessell,I`` instead.
 
 
 **Johnson-Glass**

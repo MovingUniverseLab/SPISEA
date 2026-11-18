@@ -27,12 +27,8 @@ dependencies = [
     "matplotlib",
     "pandas",
     "astropy>=7",
-    "synphot>=1.5",
-    # Minimum release is stsynphot 1.7.0, which includes the grid-spectrum
-    # cache (https://github.com/spacetelescope/stsynphot_refactor/pull/244).
-    # 1.7.0 is not on PyPI yet. This URL is that pull request. After the
-    # 1.7.0 tag is released, replace this line with "stsynphot>=1.7".
-    "stsynphot @ git+https://github.com/wei-lingfeng/stsynphot_refactor.git@cache-grid-spectra",
+    "synphot>=1.9",
+    "stsynphot>=1.7",
 ]
 
 optional-dependencies.dev = [
@@ -41,8 +37,14 @@ optional-dependencies.dev = [
     "wheel",
     "numpydoc",
     "pydata-sphinx-theme",
+    "nbsphinx>=0.9",
     "pytest",
     "pytest-astropy-header",
+]
+
+# Mass functions from initial_mass_function, for imf.IMF_package.
+optional-dependencies.imf = [
+    "initial_mass_function",
 ]
 
 classifiers = [
@@ -55,26 +57,25 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://github.com/MovingUniverseLab/spisea"
-Documentation = "https://github.com/MovingUniverseLab/spisea/tree/main/docs"
+Documentation = "https://spisea.readthedocs.io"
 Repository = "https://github.com/MovingUniverseLab/spisea"
 Issues = "https://github.com/MovingUniverseLab/spisea/issues"
 
 [build-system]
 requires = [
-    "setuptools>=61.0",
+    "setuptools>=77.0",
     "setuptools-scm",
-    "wheel",
-    "numpydoc",
-    "pydata-sphinx-theme",
-    "pytest"
 ]
 build-backend = 'setuptools.build_meta'
 
-[tool.setuptools]
-packages = ["spisea"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["spisea*"]
 
+# Files read at run time. Listed so that wheels built outside a git checkout
+# (where setuptools-scm cannot list the tracked files) still include them.
 [tool.setuptools.package-data]
-spisea = ["data/*"]
+spisea = ["data/*", "el_files/*", "filt_func/**/*", "tests/test_data/*"]
 
 [tool.pytest.ini_options]
 minversion = "9.0"

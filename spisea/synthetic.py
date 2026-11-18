@@ -32,6 +32,7 @@ from spisea.utils.synphot_bridge import (
     observation_bin_edges,
     resample_bandpass,
     resample_source_to,
+    tabulate,
     tabulate_if_needed,
     trim_spectrum,
 )
@@ -40,11 +41,73 @@ from astropy.table import Table, Column
 import astropy.modeling
 import sys
 
-default_evo_model = evolution.MISTv1()
+# The default evolution model is created on first use rather than at import
+# time, since MISTv1() requires the SPISEA_MODELS grids to be installed. This
+# lets the module be imported without the model grids (e.g., for the
+# documentation build). synthetic.default_evo_model still works; see
+# __getattr__ below.
+_default_evo_model = None
+
+def _get_default_evo_model():
+    """Return the default evolution model (MISTv1), creating it on first use."""
+    global _default_evo_model
+    if _default_evo_model is None:
+        _default_evo_model = evolution.MISTv1()
+    return _default_evo_model
+
+def __getattr__(name):
+    # Lazily provide the module attribute default_evo_model (PEP 562).
+    if name == 'default_evo_model':
+        return _get_default_evo_model()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 default_red_law = reddening.RedLawNishiyama09()
-default_atm_func = atm.get_merged_atmosphere
+default_atm_func = atm.get_merged_atmosphere_v1
 default_wd_atm_func = atm.get_wd_atmosphere
 default_multiplicity = multiplicity.MultiplicityResolvedDK(CSF_max = 1, companion_max = True)
+
+def _atm_func_name(atm_func):
+    """
+    Name used for an atmosphere function in isochrone meta-data and for
+    finding its ``_grid`` partner.
+
+    Parameters
+    ----------
+    atm_func : callable
+        Atmosphere function, e.g. ``atmospheres.get_merged_atmosphere_v1``.
+
+    Returns
+    -------
+    name : str
+        ``atm_func.__name__``, except that ``get_merged_atmosphere`` is
+        recorded as ``get_merged_atmosphere_v1``.
+    """
+    name = atm_func.__name__
+
+    # get_merged_atmosphere is the earlier name of get_merged_atmosphere_v1.
+    if atm_func is atm.get_merged_atmosphere:
+        name = 'get_merged_atmosphere_v1'
+
+    return name
+
+def _atm_grid_func(atm_func):
+    """
+    Grid function paired with an atmosphere function.
+
+    Parameters
+    ----------
+    atm_func : callable
+        Atmosphere function from any module.
+
+    Returns
+    -------
+    grid_func : callable
+        ``<atm_func name>_grid`` from the same module.
+    """
+    module = sys.modules[atm_func.__module__]
+    grid_func = getattr(module, _atm_func_name(atm_func) + "_grid")
+
+    return grid_func
 
 # Dummy telescope area for arbitrary photometry rescaling.
 tel_area_dummy = 1.0 * u.m**2
@@ -233,8 +296,12 @@ class ResolvedCluster(Cluster):
                 "Input IFMR will be ignored.")
 
         # Raise error if you're running COSMIC or other evo models
-        # with binaries only but ask for triples or higher order multiples
-        if getattr(iso.evo_model, 'no_higher_order_multiples', False) and ((self.imf._multi_props.CSF_max > 1) or (self.imf._multi_props.companion_max == False)):
+        # with binaries only but ask for triples or higher order multiples.
+        # No multiplicity object means all singles, which is allowed.
+        multi_props = self.imf._multi_props
+        binaries_only = getattr(getattr(iso, 'evo_model', None), 'no_higher_order_multiples', False)
+        if binaries_only and (multi_props is not None) and \
+                ((multi_props.CSF_max > 1) or (multi_props.companion_max == False)):
             raise Exception('Your evolution model does not support higher order multiples. Set CSF_max = 1 and companion_max = True in multiplicity object.')
             
 
@@ -696,7 +763,8 @@ class ResolvedCluster(Cluster):
         star_systems_teff_non_nan = np.nan_to_num(star_systems['Teff'], nan=-99)
         star_systems_phase_non_nan = np.nan_to_num(star_systems['phase'], nan=-99)
         if (self.ifmr == None) and (not keep_low_mass_stars):
-            print('Remove low mass stars below grid and compact objects')
+            if self.verbose:
+                print('Remove low mass stars below grid and compact objects')
             # Keep only those stars with Teff assigned and masses in grid
             min_iso = np.min(self.iso.points['mass'])
             max_iso = np.max(self.iso.points['mass'])
@@ -705,7 +773,8 @@ class ResolvedCluster(Cluster):
             idx = on_grid
 
         elif not keep_low_mass_stars:
-            print('Remove low mass stars, keep compact objects')
+            if self.verbose:
+                print('Remove low mass stars, keep compact objects')
             # Keep stars (with Teff) and any other compact objects (with phase info).
             min_iso = np.min(self.iso.points['mass'])
             max_iso = np.max(self.iso.points['mass'])
@@ -1009,11 +1078,11 @@ class Isochrone(object):
 
     evo_model: model evolution class, optional
         Set the stellar evolution model class.
-        Default is evolution.MISTv1().
+        Default (None) uses evolution.MISTv1().
 
     atm_func: model atmosphere function, optional
         Set the stellar atmosphere models for the stars.
-        Default is get_merged_atmosphere.
+        Default is get_merged_atmosphere_v1.
 
     wd_atm_func: white dwarf model atmosphere function, optional
         Set the stellar atmosphere models for the white dwarfs.
@@ -1042,7 +1111,7 @@ class Isochrone(object):
         which is often sufficient synthetic photometry in most cases.
     """
     def __init__(self, logAge, AKs, distance, metallicity=0.0,
-                 evo_model=default_evo_model, atm_func=default_atm_func,
+                 evo_model=None, atm_func=default_atm_func,
                  wd_atm_func = default_wd_atm_func,
                  red_law=default_red_law, mass_sampling=1,
                  wave_range=[3000, 52000], min_mass=None, max_mass=None,
@@ -1065,6 +1134,8 @@ class Isochrone(object):
 
         # Get solar metallicity models for a population at a specific age.
         # Takes about 0.1 seconds.
+        if evo_model is None:
+            evo_model = _get_default_evo_model()
         self.evo_model = evo_model
         evol = evo_model.isochrone(age=10**logAge,
                                    metallicity=metallicity)
@@ -1138,7 +1209,7 @@ class Isochrone(object):
         # Append all the meta data to the summary table.
         tab.meta['SPISEAVERSION'] = spisea_version_number
         tab.meta['REDLAW'] = red_law.name
-        tab.meta['ATMFUNC'] = atm_func.__name__
+        tab.meta['ATMFUNC'] = _atm_func_name(atm_func)
         tab.meta['EVOMODEL'] = type(evo_model).__name__
         tab.meta['EVOMODELVERSION'] = evo_model.model_version_name
         tab.meta['LOGAGE'] = logAge
@@ -1231,11 +1302,11 @@ class IsochronePhot(Isochrone):
 
     evo_model: model evolution class, optional
         Set the stellar evolution model class.
-        Default is evolution.MISTv1().
+        Default (None) uses evolution.MISTv1().
 
     atm_func: model atmosphere function, optional
         Set the stellar atmosphere models for the stars.
-        Default is atmospheres.get_merged_atmosphere.
+        Default is atmospheres.get_merged_atmosphere_v1.
 
     wd_atm_func: white dwarf model atmosphere function, optional
         Set the stellar atmosphere models for the white dwarfs.
@@ -1286,7 +1357,12 @@ class IsochronePhot(Isochrone):
     filters : array of strings, optional
         Define what filters the synthetic photometry
         will be calculated for, via the filter string
-        identifier.
+        identifier. The default is the Johnson-Cousins set
+        ``ubv,U`` through ``ubv,I``, kept for backwards
+        compatibility. New work should use the Bessell (1990)
+        set ``bessell,U`` through ``bessell,I``. Requesting
+        ``ubv,I`` emits a warning because that profile is cut
+        off at 1.1 microns.
 
     mag_sys : string, optional
         Define magnitude system for synthetic photometry. Default
@@ -1294,7 +1370,7 @@ class IsochronePhot(Isochrone):
     """
     def __init__(self, logAge, AKs, distance,
                  metallicity=0.0,
-                 evo_model=default_evo_model, atm_func=default_atm_func,
+                 evo_model=None, atm_func=default_atm_func,
                  wd_atm_func = default_wd_atm_func, #bd_atm_func = default_bd_atm_func,
                  wave_range=[3000, 52000],
                  red_law=default_red_law, mass_sampling=1, iso_dir='./',
@@ -1303,6 +1379,8 @@ class IsochronePhot(Isochrone):
                           'ubv,R', 'ubv,I'],
                  mag_sys='Vega',
                  verbose=False):
+        if evo_model is None:
+            evo_model = _get_default_evo_model()
         self.evo_model = evo_model
         self.metallicity = metallicity
         self.verbose=verbose
@@ -1328,7 +1406,15 @@ class IsochronePhot(Isochrone):
         older_file      = f'{iso_dir}/iso_{logAge:.2f}_{AKs:4.2f}_{str(round(distance)).zfill(5)}_{metal_sign}{metal_value*10:02.0f}.fits'
         oldest_file     = f'{iso_dir}/iso_{logAge:.2f}_{AKs:4.2f}_{str(round(distance)).zfill(5)}.fits'
 
-        new_file_exists = check_save_file(self.save_file, evo_model, atm_func, red_law, verbose=verbose)
+        new_mismatches = save_file_mismatches(self.save_file, evo_model, atm_func, red_law)
+        new_file_exists = new_mismatches == []
+        # A mismatched save_file is overwritten unless a legacy file matches. That is only
+        # known after the legacy checks, so its report waits for them: then it is either the
+        # overwrite warning (regardless of verbose) or, if nothing is overwritten, the usual
+        # verbose printout -- never both.
+        defer_report = bool(new_mismatches) and not recomp
+        if verbose and not defer_report:
+            _report_save_file_check(self.save_file, new_mismatches)
 
         if new_file_exists:
             self.save_file_legacy = None
@@ -1344,6 +1430,13 @@ class IsochronePhot(Isochrone):
 
         # Recalculate isochrone if save_file doesn't exist or recomp == True
         file_exists = new_file_exists or (self.save_file_legacy is not None)
+
+        if defer_report:
+            if file_exists:
+                if verbose:
+                    _report_save_file_check(self.save_file, new_mismatches)
+            else:
+                _warn_save_file_overwrite(self.save_file, new_mismatches)
 
         if  (recomp==True) or (not file_exists):
             self.recalc = True
@@ -1585,7 +1678,7 @@ class IsochronePhotExternalEvolution(IsochronePhot):
 
     atm_func: model atmosphere function, optional
         Set the stellar atmosphere models for the stars.
-        Default is atmospheres.get_merged_atmosphere.
+        Default is atmospheres.get_merged_atmosphere_v1.
 
     wd_atm_func: white dwarf model atmosphere function, optional
         Set the stellar atmosphere models for the white dwafs.
@@ -1632,7 +1725,12 @@ class IsochronePhotExternalEvolution(IsochronePhot):
     filters : array of strings, optional
         Define what filters the synthetic photometry
         will be calculated for, via the filter string
-        identifier.
+        identifier. The default is the Johnson-Cousins set
+        ``ubv,U`` through ``ubv,I``, kept for backwards
+        compatibility. New work should use the Bessell (1990)
+        set ``bessell,U`` through ``bessell,I``. Requesting
+        ``ubv,I`` emits a warning because that profile is cut
+        off at 1.1 microns.
 
     mag_sys : string, optional
         Define magnitude system for synthetic photometry. Default
@@ -1700,12 +1798,15 @@ class IsochronePhotExternalEvolution(IsochronePhot):
         self.filters = filters
 
         # Recalculate atmosphere grid if save_file doesn't exist or recomp == True
-        new_file_exists = check_save_file(self.save_file, evo_model, atm_func, red_law)
+        new_mismatches = save_file_mismatches(self.save_file, evo_model, atm_func, red_law)
+        new_file_exists = new_mismatches == []
         legacy_file_exists = (
             self.save_file_legacy != self.save_file and
             check_save_file(self.save_file_legacy, evo_model, atm_func, red_law)
         )
         file_exists = new_file_exists or legacy_file_exists
+        if new_mismatches and (not file_exists) and (not recomp):
+            _warn_save_file_overwrite(self.save_file, new_mismatches)
 
         if (not file_exists) | (recomp==True):
             self.recalc = True
@@ -1727,8 +1828,7 @@ class IsochronePhotExternalEvolution(IsochronePhot):
             # of the ATMOSPHERE MODEL ONLY
             # Takes the atm_func and adds the word "_grid" after it to
             # call the grid version of it
-            module = sys.modules[atm_func.__module__]
-            grid_func = getattr(module, atm_func.__name__ + "_grid")
+            grid_func = _atm_grid_func(atm_func)
             teff_arr, z_arr, logg_arr = grid_func(rebin=rebin)
 
 
@@ -1739,7 +1839,7 @@ class IsochronePhotExternalEvolution(IsochronePhot):
             # Append all the meta data to the summary table.
             tab.meta['SPISEAVERSION'] = spisea_version_number
             tab.meta['REDLAW'] = red_law.name
-            tab.meta['ATMFUNC'] = atm_func.__name__
+            tab.meta['ATMFUNC'] = _atm_func_name(atm_func)
             tab.meta['EVOMODEL'] = type(evo_model).__name__
             tab.meta['EVOMODELVERSION'] = evo_model.model_version_name
             tab.meta['AKS'] = AKs
@@ -1811,8 +1911,7 @@ class IsochronePhotExternalEvolution(IsochronePhot):
             # of the ATMOSPHERE MODEL ONLY
             # Takes the atm_func and adds the word "_grid" after it to
             # call the grid version of it
-            module = sys.modules[atm_func.__module__]
-            grid_func = getattr(module, atm_func.__name__ + "_grid")
+            grid_func = _atm_grid_func(atm_func)
             teff_arr, z_arr, logg_arr = grid_func(rebin=rebin)
 
             print('Loading stellar spectra')
@@ -1929,6 +2028,53 @@ class IsochronePhotExternalEvolution(IsochronePhot):
         return
 
 
+def save_file_mismatches(save_file_path, evo_model, atm_func, red_law):
+    """
+    Compare the meta-data of an existing save_file against the requested
+    evolution model, atmosphere function and reddening law.
+
+    returns None if the file does not exist, otherwise a list of
+    (key, value in the file, requested value) for each item that does
+    not match (empty if everything matches).
+    """
+    if not os.path.exists(save_file_path):
+        return None
+
+    tmp = Table.read(save_file_path)
+
+    mismatches = []
+    # Files made before SPISEA version 3 used the older SynPhot and
+    # photometry integration, so they are always regenerated.
+    file_version = tmp.meta.get('SPISEAVERSION')
+    if _spisea_major_version(file_version) < 3:
+        mismatches.append(('SPISEAVERSION', file_version, spisea_version_number))
+
+    expected = [('EVOMODEL', type(evo_model).__name__),
+                ('ATMFUNC', _atm_func_name(atm_func)),
+                ('REDLAW', red_law.name)]
+    # Model version is only checked if it was logged
+    if 'EVOMODELVERSION' in tmp.meta:
+        expected.append(('EVOMODELVERSION', evo_model.model_version_name))
+
+    # Files written before the v1 rename store get_merged_atmosphere.
+    file_meta = dict(tmp.meta)
+    if file_meta.get('ATMFUNC') == 'get_merged_atmosphere':
+        file_meta['ATMFUNC'] = 'get_merged_atmosphere_v1'
+
+    mismatches += [(key, tmp.meta.get(key), value) for key, value in expected
+                   if file_meta.get(key) != value]
+    return mismatches
+
+def _spisea_major_version(version):
+    """
+    Major version number of a SPISEA version string, or 0 if it is
+    missing or cannot be read.
+    """
+    try:
+        return int(str(version).split('.')[0])
+    except ValueError:
+        return 0
+
 def check_save_file(save_file_path, evo_model, atm_func, red_law, verbose=False):
     """
     Check to see if save_file exists, as saved by the save_file
@@ -1937,47 +2083,36 @@ def check_save_file(save_file_path, evo_model, atm_func, red_law, verbose=False)
 
     returns a boolean: True is file exists, false otherwise
     """
-    out_bool = False
+    mismatches = save_file_mismatches(save_file_path, evo_model, atm_func, red_law)
+    if verbose:
+        _report_save_file_check(save_file_path, mismatches)
 
-    if not os.path.exists(save_file_path):
-        if verbose: print(f'Isochrone file {save_file_path} does not exist.')
-        return out_bool
+    return mismatches == []
 
-    tmp = Table.read(save_file_path)
-    
-    # See if the isochrones were generated
-    if ('SPISEAVERSION' not in tmp.meta) or \
-        (int(tmp.meta['SPISEAVERSION'].split('.')[0])<3):
-        if verbose:
-            print('Isochrone generated before SPISEA version 3. '
-                  'Forcing regeneration w/ updated SynPhot and integration.')
-        return out_bool
+def _mismatch_message(save_file_path, mismatches):
+    """
+    Multiline report of the meta-data in save_file that does not match the request.
+    """
+    return '\n'.join([f'Isochrone file {save_file_path} exists, but meta-data does not match:'] +
+                     [f'  {key}: file has {file_value}, requested {value}' for key, file_value, value in mismatches])
 
-    # See if the meta-data matches: evo model, atm_func, redlaw
-    if ( (tmp.meta['EVOMODEL'] == type(evo_model).__name__) &
-        (tmp.meta['ATMFUNC'] == atm_func.__name__) &
-            (tmp.meta['REDLAW'] == red_law.name) ):
-        out_bool = True
-    else:
-        # If out_bool is false, print out what doesn't match
-        if verbose:
-            print(f'Isochrone file {save_file_path} exists, but meta-data does not match.')
-            if tmp.meta['EVOMODEL'] != type(evo_model).__name__:
-                print(f'  EVOMODEL: {tmp.meta["EVOMODEL"]} != {type(evo_model).__name__}')
-            if tmp.meta['ATMFUNC'] != atm_func.__name__:
-                print(f'  ATMFUNC: {tmp.meta["ATMFUNC"]} != {atm_func.__name__}')
-            if tmp.meta['REDLAW'] != red_law.name:
-                print(f'  REDLAW: {tmp.meta["REDLAW"]} != {red_law.name}')
+def _report_save_file_check(save_file_path, mismatches):
+    """
+    Print the result of save_file_mismatches: the file does not exist,
+    or which meta-data does not match (nothing if it matches).
+    """
+    if mismatches is None:
+        print(f'Isochrone file {save_file_path} does not exist.')
+    elif mismatches:
+        print(_mismatch_message(save_file_path, mismatches))
 
-    # Check model version if it was logged
-    if 'EVOMODELVERSION' in tmp.meta:
-        if tmp.meta['EVOMODELVERSION'] != evo_model.model_version_name:
-            out_bool=False
-            if verbose:
-                print(f'EVOMODELVERSION does not match: The recorded {tmp.meta["EVOMODELVERSION"]} does not matched the existing version {evo_model.model_version_name}')
-
-
-    return out_bool
+def _warn_save_file_overwrite(save_file_path, mismatches):
+    """
+    Warn that save_file, made with different inputs, is about to be
+    regenerated and overwritten. Issued regardless of verbose.
+    """
+    warnings.warn(_mismatch_message(save_file_path, mismatches) +
+                  '\nRegenerating it, which overwrites the file.')
 
 
 def get_filter_info(name, vega=vega, rebin=True):
@@ -2097,7 +2232,10 @@ def get_filter_info(name, vega=vega, rebin=True):
     filt.meta["flux0"] = vega_flux
     filt.meta["mag0"] = vega_mag
 
-    return filt
+    # An stsynphot bandpass is a tree of throughput components, each with a FITS
+    # header that synphot deep-copies in every Observation. As one table it gives
+    # the same magnitudes several times faster.
+    return tabulate(filt)
 
 
 def get_filter_col_name(obs_str):
@@ -2165,7 +2303,7 @@ def get_obs_str(col):
     return obs_str
 
 
-def make_isochrone_grid(age_arr, AKs_arr, dist_arr, evo_model=default_evo_model,
+def make_isochrone_grid(age_arr, AKs_arr, dist_arr, evo_model=None,
                         atm_func=default_atm_func, redlaw = default_red_law,
                         iso_dir = './', mass_sampling=1,
                         filters=['wfc3,ir,f127m',
@@ -2204,6 +2342,9 @@ def make_isochrone_grid(age_arr, AKs_arr, dist_arr, evo_model=default_evo_model,
     filters: dictionary
         Which filters to do the synthetic photometry on
     """
+    if evo_model is None:
+        evo_model = _get_default_evo_model()
+
     print( '**************************************')
     print( 'Start generating isochrones')
     print( 'Evolutionary Models adopted: {0}'.format(evo_model))

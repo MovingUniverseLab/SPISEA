@@ -8,15 +8,19 @@ Install From Git
 ==========================
 If you are downloading the code from scratch, please follow the
 instructions below. If you had already downloaded version 1 of the
-code and are switching to version 2, please see :ref:`version`. 
+code and are switching to version 2, please see :ref:`version`.
 
-SPISEA is hosted on `GitHub <https://github.com/MovingUniverseLab/spisea>`_.
-To begin, clone the git repository in your desired code directory::
+SPISEA is on `PyPI <https://pypi.org/project/SPISEA/>`_ and its source
+is hosted on `GitHub <https://github.com/MovingUniverseLab/spisea>`_.
+You can install the release from PyPI, install a branch directly from
+GitHub, or clone the repository and install locally. The ``main`` branch contains the current release; ``dev`` is
+for code development.
+
+To clone the repository (needed for an editable install, Docker builds,
+or contributing)::
 
    git clone https://github.com/MovingUniverseLab/spisea.git
 
-The ``main`` branch contains the current release,
-while the ``dev`` branch is for code development.
 
 .. _Dependencies:
 
@@ -29,8 +33,8 @@ Other dependencies:
 * python (>= 3.11)
 * astropy (>= 7)
 * pandas
-* synphot (>= 1.5)
-* stsynphot (>= 1.7.0; see :ref:`synphot-install`)
+* synphot (>= 1.9)
+* stsynphot (>= 1.7)
 * scipy (>= 1.14)
 * numpy (>= 2)
 * matplotlib
@@ -44,50 +48,58 @@ are needed only to run the test suite (the ``dev`` extra).
 
 Installing synphot and stsynphot
 --------------------------------
-SPISEA reads model atmospheres with ``stsynphot.grid_to_spec``.
-The minimum versions are ``synphot`` 1.5 and ``stsynphot`` 1.7.0.
-``stsynphot`` 1.7.0 is the release that will contain the merged
-grid-spectrum cache from `stsynphot pull request 244
-<https://github.com/spacetelescope/stsynphot_refactor/pull/244>`_.
-That cache keeps each grid spectrum after the first read, so
-isochrone photometry does not re-read the same atmosphere files
-for every star. The pull request's changelog entry is already
-filed under 1.7.0.
+SPISEA computes synthetic photometry with ``synphot`` and reads
+model atmospheres with ``stsynphot.grid_to_spec``. The minimum
+versions are ``synphot`` 1.9 and ``stsynphot`` 1.7, which read
+and interpolate atmosphere grid spectra faster than earlier
+versions. Both are on PyPI and are installed with SPISEA::
 
-``synphot`` 1.5 and later is on PyPI::
-
-   pip install "synphot>=1.5"
-
-``stsynphot`` 1.7.0 is not on PyPI yet. Until pull request 244 is
-merged, that cache is on Lingfeng Wei's branch. This is the URL in
-``pyproject.toml``::
-
-   pip install "stsynphot @ git+https://github.com/wei-lingfeng/stsynphot_refactor.git@cache-grid-spectra"
-
-That branch's NumPy, SciPy, and Astropy floors match the SPISEA
-minimums listed above (NumPy >= 2, SciPy >= 1.14, Astropy >= 7).
-
-After the pull request is merged, install ``stsynphot`` from the
-STScI repository. Tag ``1.7.0`` is the minimum version::
-
-   pip install "stsynphot @ git+https://github.com/spacetelescope/stsynphot_refactor.git@1.7.0"
-
-Once that release is on PyPI, the same minimum is::
-
-   pip install "stsynphot>=1.7"
+   pip install "synphot>=1.9" "stsynphot>=1.7"
 
 .. _Build:
 
-Build
-------
-Once the repository is cloned, you need to add SPISEA to your
-``PYTHONPATH`` environment variable. For example, if you are using
-BASH, then you need to add the following line to your ``bash_profile``::
-  
+Install the SPISEA package
+--------------------------
+Install SPISEA itself with ``pip``. This pulls in the Python
+dependencies listed in ``pyproject.toml``. Model atmosphere and
+evolution grids are **not** bundled with the package; continue with
+:ref:`set-up-cdbs` and :ref:`models` after the package install.
+
+**From PyPI.** Current release::
+
+   pip install spisea
+
+**From GitHub (no local clone required).** Current release branch::
+
+   pip install "SPISEA @ git+https://github.com/MovingUniverseLab/spisea.git"
+
+Development branch::
+
+   pip install "SPISEA @ git+https://github.com/MovingUniverseLab/spisea.git@dev"
+
+**From a local clone (editable).** Preferred when developing or running
+the test suite from the repository tree::
+
+   cd spisea
+   pip install -e .
+
+Optional extras (can be combined)::
+
+   pip install "spisea[imf]"
+   pip install -e ".[imf,dev]"
+
+* ``imf`` — `initial_mass_function` for :class:`~imf.imf.IMF_package`
+* ``dev`` — pytest and documentation build tools
+
+**PYTHONPATH alternative.** If you prefer not to use ``pip`` for SPISEA,
+clone the repository and add the top-level directory to ``PYTHONPATH``
+(BASH example for ``~/.bash_profile``)::
+
    export PYTHONPATH=$PYTHONPATH:<path_to_SPISEA>
 
 where ``<path_to_SPISEA>`` is the location of the top-level SPISEA
-directory. 
+directory. You still need to install the Python dependencies listed
+under :ref:`Dependencies` yourself.
 
 .. _set-up-cdbs:
 
@@ -97,18 +109,26 @@ SPISEA uses the STScI CDBS infrastructure to store
 model atmospheres and HST filter throughputs.
 In particular, it expects a top-level ``cdbs`` directory
 with 3 sub-directories: ``comp``, ``mtab``,
-and ``grid``. If you already have these set-up then you may
+and ``grid``. Which archives to download, and which SPISEA
+version they match, is listed on the `SPISEA Data Downloads
+<https://w.astro.berkeley.edu/~jlu/spisea/index.html>`_ page.
+If you already have these set-up then you may
 proceed to the next section. Otherwise, follow the steps below.
 
 #. Create a cdbs directory on your machine::
 
      mkdir <your_path>/cdbs
 
-#. The CDBS files can be downloaded from this STScI `website
-   <https://archive.stsci.edu/hlsp/reference-atlases>`_.
-   Download the ``synphot1_throughput-master.tar`` and
-   ``synphot5_pheonix-models.tar`` files and place them in your
-   cdbs directory.
+#. Download these two files from the STScI `Reference Atlases
+   <https://archive.stsci.edu/hlsp/reference-atlases>`_ page
+   and place them in your cdbs directory:
+
+   * ``synphot1_throughput-master.tar`` — HST filter throughputs
+     (``comp/`` and ``mtab/``). Use a version dated 2024-03-22 or
+     later so the Roman filters work. This archive does **not**
+     include SPISEA atmosphere grids.
+   * ``synphot5_pheonix-models.tar`` — STScI Phoenix atmosphere
+     models under ``grid/`` (used by ``get_phoenix_atmosphere``).
 
 #. Untar each of the files. Once completed, a new directory named ``grp`` will appear.
 
@@ -122,11 +142,13 @@ proceed to the next section. Otherwise, follow the steps below.
 You should end up with a cdbs directory
 ``<your_path>/cdbs`` with sub-directories
 called ``comp``, ``mtab``, and ``grid``.
-You will add additional atmosphere models to ``cdbs/grid`` in
-the :ref:`models` section below.
-
-Note: To use the Roman filters, the CDBS data version should be from
-2024-03-22 or later.
+You will add the SPISEA atmosphere catalogs (Castelli/Kurucz,
+PHOENIXv16, FlameSkimmer, BT-Settl, Meisner, Phillips, Koester WD,
+and the ``merged_*`` grids used by
+``get_merged_atmosphere_v3`` / ``v1``) by unpacking
+``spisea_cdbs.tar.gz`` in the :ref:`models` section below.
+A table of which archive provides each atmosphere function is on
+the :ref:`atmo_models` page.
 
 
 .. _models:
@@ -138,47 +160,51 @@ order to function. The evolution models are
 stand-alone and specific to SPISEA. The atmosphere model grids use the
 STScI CDBS conventions and should be placed in the ``cdbs/grid`` directory.
 
-You will need to download 2 files:
+Current archives, sizes, and which SPISEA version each grid matches
+are on the `SPISEA Data Downloads
+<https://w.astro.berkeley.edu/~jlu/spisea/index.html>`_ page.
+The steps below use ``<your_path>/models/`` as the parent of the
+``cdbs`` directory from :ref:`set-up-cdbs`. Put each ``.tar.gz`` in
+that parent directory before unpacking it.
 
-* `spisea_models.tar.gz
-  <https://w.astro.berkeley.edu/~jlu/spisea/spisea_models.tar.gz>`_ (4.1 GB; 23 GB unzipped)
+#. Download `spisea_models.tar.gz
+   <https://w.astro.berkeley.edu/~jlu/spisea/spisea_models.tar.gz>`_
+   (3.9 GB; 23 GB unzipped). This file is required. It is the stellar
+   evolution grids (grid_version 3.1, for SPISEA 3.1 and later).
+   Unpack it so it creates ``evolution/``::
 
-* `spisea_cdbs.tar.gz <https://w.astro.berkeley.edu/~jlu/spisea/spisea_cdbs.tar.gz>`_  (155 MB; 354 MB unzipped)
+      cd <your_path>/models/
+      tar -xvf spisea_models.tar.gz
 
-You may **optionally** download a third file, which contains
-higher-resolution stellar atmospheres. Note that this file is quite
-large, and is not necessary for most SPISEA use cases:
+#. Download `spisea_cdbs.tar.gz
+   <https://w.astro.berkeley.edu/~jlu/spisea/spisea_cdbs.tar.gz>`_
+   (126 MB; 354 MB unzipped). This file is required. It is the
+   low-resolution atmosphere grids (R = 250, grid_version 3.1)
+   that SPISEA packages itself (FlameSkimmer, PHOENIXv16, BT-Settl,
+   Meisner, Phillips, Koester WD, Castelli/Kurucz, and the
+   ``merged_*`` catalogs). Default synthetic photometry uses these.
+   Unpack it in the same directory so the atmospheres land in
+   ``cdbs/grid``::
 
-* `spisea_cdbs_highres.tar.gz <https://w.astro.berkeley.edu/~jlu/spisea/spisea_cdbs_highres.tar.gz>`_ (54 GB; 80 GB unzipped)
+      cd <your_path>/models/
+      tar -xvf spisea_cdbs.tar.gz
 
-SPISEA uses the low-resolution atmospheres (R = 250) in
-``spisea_cdbs.tar.gz`` by default, as
-it is then much faster for synthetic photometry and
-is sufficient in most applications. However, the user can change
-this default; see  :ref:`atmo_models` for
-more details. **Unless you change this default,**
-``spisea_cdbs_highres.tar.gz`` **is not required.**
+#. Optionally download `spisea_cdbs_highres.tar.gz
+   <https://w.astro.berkeley.edu/~jlu/spisea/spisea_cdbs_highres.tar.gz>`_
+   (50 GB; 80 GB unzipped). These are the higher-resolution
+   atmospheres. Most uses do not need them. SPISEA stays on the
+   R = 250 grids unless you change that default; see
+   :ref:`atmo_models`. If you download this file, unpack it in the
+   same directory::
 
-Once downloaded, ``spisea_cdbs.tar.gz`` (and
-``spisea_cdbs_highres.tar.gz``, if desired) should be
-expanded in  the ``cdbs`` directory. The output directories
-will automatically be placed in the correct locations. 
-The ``spisea_models.tar.gz`` file can be expanded
-anywhere, though we recommend expanding it in the same location as 
-your ``cdbs`` directory. 
+      cd <your_path>/models/
+      tar -xvf spisea_cdbs_highres.tar.gz
 
-For example, if your cdbs directory is ``/<your_path>/models/cdbs/``
-then you should put the .gz files in ``/<your_path>/models/``
-and then unzip them from there::
-
-   cd /<your_path>/models/
-   tar -xvf spisea_cdbs.tar.gz
-   tar -xvf spisea_models.tar.gz
-
-
-``spisea_cdbs.tar.gz`` will put the model atmospheres in
-``cdbs/grid``, and ``spisea_models.tar.gz`` will put the evolution
-models in a new directory called ``evolution/``
+``spisea_models.tar.gz`` puts the evolution models in ``evolution/``.
+``spisea_cdbs.tar.gz`` (and ``spisea_cdbs_highres.tar.gz``, if
+downloaded) puts SPISEA's atmosphere catalogs in ``cdbs/grid``.
+See :ref:`atmo_models` for which functions need which archive
+(including grids that are *not* in these tarballs).
 
 .. _setup-paths:
 
@@ -215,10 +241,9 @@ such as::
     
 However, these can be safely ignored since SPISEA doesn't use those functionalities.
 
-To further test your SPISEA install, try running the `Quick Start
-notebook
-<https://github.com/MovingUniverseLab/spisea/blob/main/docs/Quick_Start_Make_Cluster.ipynb>`_.
-It is also located in ``SPISEA/docs``.
+To further test your SPISEA install, try running
+:doc:`Making a cluster <notebooks/01_make_cluster>`.
+The notebooks are in ``docs/notebooks``.
 
 To test the full range of
 evolution models, atmosphere models, and photometric filters,
@@ -235,9 +260,10 @@ are (generally) fine.
 
 TroubleShooting
 -----------------------
-If SPISEA is not properly in your ``PYTHONPATH``, then when you try
-to import the SPISEA functions you will get an error message
-reporting ``No module named spisea``.
+If SPISEA is not installed (via ``pip`` / ``pip install -e .``) and is
+not on your ``PYTHONPATH``, then when you try to import the SPISEA
+functions you will get an error message reporting
+``No module named spisea``.
 
 If the ``SPISEA_MODELS`` or ``PYSYN_CDBS`` paths are broken, then
 SPISEA won't know where to get the stellar models.

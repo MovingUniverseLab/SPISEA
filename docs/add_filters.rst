@@ -5,7 +5,7 @@ Adding Photometric Filters
 ========================================
 If the user wants to add new photometric filters to SPISEA, there are 4 main steps:
 
-  1) Save the filter transmissions as text files in a new sub-directory in the top-level ``filt_func`` directory.
+  1) Save the filter transmissions as text files in a new sub-directory of the ``spisea/filt_func`` directory.
   2) Define a new function in ``filters.py`` that reads a unique filter string the user assigns to the new filters,
      and then read the appropriate data files from the new ``filt_func`` sub-directory. 
   3) Edit the ``get_filter_info()`` function  in ``synthetic.py`` to

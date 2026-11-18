@@ -3,11 +3,24 @@
 ========================================
 Atmosphere Model Object
 ========================================
+
+**Preferred for new work:**
+``get_merged_atmosphere_v3``
+(ATLAS / PHOENIX / Sonora FlameSkimmer).
+Use ``get_merged_atmosphere_v3bb`` when you need white-dwarf or
+blackbody coverage for high-gravity objects (including filters
+beyond 3 μm). Pair with
+``evolution.MergedFlameSkimmerRedDiamondbackMIST``.
+
+``IsochronePhot`` still defaults to ``get_merged_atmosphere_v1``
+(legacy Hosek et al. 2020 merge) if you do not pass ``atm_func``.
+``get_merged_atmosphere`` remains as an alias of v1.
+
 Stellar atmosphere models are defined as functions in
 ``spisea/atmospheres.py``. These can be called by::
 
  from spisea import atmospheres
- atmo = atmospheres.<function_name>
+ atmo = atmospheres.get_merged_atmosphere_v3
 
 To call an atmosphere for a particular star, user must define the
 metallicity ([Z]), temperature (in K), and gravity (in cgs)::
@@ -24,12 +37,65 @@ spectrum of each star in the isochrone model.
 SPISEA uses the stsynphot/synphot stack to extract the model atmosphere,
 and the output spectrum is a synphot ``SourceSpectrum`` built from the CDBS grid via ``stsynphot.grid_to_spec``.
 
+Which archive provides each atmosphere grid
+-------------------------------------------
+SPISEA atmospheres live under ``$PYSYN_CDBS/grid/`` as CDBS-style
+catalogs. Different archives supply different catalogs. For a standard
+SPISEA 3.1 install you need **both** STScI Reference Atlases pieces
+**and** ``spisea_cdbs.tar.gz`` (see :ref:`set-up-cdbs` and
+:ref:`models`). Details and sizes are on the `SPISEA Data Downloads
+<https://w.astro.berkeley.edu/~jlu/spisea/index.html>`_ page.
+
+.. list-table:: Atmosphere grids by download archive
+   :header-rows: 1
+   :widths: 28 36 36
+
+   * - Archive
+     - Provides (``cdbs/grid/`` catalogs)
+     - Used by
+   * - STScI ``synphot1_throughput-master.tar``
+     - Filter throughputs only (``comp/``, ``mtab/``); **no** atmosphere grids
+     - All synthetic photometry
+   * - STScI ``synphot5_pheonix-models.tar``
+     - ``phoenix`` (and related STScI Phoenix products)
+     - ``get_phoenix_atmosphere``; components of some merges
+   * - SPISEA ``spisea_cdbs.tar.gz`` (R = 250; **required**)
+     - ``ck04models``, ``k93models``, ``phoenix_v16_rebin``,
+       ``BTSettl_rebin``, ``BTSettl_2015_rebin``,
+       ``FlameSkimmer_rebin``, ``Meisner2023_rebin``,
+       ``Phillips2020_rebin``, ``wdKoester`` / ``wdKoester_rebin``,
+       ``merged_atlas_phoenix``, ``merged_BTSettl_phoenix``,
+       ``merged_BTSettl_meisner``, ``merged_flameskimmer_phoenix``
+     - Preferred merges
+       (``get_merged_atmosphere_v3`` / ``v3bb`` / ``v1`` / ``v1bb``),
+       Castelli/Kurucz, PHOENIXv16, BT-Settl, FlameSkimmer,
+       Meisner2023, Phillips2020, Koester WD, and the tabulated merges
+   * - SPISEA ``spisea_cdbs_highres.tar.gz`` (**optional**)
+     - Higher-resolution versions of the SPISEA atmosphere catalogs
+     - Same functions as ``spisea_cdbs.tar.gz`` when ``rebin=False``
+       / high-res paths are selected; not needed for default R = 250
+       photometry
+   * - None (computed)
+     - —
+     - ``get_bb_atmosphere`` (blackbody; no catalog file)
+
+**Not included** in the STScI + SPISEA archives above (and not part of
+a standard install): ``nextgen``, ``AMESdusty``, and the CMFGEN grids
+(``cmfgen_rot``, ``cmfgen_norot``, ``cmfgenF15_noRot``, …). Calling
+``get_nextgen_atmosphere``, ``get_amesdusty_atmosphere``, or the
+``get_cmfgen*_atmosphere`` helpers will fail with a missing
+``catalog.fits`` unless you add those catalogs yourself under
+``$PYSYN_CDBS/grid/``. See GitHub issue #170.
+
 Below is a table of atmosphere model grids currently supported by
 SPISEA. Note that the resolution column reports the original
-resolution of the atmosphere model grid. These are available in the
-`spisea_cdbs_highres.tar.gz` file on the installation page. However, the default grid SPISEA
-uses has degraded the resolution of all atmosphere grids to R = 250
-(the `spisea_cdbs.tar.gz` file). 
+resolution of the atmosphere model grid. High-resolution copies of the
+SPISEA-packaged grids are in `spisea_cdbs_highres.tar.gz
+<https://w.astro.berkeley.edu/~jlu/spisea/spisea_cdbs_highres.tar.gz>`_.
+The default grid SPISEA uses has degraded those SPISEA atmospheres to
+R = 250 (`spisea_cdbs.tar.gz
+<https://w.astro.berkeley.edu/~jlu/spisea/spisea_cdbs.tar.gz>`_).
+See :ref:`models` for where to unpack them. 
 
 .. list-table:: Atmosphere Models
    :header-rows: 2
@@ -42,13 +108,41 @@ uses has degraded the resolution of all atmosphere grids to R = 250
      - λ Range (μm)
      - Resolution\ :sup:`a` λ/Δλ
      - Ref
-   * - ``get_merged_atmosphere``
+   * - ``get_merged_atmosphere_v3``\ :sup:`g`
+     - 250 – 50000
+     - \ :sup:`b`
+     - \ :sup:`b`
+     - \ :sup:`b`
+     - \ :sup:`b`
+     - ATLAS/PHOENIX/FlameSkimmer; Begbie et al. (2026)
+   * - ``get_merged_atmosphere_v3bb``
+     - 250 – 50000
+     - \ :sup:`b`
+     - \ :sup:`b`
+     - \ :sup:`b`
+     - \ :sup:`b`
+     - v3 + WD/BB for high log *g*
+   * - ``get_merged_atmosphere_v1``
      - 250 – 50000
      - \ :sup:`b`
      - \ :sup:`b`
      - \ :sup:`b`
      - \ :sup:`b`
      - Appendix B; Hosek et al. (2020)
+   * - ``get_merged_atmosphere_v1bb``
+     - 250 – 50000
+     - \ :sup:`b`
+     - \ :sup:`b`
+     - \ :sup:`b`
+     - \ :sup:`b`
+     - v1 + WD/BB for high log *g*
+   * - ``get_flameskimmer_atmosphere``
+     - ~200 – 2400
+     - ≥ 2
+     - -1.0 – +0.5
+     - \ :sup:`b`
+     - \ :sup:`b`
+     - Sonora FlameSkimmer (C/O = 1)
    * - ``get_castelli_atmosphere``
      - 3500 – 50000
      - 0 – 5.0
@@ -125,7 +219,7 @@ uses has degraded the resolution of all atmosphere grids to R = 250
 :sup:`a` Resolution column reports the original resolution of the atmosphere model grid.
 The default SPISEA grid degrades all atmosphere grids to R = 250 (``spisea_cdbs.tar.gz``).
  
-:sup:`b` See Appendix B; values depend on the underlying model selected by ``get_merged_atmosphere``.
+:sup:`b` See Appendix B; values depend on the underlying model selected by ``get_merged_atmosphere_v1``.
  
 :sup:`c` Kurucz (1993); see CDBS documentation.
  
@@ -137,6 +231,10 @@ The default SPISEA grid degrades all atmosphere grids to R = 250 (``spisea_cdbs.
 ``get_wd_atmosphere`` blends the model with a blackbody from 2.8 to
 3.0 μm and continues that blackbody to 10 μm.
 See :ref:`wd_spectra`.
+
+:sup:`g` Preferred atmosphere function for SPISEA 3.1.
+``get_merged_atmosphere`` is kept as an alias of
+``get_merged_atmosphere_v1``.
 
 .. _wd_spectra:
 
@@ -194,7 +292,7 @@ Regenerate the figures from the repository root with::
 
 Sonora, PHOENIX and ATLAS suite
 -----------------------------------------
-``get_merged_atmosphere_atlas_phoenix_sonora`` adds the C/O = 1 equilibrium
+``get_merged_atmosphere_v3`` adds the C/O = 1 equilibrium
 FlameSkimmer models to the stellar atmosphere models. Below 2500 K, stars
 with log(g) >= 2 use FlameSkimmer through 2200 K and a FlameSkimmer/PHOENIX
 blend from 2200 to 2500 K. Lower-gravity stars use PHOENIX. The log(g) limit
@@ -203,7 +301,7 @@ comes from the lowest gravity in FlameSkimmer.
 Cool dwarfs below [M/H] = -1 use the -1 FlameSkimmer atmosphere and produce
 a warning. At 2500-5000 K the function uses PHOENIX, at 5000-5500 K it uses
 the ATLAS/PHOENIX blend, and above 5500 K it uses ATLAS. The separate
-``get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement`` function adds
+``get_merged_atmosphere_v3bb`` function adds
 white-dwarf atmospheres and blackbodies for high-gravity objects.
 
 Requests outside an atmosphere grid use ``get_atmosphere_bounds``, which
@@ -217,15 +315,26 @@ The use of the -1 atmosphere at lower metallicities is also an approximation.
 
 Model Atmosphere Classes
 -------------------------
+In SPISEA 3.1, ``get_merged_atmosphere`` was renamed
+``get_merged_atmosphere_v1``. ``get_merged_atmosphere`` and
+``get_merged_atmosphere_grid`` are kept and return
+``get_merged_atmosphere_v1`` and ``get_merged_atmosphere_v1_grid``.
+Isochrone files saved with ``get_merged_atmosphere`` are still read
+without being regenerated.
+
+.. autofunction:: atmospheres.get_merged_atmosphere_v1
+
 .. autofunction:: atmospheres.get_merged_atmosphere
+
+.. autofunction:: atmospheres.get_merged_atmosphere_v1bb
 
 .. autofunction:: atmospheres.get_flameskimmer_atmosphere
 
 .. autofunction:: atmospheres.get_flameskimmer_phoenix_atmosphere
 
-.. autofunction:: atmospheres.get_merged_atmosphere_atlas_phoenix_sonora
+.. autofunction:: atmospheres.get_merged_atmosphere_v3
 
-.. autofunction:: atmospheres.get_merged_atmosphere_atlas_phoenix_sonora_w_bb_supplement
+.. autofunction:: atmospheres.get_merged_atmosphere_v3bb
 
 .. autofunction:: atmospheres.get_wd_atmosphere
 

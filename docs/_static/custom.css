@@ -1,0 +1,7 @@
+/* Version badge next to the SPISEA logo in the header. */
+.navbar-version {
+  font-size: 0.9rem;
+  font-weight: 600;
+  opacity: 0.85;
+  white-space: nowrap;
+}

@@ -1,14 +1,10 @@
 matplotlib
-# Floors match pyproject.toml and the stsynphot URL below
-# (NumPy >= 2, SciPy >= 1.14, Astropy >= 7).
+# Floors match pyproject.toml.
 numpy>=2
 numpydoc
 astropy>=7
-synphot>=1.5
-# Minimum release is stsynphot 1.7.0 (grid-spectrum cache, PR 244).
-# Not on PyPI yet; see docs/getting_started.rst. After the 1.7.0 tag,
-# replace this line with stsynphot>=1.7.
-stsynphot @ git+https://github.com/wei-lingfeng/stsynphot_refactor.git@cache-grid-spectra
+synphot>=1.9
+stsynphot>=1.7
 scipy>=1.14
 pandas
 setuptools<=81.0
@@ -16,3 +12,4 @@ setuptools<=81.0
 # Sphinx before this file, so pin it here to upgrade that copy.
 sphinx>=8.2,<10
 pydata-sphinx-theme
+nbsphinx>=0.9
