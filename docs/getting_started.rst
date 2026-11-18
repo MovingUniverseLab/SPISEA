@@ -56,12 +56,17 @@ versions. Both are on PyPI and are installed with SPISEA::
 
    pip install "synphot>=1.9" "stsynphot>=1.7"
 
-Installing COSMIC
+Optional packages
 -----------------
+
+COSMIC
+~~~~~~
 SPISEA users have the option to use ``COSMIC``, a rapid binary synthesis code,
 to model the evolution of stars in multiple systems (see example `here <https://spisea.readthedocs.io/en/dev/notebooks/04_cluster_with_cosmic.html>`_).
 The user must install ``COSMIC`` to enable this functionality.
 Instructions on how to install ``COSMIC`` can be found at https://cosmic-popsynth.github.io/COSMIC/index.html.
+
+
 
 
 .. _Build:
