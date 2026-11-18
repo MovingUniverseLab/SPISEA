@@ -1746,6 +1746,8 @@ class COSMIC(StellarEvolution):
         star_systems['Teff'] = final_binaries['teff_1']
         star_systems['L'] = final_binaries['lum_1']
         star_systems['logg'] = self.calc_logg(final_binaries['mass_1'], final_binaries['rad_1'])
+        # COSMIC bin_state: -1 = single, 0 = binary, 1 = merged, 2 = disrupted
+        star_systems['bin_origin'] = final_binaries['bin_state'].to_numpy()
         
         # Takes sum of the delta kicks in case there was a kick, no disruption, then second kick
         # Even for isolated stars, take sum since second row is blank
@@ -1762,6 +1764,8 @@ class COSMIC(StellarEvolution):
         companions['Teff'] = final_binaries['teff_2'][companion_system_idxs]
         companions['L'] = final_binaries['lum_2'][companion_system_idxs]
         companions['logg'] = self.calc_logg(final_binaries['mass_2'][companion_system_idxs], final_binaries['rad_2'][companion_system_idxs])
+        # Carried along so companions promoted to star_systems keep their system's bin_origin
+        companions['bin_origin'] = final_binaries['bin_state'][companion_system_idxs].to_numpy()
         # Also take sum of companion kicks
         companion_kick_sum = (
                 kick_info
@@ -1847,6 +1851,7 @@ class COSMIC(StellarEvolution):
         mapping[star_systems['system_idx']] = star_systems['system_idx_new']
         companions['system_idx'] = mapping[companions['system_idx']]
         star_systems.remove_columns(['system_idx', 'system_idx_new'])
+        companions.remove_column('bin_origin')
 
         # Preserve a scalar kick magnitude alongside the vector components.
         for table in (star_systems, companions):
