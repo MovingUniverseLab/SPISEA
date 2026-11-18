@@ -1,32 +1,45 @@
 ---
-title: 'SPISEA v3.1: Synthetic stellar populations with updated photometry, brown dwarfs, and binaries'
+
+title: 'SPISEA v3.1: Synthetic stellar populations with updated photometry, brown dwarfs, and binary evolution'
 tags:
-  - Python
-  - astronomy
-  - synthetic photometry
-  - stellar populations
-  - star clusters
+- Python
+- astronomy
+- synthetic photometry
+- stellar populations
+- star clusters
 authors:
-  - name: Mace J. Huston
-    orcid: 0000-0003-4591-3201
-    affiliation: 1
-  - name: Jessica R. Lu
-    orcid: 0000-0001-9611-0009
-    affiliation: 1
-  - name: Natasha S. Abrams
-    orcid: 0000-0002-0287-3783
-    affiliation: 1
-  - name: Caitlin Begbie
-    affiliation: 1
-  - name: Lingfeng Wei
-    affiliation: 1
+- name: Mace J. Huston
+  orcid: 0000-0003-4591-3201
+  affiliation: 1
+- name: Jessica R. Lu
+  orcid: 0000-0001-9611-0009
+  affiliation: 1
+- name: Matt W. Hosek Jr.
+  affiliation: 2
+- name: Lingfeng Wei
+  affiliation: 2
+- name: Natasha S. Abrams
+  orcid: 0000-0002-0287-3783
+  affiliation: 1
+- name: Riley Patlak
+  affiliation: 1
+- name: Caitlin Begbie
+  affiliation: 1
+- name: Deval Deliwala
+  affiliation: 1
+- name: J. Lewis-Merrill
+  affiliation: 3
 affiliations:
-  - name: Department of Astronomy, University of California, Berkeley, CA 94720, USA
-    index: 1
+- index: 1
+  name: Department of Astronomy, University of California, Berkeley, CA 94720, USA
+- index: 2
+  name: Department of Physics and Astronomy, University of California, Los Angeles, CA 90025, USA
+- index: 3
+  name: Department of Earth and Planetary Sciences, University of California, Los Angeles, CA 90025, USA
 date: 14 November 2026
 bibliography: references.bib
----
 
+---
 
 # Summary
 
