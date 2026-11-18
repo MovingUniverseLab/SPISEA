@@ -1215,6 +1215,10 @@ def inv_prim_power(x, power):
     x = np.atleast_1d(x)
     power = np.atleast_1d(power)
 
+    # An empty draw (no stars landed in this IMF segment) has nothing to invert.
+    if x.size == 0:
+        return np.array([], dtype=float)
+
     if (len(x) == 1) and (len(power) > 1):
         x = np.repeat(x, len(power))
     if (len(power) == 1) and (len(x) > 1):
