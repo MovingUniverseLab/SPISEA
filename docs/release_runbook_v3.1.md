@@ -154,8 +154,6 @@ Highlights:
 
 **Data:** Requires grid_version 3.1 model archives from https://w.astro.berkeley.edu/~jlu/spisea/
 
-**Install note:** Until stsynphot 1.7 is on PyPI, install the git URL in docs/getting_started.rst.
-
 Cite Hosek et al. (2020); also cite Begbie et al. (2026) for brown-dwarf work.
 EOF
 )"

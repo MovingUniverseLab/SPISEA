@@ -55,7 +55,7 @@ Change Log
 
 * Note: we skipped version 3.0 to re-align the data set and code versions, since the data set released with version 2.5 was released as 3.0.
 * *Major Changes*
-	* Upgrade from pysynphot to synphot/stsynphot (significant changes to dependencies)
+	* Upgrade from pysynphot to synphot/stsynphot (significant changes to dependencies). Requires synphot >= 1.9 and stsynphot >= 1.7, which read and interpolate atmosphere grid spectra faster.
 	* Bug fix to perform photon count integration instead of energy integration for all filters (see Filters page for details)
 	* New brown dwarf models including non-solar metallicities
 		* New evolution grid: MergedFlameSkimmerRedDiamondbackMIST
