@@ -18,6 +18,13 @@ import sys
 sys.path.insert(0, os.path.abspath('../spisea/'))
 sys.path.insert(0, os.path.abspath('../'))
 
+# On Read the Docs, point PYSYN_CDBS at the minimal Kurucz grid shipped in the
+# repository's top-level data/ directory, so that spisea.atmospheres and
+# spisea.synthetic (which computes the Vega spectrum at import) can be imported
+# by autodoc. Local builds keep whatever PYSYN_CDBS the user already has.
+if os.environ.get('READTHEDOCS') == 'True':
+    os.environ.setdefault('PYSYN_CDBS', os.path.abspath('../data') + '/')
+
 # -- Project information -----------------------------------------------------
 
 project = 'SPISEA'
