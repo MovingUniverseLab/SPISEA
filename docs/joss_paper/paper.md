@@ -14,7 +14,7 @@ authors:
 - name: Jessica R. Lu
   orcid: 0000-0001-9611-0009
   affiliation: 1
-- name: Matt W. Hosek Jr.
+- name: Matthew W. Hosek Jr.
   affiliation: 2
 - name: Lingfeng Wei
   affiliation: 2
