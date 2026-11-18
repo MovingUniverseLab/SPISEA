@@ -1553,33 +1553,21 @@ class IsochronePhot(Isochrone):
         if comp_filters is None:
             comp_filters = self.filters
 
-        # Loop through the filters, get filter info, make photometry for
-        # all stars in this filter.
-        for ii in comp_filters:
-            if self.verbose:
-                prt_fmt = 'Starting filter: {0:s}   Elapsed time: {1:.2f} seconds'
-                print( prt_fmt.format(ii, time.time() - startTime))
+        # Get filter info, then make photometry for all stars in all filters.
+        # The spectra are already extincted, observed spectra. Columns are
+        # added only after all magnitudes are computed.
+        filts = [get_filter_info(ii, rebin=rebin, vega=vega) for ii in comp_filters]
+        mags = mags_in_filters(self.spec_list, filts)
 
-            filt = get_filter_info(ii, rebin=rebin, vega=vega)
+        for jj, ii in enumerate(comp_filters):
             filt_name = get_filter_col_name(ii)
-
-            # Make the column to hold magnitudes in this filter. Add to points table.
             col_name = 'm_' + filt_name
-            mag_col = Column(np.zeros(npoints, dtype=float), name=col_name)
-            self.points.add_column(mag_col)
+            self.points.add_column(Column(mags[:, jj], name=col_name))
 
-            # Loop through each star in the isochrone and do the filter integration
             if self.verbose:
-                print('Starting synthetic photometry')
-            for ss in range(npoints):
-                star = self.spec_list[ss]  # These are already extincted, observed spectra.
-                star_mag = mag_in_filter(star, filt)
-
-                self.points[col_name][ss] = star_mag
-
-                if self.verbose and (ss % 100) == 0:
+                for ss in range(0, npoints, 100):
                     print( verbose_fmt.format(self.points['mass'][ss], self.points['Teff'][ss],
-                                             filt_name, star_mag))
+                                             filt_name, mags[ss, jj]))
 
         if self.verbose:
             endTime = time.time()
@@ -1983,31 +1971,21 @@ class IsochronePhotExternalEvolution(IsochronePhot):
         if comp_filters is None:
             comp_filters = self.filters
 
-        # Loop through the filters, get filter info, make photometry for
-        # all stars in this filter.
-        for ii in comp_filters:
-            prt_fmt = 'Starting filter: {0:s}   Elapsed time: {1:.2f} seconds'
-            print( prt_fmt.format(ii, time.time() - startTime))
+        # Get filter info, then make photometry for all stars in all filters.
+        # The spectra are already extincted, observed spectra. Columns are
+        # added only after all magnitudes are computed.
+        filts = [get_filter_info(ii, rebin=rebin, vega=vega) for ii in comp_filters]
+        mags = mags_in_filters(self.spec_list, filts)
 
-            filt = get_filter_info(ii, rebin=rebin, vega=vega)
+        for jj, ii in enumerate(comp_filters):
             filt_name = get_filter_col_name(ii)
-
-            # Make the column to hold magnitudes in this filter. Add to points table.
             col_name = 'm_' + filt_name
-            mag_col = Column(np.zeros(npoints, dtype=float), name=col_name)
-            self.points.add_column(mag_col)
+            self.points.add_column(Column(mags[:, jj], name=col_name))
 
-            # Loop through each star in the isochrone and do the filter integration
-            print('Starting synthetic photometry')
-            for ss in range(npoints):
-                star = self.spec_list[ss]  # These are already extincted, observed spectra.
-                star_mag = mag_in_filter(star, filt)
-
-                self.points[col_name][ss] = star_mag
-
-                if (self.verbose and (ss % 100) == 0):
+            if self.verbose:
+                for ss in range(0, npoints, 100):
                     print( verbose_fmt.format(self.points['Teff'][ss], self.points['logg'][ss],
-                                             filt_name, star_mag))
+                                             filt_name, mags[ss, jj]))
 
         endTime = time.time()
         print( '      Time taken: {0:.2f} seconds'.format(endTime - startTime))
@@ -2397,6 +2375,65 @@ def mag_in_filter(star, filt):
                 + filt.meta["mag0"])
 
     return star_mag
+
+
+def mags_in_filters(spectra, filts):
+    """
+    Magnitudes of each spectrum in each filter, the same values as
+    ``mag_in_filter`` for every pair.
+
+    ``mag_in_filter`` builds a synphot ``Observation`` per spectrum and filter,
+    which costs several ms. Here each spectrum is evaluated once on the
+    wavelengths of all filters and integrated with numpy. Where a filter has
+    nonzero throughput beyond a spectrum's wavelength range, synphot tapers the
+    spectrum to zero, so that pair goes through ``mag_in_filter``.
+
+    Parameters
+    ----------
+    spectra : list of synphot.SourceSpectrum
+        Observed (reddened) spectra.
+    filts : list of synphot.SpectralElement
+        Filters from ``get_filter_info``, with ``flux0`` and ``mag0`` in ``meta``.
+
+    Returns
+    -------
+    mags : numpy.ndarray
+        Shape (len(spectra), len(filts)).
+    """
+    waves = [filt.waveset.to_value(u.AA) for filt in filts]
+    thru = [filt(filt.waveset).value for filt in filts]
+    edges = np.cumsum([0] + [len(wave) for wave in waves])
+    # synphot needs sorted wavelengths; inverse maps back to each filter's waveset
+    wave_all, inverse = np.unique(np.concatenate(waves), return_inverse=True)
+    hc = (constants.h * constants.c).to_value(u.erg * u.AA)
+
+    mags = np.empty((len(spectra), len(filts)))
+    for ii, star in enumerate(spectra):
+        star_wave = star.waveset
+        if star_wave is not None:
+            star_wave = star_wave.to_value(u.AA)
+            wmin, wmax = star_wave.min(), star_wave.max()
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')  # values outside the spectrum are not used
+            photlam = star(wave_all * u.AA).value[inverse]
+
+        for jj, filt in enumerate(filts):
+            wave = waves[jj]
+            flux = photlam[edges[jj]:edges[jj + 1]]
+            if star_wave is not None:
+                outside = (wave < wmin) | (wave > wmax)
+                if np.any(thru[jj][outside] != 0):
+                    mags[ii, jj] = mag_in_filter(star, filt)
+                    continue
+                # Zero throughput there, so the taper changes nothing.
+                flux = np.where(outside, 0.0, flux)
+            # As in flux_from_observation: PHOTLAM -> FLAM, then integrate flux * wave
+            flam = flux * thru[jj] * hc / wave
+            star_flux = scipy.integrate.trapezoid(flam * wave, x=wave)
+            mags[ii, jj] = (-2.5 * np.log10(star_flux / filt.meta["flux0"])
+                            + filt.meta["mag0"])
+
+    return mags
 
 
 def match_model_mass(isoMasses,theMass):
