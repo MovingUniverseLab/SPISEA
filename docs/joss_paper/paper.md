@@ -49,7 +49,7 @@ Astronomers use SPISEA to generate isochrones and resolved or unresolved cluster
 
 # Statement of need
 
-Observers and theorists need flexible, open tools that couple evolution tracks, atmosphere spectra, and filter throughputs without rebuilding a photometry pipeline for each project. Legacy SPISEA depended on `pysynphot`, which is no longer maintained and is incompatible with current NumPy stacks. Users also need brown-dwarf physics across metallicity [@Begbie2026], optional analytic IMFs beyond broken power laws, updated multiplicity statistics, and a path to evolve interacting binaries.
+Observers and theorists need flexible, open tools that couple evolution tracks, atmosphere spectra, and filter throughputs without rebuilding a photometry pipeline for each project. Legacy SPISEA depended on `pysynphot`, which is no longer maintained and is incompatible with current NumPy stacks. Users also need brown-dwarf physics across different metallicities [@Begbie2026], optional analytic IMFs beyond broken power laws, updated multiplicity statistics, and a path to evolve interacting binaries.
 
 SPISEA 3.1 addresses these gaps for researchers who simulate star clusters, calibrate CMDs, or forward-model surveys. It remains a focused cluster/isochrone engine rather than a full galaxy SPS code: the target audience is Galactic and Local Group stellar-population work where control of IMF, multiples, and extinction laws is primary. Typical workflows build an isochrone once, cache it as a FITS table, then draw many clusters with different IMFs or multiplicity assumptions—so a maintainable photometry backend and explicit model-grid versioning matter as much as new physics modules.
 
