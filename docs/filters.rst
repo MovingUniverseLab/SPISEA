@@ -21,7 +21,7 @@ These strings follow the format ``<telescope/filter_set>,<filter>``.
 Note that there is no space after the comma, and case matters.
 
 Filter transmissions are stored in specific sub-directories
-in ``SPISEA/filt_func``. The functions in ``spisea/filters.py`` tell
+in ``spisea/filt_func``. The functions in ``spisea/filters.py`` tell
 the :ref:`isochrone_objects` how to interpret the filter strings
 and pull the corresponding transmission functions from the filt_func
 directories.

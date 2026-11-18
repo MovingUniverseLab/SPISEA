@@ -10,10 +10,10 @@ If you are downloading the code from scratch, please follow the
 instructions below. If you had already downloaded version 1 of the
 code and are switching to version 2, please see :ref:`version`.
 
-SPISEA is hosted on `GitHub <https://github.com/MovingUniverseLab/spisea>`_
-and is installed with ``pip`` (it is not on PyPI yet). You can either
-install directly from GitHub or clone the repository and install
-locally. The ``main`` branch contains the current release; ``dev`` is
+SPISEA is on `PyPI <https://pypi.org/project/SPISEA/>`_ and its source
+is hosted on `GitHub <https://github.com/MovingUniverseLab/spisea>`_.
+You can install the release from PyPI, install a branch directly from
+GitHub, or clone the repository and install locally. The ``main`` branch contains the current release; ``dev`` is
 for code development.
 
 To clone the repository (needed for an editable install, Docker builds,
@@ -65,6 +65,10 @@ dependencies listed in ``pyproject.toml``. Model atmosphere and
 evolution grids are **not** bundled with the package; continue with
 :ref:`set-up-cdbs` and :ref:`models` after the package install.
 
+**From PyPI.** Current release::
+
+   pip install spisea
+
 **From GitHub (no local clone required).** Current release branch::
 
    pip install "SPISEA @ git+https://github.com/MovingUniverseLab/spisea.git"
@@ -81,7 +85,7 @@ the test suite from the repository tree::
 
 Optional extras (can be combined)::
 
-   pip install "SPISEA[imf] @ git+https://github.com/MovingUniverseLab/spisea.git"
+   pip install "spisea[imf]"
    pip install -e ".[imf,dev]"
 
 * ``imf`` — `initial_mass_function` for :class:`~imf.imf.IMF_package`
