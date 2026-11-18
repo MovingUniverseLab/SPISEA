@@ -1138,7 +1138,7 @@ def get_wdKoester_atmosphere(metallicity=0, temperature=20000, gravity=7):
         resolution as the Castelli+04 atmospheres. Default is False,
         which is often sufficient synthetic photometry in most cases.
     """
-    sp = grid_to_spec('wdKoester_rebin', temperature, metallicity, gravity)
+    sp = grid_to_spec('wdKoester', temperature, metallicity, gravity)
 
     # Do some error checking
     idx = np.where(sp(sp.waveset) != 0)[0]
@@ -1158,7 +1158,7 @@ def get_wdKoester_atmosphere_grid():
     Return white dwarf grid atmospheres from  
     `Koester et al. 2010 <https://ui.adsabs.harvard.edu/abs/2010MmSAI..81..921K/abstract>`_
     """
-    teff_arr, z_arr, logg_arr = get_atmosphere_grid('wdKoester_rebin')
+    teff_arr, z_arr, logg_arr = get_atmosphere_grid('wdKoester')
     return teff_arr, z_arr, logg_arr
 
 def get_atlas_phoenix_atmosphere(metallicity=0, temperature=5250, gravity=4):
