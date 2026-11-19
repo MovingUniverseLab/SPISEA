@@ -9,7 +9,7 @@ below, you can implement your own evolution models into the SPISEA
 framework.
 
 If you have questions or run into problems, please raise an issue on
-our Github `issue tracker <https://github.com/astropy/SPISEA/issues>`_. If you are willing to
+our Github `issue tracker <https://github.com/MovingUniverseLab/spisea/issues>`_. If you are willing to
 have the new models you add be added to the SPISEA package and made
 available to the community, please fork or branch off of the
 development repository and then submit merge requests to add your
@@ -104,7 +104,7 @@ new models (e.g., new metallicities, etc).
 
 If the user needs to change the available age range for an existing
 model grid, please let us know via the  Github `issue tracker
-<https://github.com/astropy/SPISEA/issues>`_. 
+<https://github.com/MovingUniverseLab/spisea/issues>`_.
 
 
 Creating a New Model Grid
@@ -114,5 +114,5 @@ To create an entirely new model set, the user needs to define a new
 the appropriate directory structure in the
 ``$SPISEA_MODELS/evolution`` directory. Detailed documentation on
 this is coming soon. In the meantime, let us know on the  Github `issue tracker
-<https://github.com/astropy/SPISEA/issues>`_ if you'd like to
+<https://github.com/MovingUniverseLab/spisea/issues>`_ if you'd like to
 implement a new model set. 

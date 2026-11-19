@@ -4,10 +4,16 @@
 Quick Start Guide
 ===================
 
-We provide a `jupyter notebook
-<https://github.com/astropy/SPISEA/blob/main/docs/Quick_Start_Make_Cluster.ipynb>`_
-as a Quick-Start Guide to demonstrate the steps required to simulate a cluster and interact
-with the resulting output. This guide shows you how to:
+The tutorials are meant to be read in order:
+
+* :doc:`Making a cluster <notebooks/01_make_cluster>`
+* :doc:`Brown dwarfs <notebooks/02_brown_dwarfs>`
+* :doc:`Resolved multiple systems <notebooks/03_resolved_multiples>`
+* :doc:`A cluster evolved with COSMIC <notebooks/04_cluster_with_cosmic>`
+
+:doc:`Making a cluster <notebooks/01_make_cluster>` demonstrates the steps
+required to simulate a cluster and interact with the resulting output.
+This guide shows you how to:
 
 Make a Cluster Isochrone
 ----------------------------------
@@ -43,3 +49,54 @@ changing the IMF of these clusters changes these distributions.
 
 .. figure:: images/compact_remnants_example.png
 	    :align: center
+
+
+Tutorials and further examples
+------------------------------
+The pages below expand on this quick start. They appear in the left
+sidebar under Quick Start Guide.
+
+.. toctree::
+   :maxdepth: 1
+   :titlesonly:
+   :caption: Tutorials
+
+   notebooks/01_make_cluster
+   notebooks/02_brown_dwarfs
+   notebooks/03_resolved_multiples
+   notebooks/04_cluster_with_cosmic
+   more_examples
+
+Paper examples
+--------------
+Published SPISEA figures are reproduced in the notebooks below.
+Each paper has its own subsection in the left sidebar.
+
+Hosek et al. (2020)
+~~~~~~~~~~~~~~~~~~~
+Figures from the original SPISEA paper
+(`Hosek et al. 2020
+<https://ui.adsabs.harvard.edu/abs/2020ApJ...905...25H/abstract>`_).
+See :ref:`paper_examples_hosek2020` for the full list and notes on
+atmosphere versions used for reproducibility.
+
+.. toctree::
+   :maxdepth: 2
+   :titlesonly:
+   :caption: Hosek et al. (2020)
+
+   paper_examples_hosek2020
+
+Begbie et al. (2026)
+~~~~~~~~~~~~~~~~~~~
+Figures from the brown-dwarf SPISEA paper
+(`Begbie et al. 2026 <https://arxiv.org/abs/2607.14292>`_).
+See :ref:`paper_examples_begbie2026` for the full list and notes on
+atmosphere versions used for reproducibility.
+
+.. toctree::
+   :maxdepth: 2
+   :titlesonly:
+   :caption: Begbie et al. (2026)
+
+   paper_examples_begbie2026

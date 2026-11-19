@@ -20,19 +20,35 @@ Here is a brief list of things that SPISEA can do:
 * make a star cluster at any age with an unusual IMF and unresolved multiplicity
 * make a spectrum of a star cluster in integrated light
 
-See [documentation](https://spisea.readthedocs.io/en/latest/) for
-details on installing and running SPISEA. We also provide jupyter notebooks with a 
-[quick-start tutorial](https://github.com/astropy/SPISEA/blob/main/docs/Quick_Start_Make_Cluster.ipynb)
-and [additional examples](https://github.com/astropy/SPISEA/tree/main/docs/paper_examples)
-demonstrating how to use SPISEA.
+Install with pip:
 
-If you use SPISEA in your research, please cite [Hosek et al. (2020)](https://ui.adsabs.harvard.edu/abs/2020arXiv200606691H/abstract).
+```bash
+pip install spisea
+```
+
+You still need the CDBS and evolution/atmosphere model archives; see
+[Installation](https://spisea.readthedocs.io/en/latest/getting_started.html)
+for the full setup. For an editable clone, use `pip install -e .`.
+
+See [documentation](https://github.com/MovingUniverseLab/spisea/tree/main/docs) for
+details on installing and running SPISEA. The tutorials, in order, are
+[making a cluster](https://github.com/MovingUniverseLab/spisea/blob/main/docs/notebooks/01_make_cluster.ipynb),
+[brown dwarfs](https://github.com/MovingUniverseLab/spisea/blob/main/docs/notebooks/02_brown_dwarfs.ipynb),
+[resolved multiples](https://github.com/MovingUniverseLab/spisea/blob/main/docs/notebooks/03_resolved_multiples.ipynb),
+and [COSMIC evolution](https://github.com/MovingUniverseLab/spisea/blob/main/docs/notebooks/04_cluster_with_cosmic.ipynb).
+Paper figures are in
+[docs/notebooks/papers](https://github.com/MovingUniverseLab/spisea/tree/main/docs/notebooks/papers).
+
+If you use SPISEA in your research, please cite
+[Hosek et al. (2020)](https://ui.adsabs.harvard.edu/abs/2020AJ....160..143H).
+If you use the brown-dwarf / substellar capabilities (SPISEA 2.5+),
+also cite [Begbie et al. (2026)](https://arxiv.org/abs/2607.14292).
 
 ## Change Log
 SPISEA is actively supported and is growing in functionality, and
 subsequently has had several updates since its
 initial release. See the
-[main documentation page](https://spisea.readthedocs.io/en/latest/)
+[main documentation page](https://github.com/MovingUniverseLab/spisea/blob/main/docs/index.rst)
 for the change log describing the updates in each release.
 
 ## Contributions
@@ -42,7 +58,7 @@ own fork of the repository, make their changes, and then submit a pull
 request to the "dev" branch.
 
 All contributions will be acknowledged on the
-[contributors page](https://spisea.readthedocs.io/en/dev/contributors.html#contributors) (with permission).
+[contributors page](https://github.com/MovingUniverseLab/spisea/blob/main/docs/contributors.rst) (with permission).
 Contributors with features used in code releases will be co-authors in future SPISEA software papers.
 
 ## License

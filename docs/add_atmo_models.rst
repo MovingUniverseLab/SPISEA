@@ -3,7 +3,7 @@
 ========================================
 Adding Atmosphere Models
 ========================================
-Stellar atmosphere grids are implemented in SPISEA using STSci's `pysynphot <https://pysynphot.readthedocs.io/en/latest/index.html>`_ and CDBS infrastructure.
+Stellar atmosphere grids are implemented in SPISEA using STSci's `stsynphot <https://stsynphot.readthedocs.io/>`_ / `synphot <https://synphot.readthedocs.io/>`_ stack and CDBS infrastructure.
 Adding a new atmosphere grid involves saving the models in a new
 sub-directory under your ``PYSYN_CDBS`` directory and creating a new
 function in ``atmospheres.py`` to access those files.
@@ -33,9 +33,9 @@ a template for how to make a new one. Some general notes:
   reflected in the 'INDEX' column of catalog.fits.
   
 * For the atmospheres, use units of angstroms for the wavelength and
-  "FLAM" for flux ([erg/s/cm^2/A]; see `pysynphot docs
-  <https://pysynphot.readthedocs.io/en/latest/units.html>`_)
+  "FLAM" for flux ([erg/s/cm^2/A]; see `synphot docs
+  <https://synphot.readthedocs.io/en/latest/synphot/units.html>`_)
 
 More detailed documentation on this is coming soon. In the meantime, let us know on the  Github `issue tracker
-<https://github.com/astropy/SPISEA/issues>`_ if you'd like to
+<https://github.com/MovingUniverseLab/spisea/issues>`_ if you'd like to
 implement a new atmospheric model grid.

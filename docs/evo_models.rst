@@ -4,11 +4,22 @@
 Evolution Model Object
 ========================================
 
+**Preferred for new work:**
+``MergedFlameSkimmerRedDiamondbackMIST``
+(Sonora brown dwarfs joined to MIST stars, grid_version ≥ 3.1).
+Pair it with ``atmospheres.get_merged_atmosphere_v3``
+(or ``get_merged_atmosphere_v3bb`` when compact objects / mid-IR
+WD photometry are needed). See the tutorials under
+:doc:`Quick Start Guide <quick_start>`.
+
+``IsochronePhot`` still defaults to ``MISTv1`` if you do not pass
+``evo_model``; set the preferred model explicitly for new isochrones.
+
 Stellar evolution models are defined as classes in
 ``spisea/evolution.py``. These can be called by::
 
   from spisea import evolution
-  evo = evolution.<model_name>()
+  evo = evolution.MergedFlameSkimmerRedDiamondbackMIST()
 
 The evolution object is an input for the :ref:`isochrone_objects`. 
   
@@ -28,6 +39,11 @@ Below is a table of the evolution model grids currently supported by SPISEA.
      - Years
      - [Fe/H]
      -
+   * - ``MergedFlameSkimmerRedDiamondbackMIST``\ :sup:`c`
+     - 0.011 – ~300\ :sup:`d`
+     - 5.00 – 10.18
+     - -4.0, -3.5, -3.0, -2.5, -2.0, -1.75, -1.5, -1.25, -1.0, -0.75, -0.5, -0.25, 0, 0.25, 0.5
+     - Begbie et al. (2026); Choi et al. (2016)
    * - ``MISTv1``
      - 0.10 – 300
      - 5.01 – 10.30
@@ -85,6 +101,10 @@ Below is a table of the evolution model grids currently supported by SPISEA.
 
 :sup:`b` COSMIC evolves the stars externally and does not use SPISEA's standard isochrone-grid architecture. Instead, it uses a custom atmosphere grid that is created on the fly. See Breivik et al. (2020) for more details on COSMIC. When COSMIC is used, the IFMR is ignored.
 
+:sup:`c` Preferred evolution model for SPISEA 3.1. Requires evolution model grid_version ≥ 3.1.
+
+:sup:`d` Upper mass limit depends on age (high-mass stars leave the isochrone at older ages). At log(Age) ≈ 6 the upper mass is ~300 M\ :sub:`⊙`.
+
 Please note the stellar mass range, age range, and metallicity values of the evolution
 model grid you choose:
 
@@ -103,6 +123,40 @@ model grid you choose:
 If you require other evolution models or need to
 expand the existing grids, please see
 :ref:`add_evo_models`. 
+
+Merged Sonora and MIST grid
+-----------------------------------------
+``MergedFlameSkimmerRedDiamondbackMIST`` combines Sonora brown-dwarf models
+with MIST stellar models. Files are stored in
+``SPISEA_MODELS/evolution/merged/flame_red_diamondback_mist/iso``.
+Each metallicity has its own ``z...`` directory. The loader selects the
+closest available metallicity and age using the lists defined in the class.
+The regular filenames use two decimal places for log age; the additional
+9-Gyr and 15-Gyr files use six decimal places. These models require
+evolution model grid version 3.1 or later.
+
+The full grid has 1,590 files: 15 metallicities at 106 ages each. The
+metallicities are -4, -3.5, -3, -2.5, -2, -1.75, -1.5, -1.25, -1, -0.75,
+-0.5, -0.25, 0, +0.25 and +0.5. Ages run from 0.1 Myr to 15 Gyr, with
+log10(age/yr) steps of 0.05 through 10.15 and additional files at 9 and 15 Gyr.
+
+FlameSkimmer supplies brown-dwarf ages up to 9 Gyr. At older ages,
+Red Diamondback supplies -0.5 <= [M/H] <= +0.5. Values at -0.25 and +0.25
+are linearly interpolated in metallicity. Older values at -1 and -0.75
+are estimated from the last FlameSkimmer ages. Below [M/H] = -1, the -1
+Sonora brown-dwarf values are combined with MIST at the lower metallicity.
+These low-metallicity brown-dwarf values are approximations.
+
+The mass connections use limited cubic interpolation in log10(initial mass).
+Radius is calculated from luminosity and effective temperature in the
+connection. Surface gravity is interpolated separately, so it can differ
+from GM/R squared. Values outside the connection are kept from the input
+models. Intermediate metallicities use linear interpolation of the logarithmic
+stellar quantities in [M/H].
+
+Some MIST evolutionary stages have the same initial mass. Those rows and
+their ``mist_eep`` labels are kept in the low-metallicity files. A mass-only
+interpolator may need to choose between these stages.
 
 ModelMismatch Error
 -----------------------------------------
@@ -147,8 +201,14 @@ Specific Evolution Model Classes
 
 .. autoclass:: evolution.MergedPhillipsBaraffePisaEkstromParsec
 	       :show-inheritance:
+
+.. autoclass:: evolution.MergedFlameSkimmerRedDiamondbackMIST
+               :show-inheritance:
    
 .. autoclass:: evolution.Phillips2020
+	       :show-inheritance:
+
+.. autoclass:: evolution.Marley2021
 	       :show-inheritance:
 
 .. autoclass:: evolution.COSMIC

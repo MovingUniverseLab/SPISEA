@@ -1,9 +1,15 @@
 matplotlib
-numpy <= 1.24.4
+# Floors match pyproject.toml.
+numpy>=2
 numpydoc
-astropy
-pysynphot
-scipy
+astropy>=7
+synphot>=1.9
+stsynphot>=1.7
+scipy>=1.14
 pandas
 setuptools<=81.0
-docutils<0.18
+# PyData Sphinx Theme 0.24 needs Sphinx >= 8.2. Read the Docs installs
+# Sphinx before this file, so pin it here to upgrade that copy.
+sphinx>=8.2,<10
+pydata-sphinx-theme
+nbsphinx>=0.9

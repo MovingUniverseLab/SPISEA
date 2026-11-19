@@ -18,6 +18,13 @@ import sys
 sys.path.insert(0, os.path.abspath('../spisea/'))
 sys.path.insert(0, os.path.abspath('../'))
 
+# On Read the Docs, point PYSYN_CDBS at the minimal Kurucz grid shipped in the
+# repository's top-level data/ directory, so that spisea.atmospheres and
+# spisea.synthetic (which computes the Vega spectrum at import) can be imported
+# by autodoc. Local builds keep whatever PYSYN_CDBS the user already has.
+if os.environ.get('READTHEDOCS') == 'True':
+    os.environ.setdefault('PYSYN_CDBS', os.path.abspath('../data') + '/')
+
 # -- Project information -----------------------------------------------------
 
 project = 'SPISEA'
@@ -25,9 +32,9 @@ copyright = '2020, Matthew Hosek Jr, Jessica R. Lu, Casey Y. Lam.'
 author = 'Matthew Hosek Jr, Jessica R. Lu, Casey Y. Lam'
 
 # The short X.Y version
-version = '2.5'
+version = '3.1'
 # The full version, including alpha/beta/rc tags
-release = '2.5'
+release = '3.1'
 
 
 
@@ -43,8 +50,13 @@ release = '2.5'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.mathjax',
-    'numpydoc'
+    'numpydoc',
+    'nbsphinx',
 ]
+
+# Notebooks are executed locally and stored with their outputs.
+# Read the Docs only renders those outputs.
+nbsphinx_execute = 'never'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -63,12 +75,28 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = [
+    '_build',
+    'Thumbs.db',
+    '.DS_Store',
+    '**/.ipynb_checkpoints',
+    'notebooks/_output',
+]
+
+# Read the Docs builds each format with a separate ``sphinx -b <builder>``
+# invocation. Notebook outputs are large enough that LaTeX exceeds TeX
+# memory on RTD (``TeX capacity exceeded``), which fails the whole build
+# when ``formats: all`` is set. Keep notebooks in HTML/ePub; drop them
+# from the PDF only.
+if '-b' in sys.argv:
+    _builder_idx = sys.argv.index('-b') + 1
+    if _builder_idx < len(sys.argv) and sys.argv[_builder_idx] == 'latex':
+        exclude_patterns.append('notebooks/**')
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
@@ -76,31 +104,44 @@ pygments_style = 'sphinx'
 
 # -- Options for HTML output -------------------------------------------------
 
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-#
-html_theme = 'sphinxdoc'
+# PyData supplies:
+# - Header: top-level toctree entries (Installation, Quick Start, ...)
+# - Left sidebar: Section Navigation (sibling/child pages of the
+#   current header section — across pages)
+# - Right sidebar: On this page (heading outline — within a page)
+# Do not set html_sidebars; that overrides those templates.
+html_theme = 'pydata_sphinx_theme'
 
-# Theme options are theme-specific and customize the look and feel of a theme
-# further.  For a list of options available for each theme, see the
-# documentation.
-#
-# html_theme_options = {}
+html_theme_options = {
+    'logo': {
+        'text': 'SPISEA',
+    },
+    # Logo + v3.1 badge on the left; header nav in the center.
+    'navbar_start': ['navbar-logo', 'version-badge'],
+    'navbar_center': ['navbar-nav'],
+    'navbar_end': ['theme-switcher', 'navbar-icon-links'],
+    'icon_links': [
+        {
+            'name': 'GitHub',
+            'url': 'https://github.com/MovingUniverseLab/spisea',
+            'icon': 'fa-brands fa-github',
+        },
+    ],
+    # Show all four header items before the "More" dropdown.
+    'header_links_before_dropdown': 4,
+    # Left sidebar: pages under the active header section.
+    'navigation_depth': 3,
+    'show_nav_level': 2,
+    # Right sidebar: in-page section outline.
+    'show_toc_level': 2,
+    'secondary_sidebar_items': ['page-toc', 'sourcelink'],
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-
-# Custom sidebar templates, must be a dictionary that maps document names
-# to template names.
-#
-# The default sidebars (for documents that don't match any pattern) are
-# defined by theme itself.  Builtin themes are using these templates by
-# default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
-# 'searchbox.html']``.
-#
-# html_sidebars = {}
+html_css_files = ['custom.css']
 
 
 # -- Options for HTMLHelp output ---------------------------------------------

@@ -1239,24 +1239,36 @@ def get_pisa_isochrone(logAge, metallicity='solar'):
 
     return obj
 
-def get_phillips_pisa_isochrone(logAge, metallicity='solar'):
+def get_phillips_pisa_isochrone(logAge, metallicity='solar',
+                                warn_interpolated=True):
     """
-    Load mass, effective temperature, log gravity, and log luminosity
-    for the Phillips/Pisa isochrones at given logAge. Code will quit if that
-    logAge value doesn't exist (can make some sort of interpolation thing
-    later).
+    Load mass, Teff, log g, and log L for Phillips/Pisa isochrones at logAge.
 
-    Note: mass is currently initial mass, not instantaneous mass
-    
-    Inputs:
-    logAge - Logarithmic Age
-    metallicity - in Z (def = solar of 0.014)
+    Quits if that logAge does not exist. Mass is initial mass, not
+    instantaneous mass.
+
+    Parameters
+    ----------
+    logAge : float
+        Logarithmic age.
+    metallicity : str, optional
+        Metallicity label. Only ``'solar'`` (Z = 0.014) is supported.
+    warn_interpolated : bool, optional
+        If True, print a warning when any isochrone points come from an
+        interpolated region. Default is True.
+
+    Returns
+    -------
+    obj : `objects.DataHolder` or None
+        Isochrone with mass, logT, logg, logL, mass_current, phase, and
+        interpolated arrays. None if the file is missing or metallicity
+        is unsupported.
     """
     rootDir = models_dir + 'merged/phillips_pisa'
     metSuffix = 'z015/'
     if metallicity != 'solar':
         print( 'Non-solar Phillips 2020 & Pisa 2011 metallicities not supported yet')
-        return
+        return None
     rootDir += metSuffix
 
     # Check to see if isochrone exists
@@ -1264,8 +1276,8 @@ def get_phillips_pisa_isochrone(logAge, metallicity='solar'):
     if not os.path.exists(isoFile):
         print( 'Phillips/Pisa isochrone for logAge = {0:3.2f} does\'t exist'.format(logAge))
         print( 'Quitting')
-        return
-        
+        return None
+
     data = Table.read(isoFile, format='fits')
     cols = data.keys()
     mass = data[cols[0]] #Note: this is initial mass, in M_sun
@@ -2324,7 +2336,7 @@ def create_merged_models(cdbs_path, plot=False):
 
         # Copy the atlas 5500 K and phoenix 5000 K models into the
         # merged directory to accompany the merged model. This is for
-        # interpolation purposes for pysynphot
+        # interpolation purposes for synphot
         cmd = 'cp {0}/{1}_5500.fits {2}'.format(atlas_path, atlas_dir[ii], final_dir)
         cmd2 = 'cp {0}/{1}_05000.fits {2}'.format(phoenix_path, phoenix_dir[ii], final_dir)
         os.system(cmd)

@@ -29,64 +29,61 @@ Here is a brief list of things that SPISEA can do:
   
 * make a spectrum of a star cluster in integrated light
 
-SPISEA can be downloaded from `Github <https://github.com/astropy/SPISEA>`_. Please cite `Hosek et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020arXiv200606691H/abstract>`_  if you use SPISEA in
-your research. 
+SPISEA can be downloaded from `Github <https://github.com/MovingUniverseLab/spisea>`_.
+Please cite `Hosek et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020AJ....160..143H>`_
+if you use SPISEA in your research. If you use the brown-dwarf /
+substellar capabilities (SPISEA 2.5+), also cite
+`Begbie et al. (2026) <https://arxiv.org/abs/2607.14292>`_.
 
-Getting Started
-----------------
+The header links below are the top-level sections. The left sidebar
+lists pages within the section you are viewing (Section Navigation).
+The right sidebar lists headings on the current page (On this page).
+
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
+   :titlesonly:
 
-   getting_started.rst
-   quick_start.rst
-   more_examples.rst
-
-
-Documentation
--------------------------
-.. toctree::
-   :maxdepth: 1
-
-   make_isochrone.rst
-   make_cluster.rst
-   evo_models.rst
-   atmo_models.rst
-   imf.rst
-   multiplicity.rst
-   ifmr.rst
-   extinction.rst
-   filters.rst
-
-Advanced Documentation
------------------------------
-.. toctree::
-   :maxdepth: 1
-	      
-   add_evo_models.rst
-   add_atmo_models.rst
-   add_filters.rst
-
-Contributions
----------------
-Have an idea? We'd love to have you join our team!
-We welcome and encourage contributions to SPISEA.
-
-For feature additions, we ask that users make their
-own fork of the repository, make their changes, and then submit a pull
-request to the "dev" branch.
-
-All contributions will be acknowledged on the :ref:`contributors` page
-(with permission). Contributors with features used in code
-releases will be co-authors in future SPISEA software papers.
+   getting_started
+   quick_start
+   api
+   development
 
 
 Change Log
 ----------
+3.1 (2026-11-14)
+
+* Note: we skipped version 3.0 to re-align the data set and code versions, since the data set released with version 2.5 was released as 3.0.
+* *Major Changes*
+	* Upgrade from pysynphot to synphot/stsynphot (significant changes to dependencies). Requires synphot >= 1.9 and stsynphot >= 1.7, which read and interpolate atmosphere grid spectra faster.
+	* Bug fix to perform photon count integration instead of energy integration for all filters (see Filters page for details)
+	* New brown dwarf models including non-solar metallicities
+		* New evolution grid: MergedFlameSkimmerRedDiamondbackMIST
+		* New atmosphere grid: FlameSkimmer
+		* New merged atmosphere set get_merged_atmosphere_v3 (ATLAS/PHOENIX/Sonora)
+		* Updated evolution and atmosphere grid data sets w/ grid_version=3.1
+* *Minor Changes*
+	* Added :class:`~imf.imf.IMF_package` to draw primary masses from the optional `initial_mass_function <https://github.com/keflavich/imf>`_ package (Salpeter, Kroupa, Chabrier, or a custom ``MassFunction``), while keeping SPISEA multiplicity. Install with ``pip install "spisea[imf]"`` or ``pip install initial_mass_function``. See :ref:`imf_package`.
+	* Added opt-in Offner et al. 2023 (Protostars and Planets VII; arXiv:2203.10066) multiplicity model :class:`~imf.multiplicity.MultiplicityUnresolvedOffner2023` / :class:`~imf.multiplicity.MultiplicityResolvedOffner2023`, including brown dwarfs. MF/CSF is a logistic in log-mass; :math:`\gamma(M)` is an error-weighted logistic; :math:`\mu(a)` is a smooth broken power law (:math:`s=0.1` dex); :math:`\sigma(\log_{10} a)` is a 2-parameter logistic. Comparison figures vs the default :class:`~imf.multiplicity.MultiplicityUnresolved` / :class:`~imf.multiplicity.MultiplicityResolvedDK` are in :ref:`multi_obj`.
+	* Companion mass and separation draws (including brown-dwarf q and binaries-only BD systems) now live on the multiplicity object rather than being special-cased in ``imf.py``.
+	* Filter profile updates: 
+		* OGLE filters now account for QE
+		* JWST NIRCam filter profiles updated to v7.0 (Jan 2025)
+		* Updated DECam filters to include full instrument + atmosphere transmission
+	* Improved precision of magnitude summations for clusters with multiplicity
+	* Faster synthetic photometry: atmosphere spectra and filter bandpasses are converted to single tabulated synphot models on their own wavelength grids. Magnitudes are unchanged.
+	* Warning before an existing isochrone file is overwritten because its parameters or SPISEA version do not match; files from versions before 3.0 are reported as mismatched.
+	* Bug fix: IMF_broken_powerlaw could return NaN masses when a segment was steeper than the next higher-mass segment (e.g. 19% NaN for powers [-2.3, -1.3]). IMFs that get steeper toward higher masses, such as Kroupa-like IMFs, were not affected.
+	* IMF helpers theta_closed, theta_open, and delta return a float, not a one-element array, for NumPy scalar input
+	* ResolvedCluster prints its low-mass star removal messages only when verbose=True
+	* Renamed ``get_merged_atmosphere`` (and its ``_grid`` function) to ``get_merged_atmosphere_v1``. ``get_merged_atmosphere`` and ``get_merged_atmosphere_grid`` remain and return the v1 versions. Isochrone files saved with ``get_merged_atmosphere`` are still used.
+	* Tutorials and paper-example Jupyter notebooks are rendered in the HTML docs with nbsphinx (see Tutorials and Paper examples on the home page).
+
 2.5 (2026-07-17)
 
 * *Major Changes*
 	* Addition of brown dwarf models (see `Begbie et al. (2026) <https://arxiv.org/abs/2607.14292>`_)
-		* New evolution grids: `Phillips2020`, Marley2021, and mergedPhillipsMergedPhillipsBaraffePisaEkstromParsec
+		* New evolution grids: `Phillips2020`, Marley2021, and MergedPhillipsBaraffePisaEkstromParsec
 		* New atmosphere grids: Phillips2020, Meisner2023
 		* get_merged_atmosphere now uses Meisner2023 for T < 1000 K and interpolated BTSettl/Meisner2023 for 1000 < T <= 1200
   		* Updated evolution and atmosphere grid data sets w/ grid_version=3.0
@@ -94,7 +91,7 @@ Change Log
 		* When COSMIC is used when creating synthetic clusters, SPISEA creates binary systems normally (using the Multiplicity obj) which are then evolved using COSMIC. 
 		* New COSMIC evolution class, which is used with new IsochronePhotExternalEvolution obj ('external evolution' referring to fact that stellar evolution is done outside of standard SPISEA isochrone-grid framework)
 		* New merged atmosphere model class get_merged_atmosphere_w_bb_supplement, which reverts to blackbody atmospheres for stars with parameters outside of existing grid support.
-		* New tutorial for creating SPISEA clusters using COSMIC: docs/Cluster_w_COSMIC.ipynb
+		* New tutorial for creating SPISEA clusters using COSMIC: :doc:`notebooks/04_cluster_with_cosmic`
 
 * *Minor Changes*
 	* The MISTv1.2-synthpop model extension was modified to include denser sampling in the gap between the base MISTv1.2 grids and 0.1Msun.
@@ -164,9 +161,9 @@ Change Log
     operating system used
 
 2.1.10 (2023-06-01)
-  * Added support for Roman Space Telescope filters (via pysynphot)
+  * Added support for Roman Space Telescope filters (via stsynphot)
     
-    * Note: this requires the pysynphot ``cdbs/mtab`` and
+    * Note: this requires the ``cdbs/mtab`` and
       ``cdbs/comp/`` directories to be at least the 2021-07-16 version or later. See :ref:`getting_started` for how to download these files
 
 2.1.9 (2023-01-10)

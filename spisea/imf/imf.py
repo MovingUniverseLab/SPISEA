@@ -129,17 +129,42 @@ class IMF(object):
         systemMasses : numpy float array
             Array of total system masses (primary + companions) for each primary star.
 
+        Notes
+        -----
+        Subclasses supply the primary-mass draw through
+        ``_begin_sampling``, ``_mean_star_count``,
+        ``_draw_primary_masses``, and ``_end_sampling``. Multiplicity and
+        the trim to the closest cumulative system mass are shared.
         """
-        initial_mass_limit = self._mass_limits[-1]
+        # Let the subclass set up per-cluster state (e.g. cap the
+        # maximum stellar mass at the cluster mass).
+        self._begin_sampling(totalMass)
 
-        if (self._mass_limits[-1] > totalMass):
-            log.info('sample_imf: Setting maximum allowed mass to %d' %
-                      (totalMass))
-            self._mass_limits[-1] = totalMass
+        try:
+            result = self._sample_cluster(totalMass)
+        finally:
+            self._end_sampling()
 
+        return result
+
+    def _sample_cluster(self, totalMass):
+        """
+        Draw primaries and companions until the cluster mass is reached.
+
+        Parameters
+        ----------
+        totalMass : float
+            The total mass of the cluster (including companions) in solar
+            masses.
+
+        Returns
+        -------
+        result : tuple
+            ``(masses, isMultiple, compMasses, systemMasses)`` as described
+            in :meth:`generate_cluster`.
+        """
         # Estimate the mean number of stars expected.
-        self.normalize(totalMass)
-        mean_number = self.int_xi(self._mass_limits[0], self._mass_limits[-1])
+        mean_number = self._mean_star_count(totalMass)
         newStarCount = np.round(mean_number)
         if self._multi_props == None:
             newStarCount *= 1.1
@@ -158,10 +183,12 @@ class IMF(object):
 
         # start_while = time.time()
         while totalMassTally < totalMass:
-            # Generate a random number array.
-            uniX = self.rng.random(newStarCount.astype(int))
-            # Convert into the IMF from the inverted CDF
-            newMasses = self.dice_star_cl(uniX)
+            # Batch size for this pass. At least one star, so small
+            # clusters cannot loop forever on empty batches.
+            nDraw = max(int(newStarCount), 1)
+
+            # Draw primary masses from the IMF.
+            newMasses = self._draw_primary_masses(nDraw)
 
             # Testing for Nans produced in masses
             test = np.isnan(newMasses)
@@ -176,7 +203,7 @@ class IMF(object):
                 MF = self._multi_props.multiplicity_fraction(newMasses)
                 CSF = self._multi_props.companion_star_fraction(newMasses)
 
-                newIsMultiple = self.rng.random(newStarCount.astype(int)) < MF
+                newIsMultiple = self.rng.random(nDraw) < MF
 
                 # Function to calculate multiple systems more efficiently
                 # start_calc = time.time()
@@ -242,69 +269,78 @@ class IMF(object):
             isMultiple = np.zeros(len(masses), dtype=bool)
             systemMasses = masses
 
-        self._mass_limits[-1] = initial_mass_limit
-
         return (masses, isMultiple, compMasses, systemMasses)
+
+    def _begin_sampling(self, totalMass):
+        """
+        Prepare per-cluster sampling state. No-op in the base class.
+
+        Parameters
+        ----------
+        totalMass : float
+            Requested cluster mass in solar masses.
+
+        Returns
+        -------
+        None
+        """
+        return None
+
+    def _end_sampling(self):
+        """
+        Undo any state set in :meth:`_begin_sampling`. No-op in the base
+        class.
+
+        Returns
+        -------
+        None
+        """
+        return None
+
+    def _mean_star_count(self, totalMass):
+        """
+        Expected number of primaries in a cluster of ``totalMass``.
+
+        Parameters
+        ----------
+        totalMass : float
+            Requested cluster mass in solar masses.
+
+        Returns
+        -------
+        mean_number : float
+            Expected number of primary stars.
+        """
+        raise NotImplementedError(
+            f'{type(self).__name__} must implement _mean_star_count')
+
+    def _draw_primary_masses(self, n_draw):
+        """
+        Draw ``n_draw`` primary masses from the IMF using ``self.rng``.
+
+        Parameters
+        ----------
+        n_draw : int
+            Number of masses to draw.
+
+        Returns
+        -------
+        masses : numpy array, dtype=float, shape = [n_draw]
+            Primary masses in solar masses.
+        """
+        raise NotImplementedError(
+            f'{type(self).__name__} must implement _draw_primary_masses')
 
     def calc_multi(self, newMasses, newIsMultiple, CSF, MF):
         """
         Helper function to calculate multiples more efficiently.
-        We will use array operations as much as possible.
-        Uses Fontanive+18 parameters for brown dwarf masses
-        (M <= 0.08 M_sun) while keeping default parameters for
-        all other stellar primaries.
+        Companion counts and companion-mass draws (including brown-dwarf
+        q distributions and binaries-only BD systems) are delegated to
+        the multiplicity object.
         """
-        # Copy over the primary masses. Eventually add the companions.
-        newSystemMasses = newMasses.copy()
-
-        # Identify multiple systems, calculate number of companions for each
-        multiple_idx = np.where(newIsMultiple)[0]
-        comp_nums = 1 + self.rng.poisson((CSF[multiple_idx] / MF[multiple_idx]) - 1)
-        if self._multi_props.companion_max:
-            too_many = np.where(comp_nums > self._multi_props.CSF_max)[0]
-            comp_nums[too_many] = self._multi_props.CSF_max
-        primary = newMasses[multiple_idx]
-
-        # limit BD primaries to 1 companion (Fontanive+18)
-        bd_mask = primary <= 0.08
-        comp_nums[bd_mask & (comp_nums > 1)] = 1
-
-        # We will deal with each number of multiple system independently. This is
-        # so we can put in uniform arrays in _multi_props.random_q.
-        comp_unique = np.unique(comp_nums)
-        comp_indices = [np.where(comp_nums == i)[0] for i in comp_unique]
-        if np.any(newIsMultiple):
-            compMasses = np.zeros((len(newMasses), max(comp_unique)))
-        else:
-            compMasses = np.zeros((len(newMasses), 1))
-
-        for comp_num, comp_index in zip(comp_unique, comp_indices):
-            prim_subset = primary[comp_index]
-            bd_sub_mask = prim_subset <= 0.08
-            star_sub_mask = ~bd_sub_mask
-
-            q_values = np.empty((len(comp_index), comp_num))
-
-            # Stellar primaries: use default Duchene & Kraus distribution
-            if np.any(star_sub_mask):
-                q_values[star_sub_mask] = self._multi_props.random_q(self.rng.random((star_sub_mask.sum(), comp_num)))
-
-            # BD primaries: use Fontanive+18 power-law distribution
-            if np.any(bd_sub_mask):
-                b = 1.0 + 6.1  # gamma from Fontanive+18
-                rand_vals = self.rng.random((bd_sub_mask.sum(), comp_num))
-                q_values[bd_sub_mask] = (rand_vals * (1.0 - self._multi_props.q_min ** b) +
-                                         self._multi_props.q_min ** b) ** (1.0 / b)
-
-            m_comp = np.multiply(q_values, np.transpose([prim_subset]))
-            compMasses[multiple_idx[comp_index], :comp_num] = m_comp
-
-        # Mask out companions below the minimum mass
-        compMasses = np.ma.MaskedArray(compMasses, mask=compMasses < self._mass_limits[0])
-        newSystemMasses[multiple_idx] += compMasses[multiple_idx].sum(axis=1)
-        newIsMultiple = np.any(~compMasses.mask, axis=1)
-
-        return compMasses, newSystemMasses, newIsMultiple
+        return self._multi_props.draw_companion_masses(
+            newMasses, newIsMultiple, CSF, MF,
+            rng=self.rng, mass_min=self._mass_limits[0])
 
 
 class IMF_broken_powerlaw(IMF):
@@ -361,6 +397,80 @@ class IMF_broken_powerlaw(IMF):
         self.coeffs = coeffs
         self.k = 1
 
+    def _begin_sampling(self, totalMass):
+        """
+        Cap the maximum stellar mass at the cluster mass for this draw.
+
+        Parameters
+        ----------
+        totalMass : float
+            Requested cluster mass in solar masses.
+
+        Returns
+        -------
+        None
+        """
+        # Remember the upper limit so _end_sampling can restore it.
+        self._initial_mass_limit = self._mass_limits[-1]
+
+        if (self._mass_limits[-1] > totalMass):
+            log.info('sample_imf: Setting maximum allowed mass to %d' %
+                      (totalMass))
+            self._mass_limits[-1] = totalMass
+
+        return None
+
+    def _end_sampling(self):
+        """
+        Restore the maximum stellar mass changed in :meth:`_begin_sampling`.
+
+        Returns
+        -------
+        None
+        """
+        self._mass_limits[-1] = self._initial_mass_limit
+
+        return None
+
+    def _mean_star_count(self, totalMass):
+        """
+        Normalize to ``totalMass`` and return the expected star count.
+
+        Parameters
+        ----------
+        totalMass : float
+            Requested cluster mass in solar masses.
+
+        Returns
+        -------
+        mean_number : float
+            Integral of the normalized IMF over the mass limits.
+        """
+        self.normalize(totalMass)
+        mean_number = self.int_xi(self._mass_limits[0], self._mass_limits[-1])
+
+        return mean_number
+
+    def _draw_primary_masses(self, n_draw):
+        """
+        Draw primary masses through the inverted CDF (:meth:`dice_star_cl`).
+
+        Parameters
+        ----------
+        n_draw : int
+            Number of masses to draw.
+
+        Returns
+        -------
+        masses : numpy array, dtype=float, shape = [n_draw]
+            Primary masses in solar masses.
+        """
+        # Uniform deviates, then map through the inverted CDF.
+        uniX = self.rng.random(n_draw)
+        masses = self.dice_star_cl(uniX)
+
+        return masses
+
     def xi(self, m):
         """
         Probability density describing the IMF.
@@ -371,7 +481,7 @@ class IMF_broken_powerlaw(IMF):
         Output:
         xi - probability of measuring that mass.
         """
-        returnFloat = type(m) == float
+        returnFloat = isinstance(m, (float, np.floating))
 
         m = np.atleast_1d(m)
 
@@ -412,7 +522,7 @@ class IMF_broken_powerlaw(IMF):
         """
         Mass-weighted probability m*xi
         """
-        returnFloat = type(m) == float
+        returnFloat = isinstance(m, (float, np.floating))
         m = np.atleast_1d(m)
         mxi = np.zeros(len(m), dtype=float)
 
@@ -478,7 +588,7 @@ class IMF_broken_powerlaw(IMF):
         """
         Helper function
         """
-        returnFloat = type(a) == float
+        returnFloat = isinstance(a, (float, np.floating))
 
         a = np.atleast_1d(a)
         val = np.zeros(len(a), dtype=float)
@@ -506,7 +616,7 @@ class IMF_broken_powerlaw(IMF):
         """
         Helper function
         """
-        returnFloat = type(a) == float
+        returnFloat = isinstance(a, (float, np.floating))
 
         a = np.atleast_1d(a)
         val = np.zeros(len(a), dtype=float)
@@ -542,7 +652,6 @@ class IMF_broken_powerlaw(IMF):
             Mmax = self._m_limits_high[-1]
 
         if Mmin == None:
-
             Mmin = self._m_limits_low[0]
 
         if Mmax > Mcl:
@@ -557,8 +666,12 @@ class IMF_broken_powerlaw(IMF):
         self.norm_Mmin = Mmin
         self.norm_Mmax = Mmax
 
-        self.k = Mcl / self.int_mxi(self.norm_Mmin, self.norm_Mmax)
+        int_mxi = self.int_mxi(self.norm_Mmin, self.norm_Mmax)
+
+        self.k = Mcl / int_mxi
         self.lamda = self.int_xi_cl(self._m_limits_low[0], self._mass_limits)
+
+        return
 
     def norm_cl_wk04(self, Mcl, Mmax=None, Mmin=None):
         """
@@ -640,7 +753,7 @@ class IMF_broken_powerlaw(IMF):
         Given a list of random numbers (r), return a list of masses
         selected from the IMF.
         """
-        returnFloat = type(r) == float
+        returnFloat = isinstance(r, (float, np.floating))
         r = np.atleast_1d(r)  # Make sure it is an array
 
         x = r * self.lamda[-1]
@@ -663,8 +776,11 @@ class IMF_broken_powerlaw(IMF):
 
             t1 = aux_tmp / (self.coeffs[i] * self.k)
             t1 += prim_power(self._m_limits_low[i], self._powers[i])
+            # Only the entries within this segment: beyond it the inverse can be NaN (for a steep segment followed by
+            # others), and 0 * NaN would carry it into the result
             y_i = gamma_closed(x_tmp, self.lamda[i], self.lamda[i+1])
-            y_i *= inv_prim_power(t1, self._powers[i])
+            in_seg = y_i > 0
+            y_i[in_seg] *= inv_prim_power(t1[in_seg], self._powers[i])
 
             # Save results into the y array
             y[idx] += y_i
@@ -756,6 +872,308 @@ class Salpeter_Kirkpatrick_2024(IMF_broken_powerlaw):
         IMF_broken_powerlaw.__init__(self, massLimits, powers,
                                      multiplicity=multiplicity)
 
+
+class IMF_package(IMF):
+    """
+    IMF that draws primary masses from a mass function in the
+    ``initial_mass_function`` package
+    (`Richardson, Ginsburg & Koposov 2026 <https://doi.org/10.3847/1538-3881/ae8aef>`_).
+
+    Masses are drawn through the package mass function's inverse CDF
+    with this object's ``rng``, so ``seed`` and ``ResolvedCluster(seed=...)``
+    behave as they do for the other SPISEA IMFs. Companions, the trim to
+    the requested cluster mass, and the outputs of :meth:`generate_cluster`
+    are SPISEA's.
+
+    Parameters
+    ----------
+    massfunc : str, MassFunction class, or MassFunction instance
+        Mass function from ``initial_mass_function``. Strings are the names
+        registered there: ``'salpeter'``, ``'kroupa'``, ``'chabrier'``,
+        ``'chabrierpowerlaw'``, and ``'chabrierlognormal'``.
+
+    mmin, mmax : float, optional
+        Minimum and maximum stellar mass, in solar masses. For a name or
+        class they are passed to the mass function (``None`` keeps the
+        package default). For an instance they must match its limits.
+        The final limits must be finite with ``0 < mmin < mmax``. Chabrier
+        defaults to ``[0, inf]``, so pass limits explicitly (for example
+        ``mmin=0.03, mmax=120``).
+
+    multiplicity : Multiplicity object or None
+        If None, no multiplicity is assumed. Otherwise, use
+        multiplicity object to create multiple star systems.
+
+    seed : int, optional
+        Seed for ``numpy.random.default_rng``. See :class:`IMF`.
+
+    **kwargs
+        Extra mass-function parameters (for example ``alpha=2.35``) when
+        ``massfunc`` is a name or class.
+
+    Notes
+    -----
+    Requires ``pip install initial_mass_function`` (or
+    ``pip install "SPISEA[imf]"``). The package is imported only when this
+    class is constructed.
+
+    The package mass function is used as the primary-star mass function,
+    and SPISEA multiplicity adds companions on top of it, as for
+    :class:`IMF_broken_powerlaw`.
+
+    Examples
+    --------
+    ::
+
+        from spisea.imf import imf, multiplicity
+
+        multi = multiplicity.MultiplicityUnresolvedOffner2023()
+        my_imf = imf.IMF_package('chabrier', mmin=0.03, mmax=120,
+                                 multiplicity=multi, seed=42)
+    """
+    def __init__(self, massfunc, mmin=None, mmax=None, multiplicity=None,
+                 seed=None, **kwargs):
+        imf_pkg = _import_imf_package()
+
+        # Instances already carry their parameters.
+        if isinstance(massfunc, imf_pkg.MassFunction) and kwargs:
+            raise TypeError('IMF_package: extra mass-function parameters '
+                            f'{sorted(kwargs)} cannot be applied to an existing '
+                            'MassFunction instance.')
+
+        # Reject bad explicit limits before the package asserts on them.
+        for label, value in (('mmin', mmin), ('mmax', mmax)):
+            if value is not None and not (np.isfinite(value) and value > 0):
+                raise ValueError(f'IMF_package: {label} must be finite and '
+                                 f'positive; got {value}.')
+
+        # Build the mass function, or check an instance against mmin/mmax.
+        mfc = imf_pkg.get_massfunc(massfunc, mmin=mmin, mmax=mmax, **kwargs)
+
+        # Sampling needs the inverse CDF and the CDF of the distribution.
+        distr = getattr(mfc, 'distr', None)
+        if not (hasattr(distr, 'ppf') and hasattr(distr, 'cdf')):
+            raise ValueError(f'IMF_package: {type(mfc).__name__} has no '
+                             'distribution with a ppf and cdf, so it cannot '
+                             'be randomly sampled.')
+
+        # Mass limits must be finite and positive.
+        m_lo = float(mfc.mmin)
+        m_hi = float(mfc.mmax)
+        if not (np.isfinite(m_lo) and np.isfinite(m_hi) and 0 < m_lo < m_hi):
+            raise ValueError('IMF_package: mass limits must be finite with '
+                             f'0 < mmin < mmax; got mmin={m_lo}, mmax={m_hi}. '
+                             'Pass mmin and mmax explicitly.')
+
+        super().__init__(massLimits=np.array([m_lo, m_hi]),
+                         multiplicity=multiplicity, seed=seed)
+
+        self.massfunc = mfc
+
+        # Mean stellar mass keyed by upper mass limit; the integrals can be
+        # numerical (scipy quad) and are the same for every cluster.
+        self._mean_mass_cache = {}
+
+        # Full-range sampling state; _begin_sampling narrows it per cluster.
+        self._reset_sampling_range()
+
+        return
+
+    def _reset_sampling_range(self):
+        """
+        Sample the full ``[mmin, mmax]`` range.
+
+        Returns
+        -------
+        None
+        """
+        self._m_top = self._mass_limits[-1]
+        self._u_lo = 0.0
+        self._u_hi = 1.0
+
+        return None
+
+    def _begin_sampling(self, totalMass):
+        """
+        Truncate the mass function at ``totalMass`` when it is below ``mmax``.
+
+        Parameters
+        ----------
+        totalMass : float
+            Requested cluster mass in solar masses.
+
+        Returns
+        -------
+        None
+        """
+        m_lo, m_hi = self._mass_limits[0], self._mass_limits[-1]
+
+        if totalMass <= m_lo:
+            raise ValueError(f'IMF_package: cluster mass {totalMass} Msun must '
+                             f'exceed the minimum stellar mass {m_lo} Msun.')
+
+        # No star may be heavier than the whole cluster.
+        self._m_top = min(m_hi, totalMass)
+        if self._m_top < m_hi:
+            log.info('sample_imf: Setting maximum allowed mass to %d' %
+                     (totalMass))
+
+            # Map uniform deviates onto the CDF range [mmin, m_top].
+            # Divide by cdf(mmax) so mass functions whose CDF does not
+            # end at exactly 1 are still truncated correctly.
+            distr = self.massfunc.distr
+            cdf_hi = float(distr.cdf(m_hi))
+            self._u_lo = float(distr.cdf(m_lo)) / cdf_hi
+            self._u_hi = float(distr.cdf(self._m_top)) / cdf_hi
+
+        return None
+
+    def _end_sampling(self):
+        """
+        Restore the full sampling range after a cluster draw.
+
+        Returns
+        -------
+        None
+        """
+        self._reset_sampling_range()
+
+        return None
+
+    def _mean_star_count(self, totalMass):
+        """
+        Expected number of primaries: ``totalMass`` over the mean mass.
+
+        Parameters
+        ----------
+        totalMass : float
+            Requested cluster mass in solar masses.
+
+        Returns
+        -------
+        mean_number : float
+            Expected number of primary stars on ``[mmin, m_top]``.
+        """
+        m_lo = self._mass_limits[0]
+        m_top = float(self._m_top)
+
+        if m_top not in self._mean_mass_cache:
+            # Number and mass integrals share one normalization, so their
+            # ratio is the mean stellar mass on [mmin, m_top].
+            number = self.massfunc.integrate(m_lo, m_top)[0]
+            mass = self.massfunc.m_integrate(m_lo, m_top)[0]
+            self._mean_mass_cache[m_top] = mass / number
+
+        mean_number = totalMass / self._mean_mass_cache[m_top]
+
+        return mean_number
+
+    def _draw_primary_masses(self, n_draw):
+        """
+        Draw primary masses through the package inverse CDF with ``self.rng``.
+
+        Parameters
+        ----------
+        n_draw : int
+            Number of masses to draw.
+
+        Returns
+        -------
+        masses : numpy array, dtype=float, shape = [n_draw]
+            Primary masses in solar masses.
+        """
+        # Uniform deviates on the (possibly truncated) CDF range.
+        u = self._u_lo + self.rng.random(n_draw) * (self._u_hi - self._u_lo)
+
+        masses = _vectorized_ppf(self.massfunc.distr, u, _import_imf_package())
+
+        return masses
+
+
+def _import_imf_package():
+    """
+    Import ``initial_mass_function`` (module name ``imf``).
+
+    Returns
+    -------
+    imf_pkg : module
+        The ``initial_mass_function`` top-level module.
+
+    Raises
+    ------
+    ImportError
+        If the package is missing, or ``imf`` resolves to another module
+        (for example ``spisea/imf`` when ``spisea/`` is on ``sys.path``).
+    """
+    try:
+        import imf as imf_pkg
+    except ImportError as err:
+        raise ImportError('IMF_package needs the initial_mass_function '
+                          'package. Install it with '
+                          '`pip install initial_mass_function` or '
+                          '`pip install "SPISEA[imf]"`.') from err
+
+    if not hasattr(imf_pkg, 'get_massfunc'):
+        raise ImportError('IMF_package: the module imported as `imf` '
+                          f'({getattr(imf_pkg, "__file__", "unknown path")}) '
+                          'is not initial_mass_function. Check that '
+                          'spisea/ itself is not on sys.path.')
+
+    return imf_pkg
+
+
+def _vectorized_ppf(distr, u, imf_pkg):
+    """
+    Inverse CDF of an ``initial_mass_function`` distribution, vectorized.
+
+    ``BrokenPowerLaw.ppf`` and ``CompositeDistribution.ppf`` in the
+    package loop over samples in Python. This uses the same segment
+    weights and per-segment ppf, one array call per segment.
+
+    Parameters
+    ----------
+    distr : initial_mass_function distribution
+        Object with ``ppf``; piecewise types also need ``weights``.
+    u : numpy array, dtype=float, shape = [N]
+        Uniform deviates in [0, 1].
+    imf_pkg : module
+        The ``initial_mass_function`` module, for the piecewise types.
+
+    Returns
+    -------
+    masses : numpy array, dtype=float, shape = [N]
+        Masses in solar masses.
+    """
+    u = np.asarray(u, dtype=float)
+
+    # Segments of the piecewise types; anything else has a vectorized ppf.
+    dists = imf_pkg.distributions
+    if isinstance(distr, dists.BrokenPowerLaw):
+        segments = distr.pows
+    elif isinstance(distr, dists.CompositeDistribution):
+        segments = distr.distrs
+    else:
+        masses = np.asarray(distr.ppf(u), dtype=float)
+        return masses
+
+    # Cumulative segment edges on the [0, 1] CDF scale.
+    weights = np.asarray(distr.weights, dtype=float)
+    edges = np.r_[0.0, np.cumsum(weights)]
+
+    # Segment index (1-based, as in the package) and position within it.
+    pos = np.clip(np.digitize(u, edges), 1, len(segments))
+    u_seg = np.clip((u - edges[pos - 1]) / weights[pos - 1], 0, 1)
+
+    # One ppf call per segment.
+    masses = np.empty_like(u)
+    for ii, segment in enumerate(segments):
+        idx = pos == ii + 1
+        if np.any(idx):
+            masses[idx] = _vectorized_ppf(segment, u_seg[idx], imf_pkg)
+
+    return masses
+
+
 ##################################################
 #
 # Generic functions -- see if we can move these up.
@@ -766,7 +1184,7 @@ def prim_power(m, power):
     Takes floats or arrays, but returns arrays.
     returns: m**(power + 1) / (power + 1) and handles the case when power = -1
     """
-    returnFloat = (type(m) == float) and (type(power) == float)
+    returnFloat = isinstance(m, (float, np.floating)) and isinstance(power, (float, np.floating))
 
     m = np.atleast_1d(m)
     power = np.atleast_1d(power)
@@ -792,10 +1210,14 @@ def inv_prim_power(x, power):
     returns ((1+power) * x)**(1.0 / (1 + power)) and handles the case
     when power == -1.
     """
-    returnFloat = (type(x) == float) and (type(power) == float)
+    returnFloat = isinstance(x, (float, np.floating)) and isinstance(power, (float, np.floating))
 
     x = np.atleast_1d(x)
     power = np.atleast_1d(power)
+
+    # An empty draw (no stars landed in this IMF segment) has nothing to invert.
+    if x.size == 0:
+        return np.array([], dtype=float)
 
     if (len(x) == 1) and (len(power) > 1):
         x = np.repeat(x, len(power))
@@ -818,8 +1240,7 @@ def inv_prim_power(x, power):
 
 
 def log_normal(m, mean_logm, sigma_logm):
-    returnFloat = (type(m) == float) and (type(mean_logm) == float) and \
-        (type(sigma_logm) == float)
+    returnFloat = isinstance(m, (float, np.floating)) and isinstance(mean_logm, (float, np.floating)) and isinstance(sigma_logm, (float, np.floating))
 
     m = np.atleast_1d(m)
     mean_logm = np.atleat_1d(mean_logm)
@@ -834,8 +1255,7 @@ def log_normal(m, mean_logm, sigma_logm):
         return val
 
 def prim_log_normal(m, mean_logm, sigma_logm):
-    returnFloat = (type(m) == float) and (type(mean_logm) == float) and \
-        (type(sigma_logm) == float)
+    returnFloat = isinstance(m, (float, np.floating)) and isinstance(mean_logm, (float, np.floating)) and isinstance(sigma_logm, (float, np.floating))
 
     m = np.atleast_1d(m)
     mean_logm = np.atleat_1d(mean_logm)
@@ -849,15 +1269,14 @@ def prim_log_normal(m, mean_logm, sigma_logm):
     else:
         return val
 
-def inv_prim_log_normal(x, mean_logm, sigma_logm):
-    returnFloat = (type(m) == float) and (type(mean_logm) == float) and \
-        (type(sigma_logm) == float)
+def inv_prim_log_normal(m, mean_logm, sigma_logm):
+    returnFloat = isinstance(m, (float, np.floating)) and isinstance(mean_logm, (float, np.floating)) and isinstance(sigma_logm, (float, np.floating))
 
     m = np.atleast_1d(m)
     mean_logm = np.atleat_1d(mean_logm)
     sigma_logm = np.atleat_1d(sigma_logm)
 
-    mu = inv_error(0.346516861952484 * x / sigma_logm)
+    mu = inv_error(0.346516861952484 * m / sigma_logm)
     val = 10.0**(1.4142135623731 * sigma_logm * mu + mean_logm)
 
     if returnFloat:
@@ -865,9 +1284,8 @@ def inv_prim_log_normal(x, mean_logm, sigma_logm):
     else:
         return val
 
-def mlog_normal(x, mean_logm, sigma_logm):
-    returnFloat = (type(m) == float) and (type(mean_logm) == float) and \
-        (type(sigma_logm) == float)
+def mlog_normal(m, mean_logm, sigma_logm):
+    returnFloat = isinstance(m, (float, np.floating)) and isinstance(mean_logm, (float, np.floating)) and isinstance(sigma_logm, (float, np.floating))
 
     m = np.atleast_1d(m)
     mean_logm = np.atleat_1d(mean_logm)
@@ -881,9 +1299,8 @@ def mlog_normal(x, mean_logm, sigma_logm):
     else:
         return val
 
-def prim_mlog_normal(x, mean_logm, sigma_logm):
-    returnFloat = (type(m) == float) and (type(mean_logm) == float) and \
-        (type(sigma_logm) == float)
+def prim_mlog_normal(m, mean_logm, sigma_logm):
+    returnFloat = isinstance(m, (float, np.floating)) and isinstance(mean_logm, (float, np.floating)) and isinstance(sigma_logm, (float, np.floating))
 
     m = np.atleast_1d(m)
     mean_logm = np.atleat_1d(mean_logm)
@@ -908,7 +1325,7 @@ def theta_closed(x):
     Pass in float or array of floats (x) and return 0 for x<0
     and 1 for everything else.
     """
-    isFloat = type(x) == float
+    isFloat = isinstance(x, (float, np.floating))
 
     x = np.atleast_1d(x)
     val = (x >= 0).astype('float')
@@ -923,7 +1340,7 @@ def theta_open(x):
     Pass in float or array of floats (x) and return 1 for x>0
     and 0 for everything else.
     """
-    isFloat = type(x) == float
+    isFloat = isinstance(x, (float, np.floating))
 
     x = np.atleast_1d(x)
     val = (x > 0).astype('float')
@@ -938,7 +1355,7 @@ def delta(x):
     Pass in float or array of floats (x) and return 0.5 for x==0
     and 1.0 for everything else.
     """
-    isFloat = type(x) == float
+    isFloat = isinstance(x, (float, np.floating))
 
     x = np.atleast_1d(x)
     val = np.ones(len(x), dtype=float)

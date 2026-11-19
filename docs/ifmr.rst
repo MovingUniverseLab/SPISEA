@@ -3,6 +3,14 @@
 =============
 IFMR Object
 =============
+
+**Preferred for new work:**
+:class:`~ifmr.IFMR_Raithel18`
+(used in the tutorials). Other options are
+:class:`~ifmr.IFMR_Spera15` and
+:class:`~ifmr.IFMR_N20_Sukhbold`.
+Omit the IFMR (``ifmr=None``) if you do not want compact remnants.
+
 The Initial-Final Mass Relation (IFMR) maps a star’s initial zero-age main sequence (ZAMS)
 mass to the type and mass of the compact object it will form. The
 SPISEA IFMR classes support white dwarfs (WD), neutron stars (NS),
@@ -11,7 +19,7 @@ and black holes (BH). The associated code is found in ``spisea/ifmr.py``.
 To define an IFMR object::
 
   from spisea import ifmr
-  ifmr_obj = ifmr.<class_name>
+  ifmr_obj = ifmr.IFMR_Raithel18()
 
 Compact objects are included in the output tables produced by
 :ref:`cluster_objects`, and can be identified by the "phase" column:
@@ -20,8 +28,7 @@ Compact objects are included in the output tables produced by
 * NS: phase = 102
 * BH: phase = 103
 
-See `Quick Start Example
-<https://github.com/astropy/SPISEA/blob/main/docs/Quick_Start_Make_Cluster.ipynb>`_
+See :doc:`Making a cluster <notebooks/01_make_cluster>`
 for more examples of how to interact with the :ref:`cluster_objects`
 output.
 
