@@ -1,3 +1,4 @@
+import functools
 import logging
 import numpy as np
 import os
@@ -120,6 +121,13 @@ def get_atmosphere_bounds(model_dir, metallicity=0, temperature=20000, gravity=4
 
     return (temperature_new, gravity_new, metallicity_new)
 
+@functools.lru_cache(maxsize=None)
+def _read_atmosphere_grid(catalog_file, mtime):
+    """Teff, [M/H], and log g arrays of a grid catalog; *mtime* renews the cache when the file changes."""
+    catalog = Table.read(catalog_file)
+    params = np.array([index.split(',')[:3] for index in catalog['INDEX']], dtype=float)
+    return params[:, 0], params[:, 1], params[:, 2]
+
 def get_atmosphere_grid(model_dir):
     """
     Gets grid of temps, Zs, and loggs of atmosphere grid
@@ -140,21 +148,14 @@ def get_atmosphere_grid(model_dir):
     logg_arr : array-like
         Surface gravity array
     """
-    # Open catalog fits file and break out row indices
-    catalog = Table.read('{0}/grid/{1}/catalog.fits'.format(os.environ['PYSYN_CDBS'], model_dir))
-    
-    teff_arr = []
-    z_arr = []
-    logg_arr = []
-    for cur_row_index in range(len(catalog)):
-        index = catalog['INDEX'][cur_row_index]
-        tmp = index.split(',')
-        teff_arr.append(float(tmp[0]))
-        z_arr.append(float(tmp[1]))
-        logg_arr.append(float(tmp[2]))
-    teff_arr = np.array(teff_arr)
-    z_arr = np.array(z_arr)
-    logg_arr = np.array(logg_arr)
+    # Reading and parsing the catalog takes ~15 ms, and the atmosphere functions
+    # call this for every star that falls off the grid, so it is cached. Copies
+    # keep callers from changing the cached arrays.
+    catalog_file = '{0}/grid/{1}/catalog.fits'.format(os.environ['PYSYN_CDBS'], model_dir)
+    # A missing catalog is not cached and fails in Table.read, as before.
+    mtime = os.path.getmtime(catalog_file) if os.path.exists(catalog_file) else None
+    grid = _read_atmosphere_grid(catalog_file, mtime)
+    teff_arr, z_arr, logg_arr = (arr.copy() for arr in grid)
 
     return teff_arr, z_arr, logg_arr
 

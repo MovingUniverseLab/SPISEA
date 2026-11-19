@@ -1730,6 +1730,55 @@ def test_mag_in_filter():
     return
 
 
+def test_mags_in_filters_matches_mag_in_filter():
+    """The vectorized photometry gives the mag_in_filter value for every spectrum and filter."""
+    red_law = reddening.RedLawNishiyama09()
+    spectra = []
+    for teff, logg in [(4000, 4.5), (9500, 4.0), (25000, 3.5)]:
+        spec = atmospheres.get_castelli_atmosphere(temperature=teff, gravity=logg)
+        spec = syn.trim_spectrum(spec, 3000, 52000)
+        spec *= 1e-20
+        spec *= red_law.extinction_curve(2.7, spec.waveset)
+        spectra.append(spec)
+    # Ends at 2 microns, inside nirc2 Kp: that pair takes the tapered mag_in_filter path.
+    spectra.append(syn.trim_spectrum(spectra[1], 3000, 20000))
+
+    filts = [syn.get_filter_info(name) for name in
+             ['nirc2,J', 'nirc2,Kp', 'wfc3,ir,f160w', 'acs,wfc1,f814w']]
+
+    with patch.object(syn, 'mag_in_filter', wraps=syn.mag_in_filter) as fallback:
+        mags = syn.mags_in_filters(spectra, filts)
+    # Only the trimmed spectrum in Kp needs the taper; the rest take the fast path.
+    assert fallback.call_count == 1
+
+    expected = np.array([[syn.mag_in_filter(spec, filt) for filt in filts] for spec in spectra])
+
+    assert mags.shape == (len(spectra), len(filts))
+    np.testing.assert_allclose(mags, expected, rtol=0, atol=1e-10)
+
+    return
+
+
+def test_make_photometry_error_adds_no_columns():
+    """If photometry fails in one filter, no magnitude columns are added."""
+    from synphot.exceptions import DisjointError
+    from synphot.models import Gaussian1D
+
+    # A narrow line at 1.6 microns: inside F160W, disjoint from Kp.
+    iso = object.__new__(syn.IsochronePhot)
+    iso.points = Table({'mass': [1.0], 'Teff': [5000.0]})
+    iso.spec_list = [syn.SourceSpectrum(Gaussian1D, amplitude=1e-3, mean=16000, stddev=300)]
+    iso.filters = ['wfc3,ir,f160w', 'nirc2,Kp']
+    iso.verbose = False
+    iso.save_file = None
+
+    with pytest.raises(DisjointError):
+        iso.make_photometry()
+    assert iso.points.colnames == ['mass', 'Teff']
+
+    return
+
+
 @pytest.mark.slow
 @pytest.mark.parametrize('log_age', [np.log10(1.0e9), np.log10(8.0e9)],
                          ids=['1Gyr', '8Gyr'])

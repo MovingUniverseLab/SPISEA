@@ -28,6 +28,19 @@ def _unit_flat_bandpass(waveset):
     )
 
 
+def test_get_atmosphere_grid_cached_copy():
+    """The cached grid matches the catalog, and changing a returned array leaves the cache alone."""
+    from astropy.table import Table
+    catalog = Table.read(f"{os.environ['PYSYN_CDBS']}/grid/ck04models/catalog.fits")
+    expected = np.array([[float(x) for x in index.split(',')[:3]] for index in catalog['INDEX']])
+
+    teff, z, logg = atm.get_atmosphere_grid('ck04models')
+    np.testing.assert_array_equal(np.column_stack([teff, z, logg]), expected)
+
+    teff[:] = -1
+    np.testing.assert_array_equal(atm.get_atmosphere_grid('ck04models')[0], expected[:, 0])
+
+
 def test_rebin_spec_matches_synphot_observation():
     """``rebin_spec`` must return the same binned flux as ``Observation.binflux``."""
     vega = syn.vega
