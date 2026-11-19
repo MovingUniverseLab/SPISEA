@@ -30,12 +30,12 @@ You still need the CDBS and evolution/atmosphere model archives; see
 [Installation](https://spisea.readthedocs.io/en/latest/getting_started.html)
 for the full setup. For an editable clone, use `pip install -e .`.
 
-See [documentation](https://github.com/MovingUniverseLab/spisea/tree/main/docs) for
+See [documentation](https://spisea.readthedocs.io/en/latest/) for
 details on installing and running SPISEA. The tutorials, in order, are
-[making a cluster](https://github.com/MovingUniverseLab/spisea/blob/main/docs/notebooks/01_make_cluster.ipynb),
-[brown dwarfs](https://github.com/MovingUniverseLab/spisea/blob/main/docs/notebooks/02_brown_dwarfs.ipynb),
-[resolved multiples](https://github.com/MovingUniverseLab/spisea/blob/main/docs/notebooks/03_resolved_multiples.ipynb),
-and [COSMIC evolution](https://github.com/MovingUniverseLab/spisea/blob/main/docs/notebooks/04_cluster_with_cosmic.ipynb).
+[making a cluster](https://spisea.readthedocs.io/en/latest/notebooks/01_make_cluster.html),
+[brown dwarfs](https://spisea.readthedocs.io/en/latest/notebooks/02_brown_dwarfs.html),
+[resolved multiples](https://spisea.readthedocs.io/en/latest/notebooks/03_resolved_multiples.html),
+and [COSMIC evolution](https://spisea.readthedocs.io/en/latest/notebooks/04_cluster_with_cosmic.html).
 Paper figures are in
 [docs/notebooks/papers](https://github.com/MovingUniverseLab/spisea/tree/main/docs/notebooks/papers).
 
@@ -48,7 +48,7 @@ also cite [Begbie et al. (2026)](https://arxiv.org/abs/2607.14292).
 SPISEA is actively supported and is growing in functionality, and
 subsequently has had several updates since its
 initial release. See the
-[main documentation page](https://github.com/MovingUniverseLab/spisea/blob/main/docs/index.rst)
+[main documentation page](https://spisea.readthedocs.io/en/latest/index.html)
 for the change log describing the updates in each release.
 
 ## Contributions
@@ -58,7 +58,7 @@ own fork of the repository, make their changes, and then submit a pull
 request to the "dev" branch.
 
 All contributions will be acknowledged on the
-[contributors page](https://github.com/MovingUniverseLab/spisea/blob/main/docs/contributors.rst) (with permission).
+[contributors page](https://spisea.readthedocs.io/en/latest/contributors.html) (with permission).
 Contributors with features used in code releases will be co-authors in future SPISEA software papers.
 
 ## License
