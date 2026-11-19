@@ -1114,6 +1114,11 @@ def test_COSMIC_evolve():
     # Core bookkeeping invariant: companion count must match companion table length
     assert np.sum(ss['N_companions']) == len(comp)
 
+    # bin_origin is COSMIC's bin_state: -1 single, 0 binary, 1 merged, 2 disrupted
+    assert 'bin_origin' in ss.colnames
+    assert 'bin_origin' not in comp.colnames
+    np.testing.assert_array_equal(ss['bin_origin'], [0, 0, -1])
+
     # Scalar kick must be the magnitude of the kick vector components
     np.testing.assert_allclose(
         ss['kick'], np.sqrt(ss['kick_x']**2 + ss['kick_y']**2 + ss['kick_z']**2))
